@@ -13,6 +13,21 @@ async function getTour(id: string) {
   return tour;
 }
 
+/** Safely extract a JSON array field — handles null, empty strings, raw strings, and already-parsed arrays */
+function safeArray(value: unknown, fallback: string[] = [""]): any[] {
+  if (!value) return fallback;
+  if (Array.isArray(value)) return value.length > 0 ? value : fallback;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) && parsed.length > 0 ? parsed : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+}
+
 export default async function EditTourPage(
   props: { params: Promise<{ id: string }> }
 ) {
@@ -32,16 +47,19 @@ export default async function EditTourPage(
     stateCode:        tour.stateCode ?? "",
     shortDescription: tour.shortDescription,
     description:      tour.description,
-    highlights:       (tour.highlights as string[]).length > 0 ? tour.highlights as string[] : [""],
-    itinerary:        (tour.itinerary as any[]).length > 0
-                        ? (tour.itinerary as any[]).map((stop: any, idx: number) => ({
-                            order:       stop.order ?? stop.day ?? idx + 1,
-                            title:       stop.title ?? "",
-                            description: stop.description ?? "",
-                            stayMinutes: stop.stayMinutes ?? "30",
-                            isOptional:  stop.isOptional ?? false,
-                          }))
-                        : [{ order: 1, title: "", description: "", stayMinutes: "30", isOptional: false }],
+    highlights:       safeArray(tour.highlights),
+    itinerary:        (() => {
+                        const arr = safeArray(tour.itinerary, []);
+                        return arr.length > 0
+                          ? arr.map((stop: any, idx: number) => ({
+                              order:       stop.order ?? stop.day ?? idx + 1,
+                              title:       stop.title ?? "",
+                              description: stop.description ?? "",
+                              stayMinutes: stop.stayMinutes ?? "30",
+                              isOptional:  stop.isOptional ?? false,
+                            }))
+                          : [{ order: 1, title: "", description: "", stayMinutes: "30", isOptional: false }];
+                      })(),
     meetingPoint:     tour.meetingPoint,
     endPoint:         tour.endPoint ?? "",
     duration:         tour.duration.toString(),
@@ -49,13 +67,14 @@ export default async function EditTourPage(
     maxGroupSize:     tour.maxGroupSize.toString(),
     minGroupSize:     tour.minGroupSize.toString(),
     dailyCapacity:    tour.dailyCapacity?.toString() ?? "10",
-    languages:        (tour.languages as string[]).length > 0 ? tour.languages as string[] : ["English"],
+    languages:        safeArray(tour.languages, ["English"]),
     serviceProvider:  tour.serviceProvider ?? "",
     basePrice:        Number(tour.basePrice).toString(),
     childPrice:       tour.childPrice ? Number(tour.childPrice).toString() : "",
-    priceTiers:       (tour.priceTiers as any[])?.length > 0 ? (tour.priceTiers as any[]) : [],
-    includes:         (tour.includes as string[]).length > 0 ? tour.includes as string[] : [""],
-    excludes:         (tour.excludes as string[]).length > 0 ? tour.excludes as string[] : [""],
+    priceTiers:       safeArray(tour.priceTiers, []),
+    includes:         safeArray(tour.includes),
+    excludes:         safeArray(tour.excludes),
+    importantInfo:    safeArray(tour.importantInfo),
     metaTitle:        tour.metaTitle ?? "",
     metaDescription:  tour.metaDescription ?? "",
     featured:         tour.featured,

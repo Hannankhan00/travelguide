@@ -1,19 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Menu, X, MapPin, ChevronDown } from "lucide-react";
+import { Menu, X, MapPin, ChevronDown, Heart, User, LogIn, LogOut, Bell, Sun, HelpCircle, Smartphone, ChevronRight, Ticket } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { COMPANY_NAME, NAV_LINKS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
+import { signOut } from "next-auth/react";
 
 interface NavbarProps {
   transparent?: boolean;
+  isLoggedIn?: boolean;
 }
 
-export function Navbar({ transparent = false }: NavbarProps) {
+export function Navbar({ transparent = false, isLoggedIn = false }: NavbarProps) {
   const [scrolled,   setScrolled]   = useState(false);
   const [menuOpen,   setMenuOpen]   = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!transparent) return;
@@ -21,6 +25,18 @@ export function Navbar({ transparent = false }: NavbarProps) {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [transparent]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+    }
+    if (profileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [profileMenuOpen]);
 
   const isWhite = !transparent || scrolled;
 
@@ -71,26 +87,89 @@ export function Navbar({ transparent = false }: NavbarProps) {
           </nav>
 
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-3">
-            <Link
-              href="/auth/login"
-              className={cn(
-                "text-sm font-medium transition-colors",
-                isWhite ? "text-muted hover:text-foreground" : "text-white/80 hover:text-white"
-              )}
-            >
-              Sign In
-            </Link>
-            <Link href="/tours">
-              <Button
-                size="sm"
-                className={cn(
-                  !isWhite && "bg-accent text-secondary hover:bg-accent/90"
-                )}
+          <div className="hidden md:flex items-center gap-6">
+            {isLoggedIn && (
+              <Link href="/bookings" className="group flex flex-col items-center justify-center gap-1 transition-colors relative">
+                <Ticket className={cn("size-[22px]", isWhite ? "text-[#111111]" : "text-white")} />
+                <span className={cn("text-[11px] font-bold tracking-wide", isWhite ? "text-[#111111]" : "text-white")}>
+                  Bookings
+                </span>
+              </Link>
+            )}
+
+            <button className="group flex flex-col items-center justify-center gap-1 transition-colors relative">
+              <Heart className={cn("size-[22px]", isWhite ? "text-[#111111]" : "text-white")} />
+              <span className={cn("text-[11px] font-bold tracking-wide", isWhite ? "text-[#111111]" : "text-white")}>
+                Wishlist
+              </span>
+            </button>
+
+            <div className="relative" ref={profileRef}>
+              <button 
+                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                className="group flex flex-col items-center justify-center gap-1 transition-colors relative"
               >
-                Book Now
-              </Button>
-            </Link>
+                <User className={cn("size-[22px]", isWhite ? "text-[#111111]" : "text-white")} />
+                <span className={cn("text-[11px] font-bold tracking-wide", isWhite ? "text-[#111111]" : "text-white")}>
+                  Profile
+                </span>
+                
+                {/* Active Indicator exactly matching screenshot red line */}
+                {profileMenuOpen && (
+                  <div className="absolute -bottom-[9px] left-0 right-0 h-[2px] bg-[#C41230]" />
+                )}
+              </button>
+
+              {profileMenuOpen && (
+                <div className="absolute top-[42px] right-0 w-[280px] bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-[#E4E0D9] overflow-hidden animate-zoom-in origin-top-right text-[#111111]">
+                  <div className="px-5 py-4">
+                    <h3 className="text-[17px] font-extrabold" style={{ fontFamily: "var(--font-sans)" }}>Profile</h3>
+                  </div>
+                  
+                  <div className="flex flex-col py-1">
+                    {!isLoggedIn ? (
+                      <Link 
+                        href="?auth=login" 
+                        onClick={() => setProfileMenuOpen(false)}
+                        className="flex items-center gap-4 px-5 py-3 hover:bg-[#F8F7F5] transition-colors"
+                      >
+                        <LogIn className="size-[22px]" />
+                        <span className="text-[15px] font-semibold">Log in or sign up</span>
+                      </Link>
+                    ) : (
+                      <button 
+                        onClick={() => {
+                          setProfileMenuOpen(false);
+                          signOut({ callbackUrl: "/" });
+                        }}
+                        className="flex items-center gap-4 px-5 py-3 hover:bg-[#FEE2E2] hover:text-[#C41230] transition-colors w-full text-left"
+                      >
+                        <LogOut className="size-[22px]" />
+                        <span className="text-[15px] font-semibold">Log out</span>
+                      </button>
+                    )}
+
+                    <div className="h-px bg-[#E4E0D9] mx-5 my-2" />
+
+                    <button className="flex items-center justify-between px-5 py-3 hover:bg-[#F8F7F5] transition-colors w-full text-left">
+                      <div className="flex items-center gap-4">
+                        <Bell className="size-[22px]" />
+                        <span className="text-[15px] font-semibold">Updates</span>
+                      </div>
+                      <ChevronRight className="size-[18px] text-[#A8A29E]" />
+                    </button>
+
+                    <div className="h-px bg-[#E4E0D9] mx-5 my-2" />
+
+                    <button className="flex items-center gap-4 px-5 py-3 hover:bg-[#F8F7F5] transition-colors w-full text-left">
+                      <HelpCircle className="size-[22px]" />
+                      <span className="text-[15px] font-semibold">Support</span>
+                    </button>
+                  </div>
+                  <div className="h-2" />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Mobile menu toggle */}
@@ -122,10 +201,41 @@ export function Navbar({ transparent = false }: NavbarProps) {
               </Link>
             ))}
             <div className="pt-2 mt-1 border-t border-border flex flex-col gap-2">
-              <Link href="/auth/login" className="px-4 py-2.5 text-sm text-muted hover:text-foreground text-center">Sign In</Link>
-              <Link href="/tours" onClick={() => setMenuOpen(false)}>
-                <Button size="sm" className="w-full">Book Now</Button>
+              {isLoggedIn && (
+                <Link
+                  href="/bookings"
+                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface rounded-lg transition-colors"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <Ticket className="size-5 text-muted" /> Bookings
+                </Link>
+              )}
+              <Link
+                href="/wishlist"
+                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface rounded-lg transition-colors"
+                onClick={() => setMenuOpen(false)}
+              >
+                <Heart className="size-5 text-muted" /> Wishlist
               </Link>
+              {!isLoggedIn ? (
+                <Link
+                  href="?auth=login"
+                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface rounded-lg transition-colors"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <LogIn className="size-5 text-muted" /> Log in or sign up
+                </Link>
+              ) : (
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    signOut({ callbackUrl: "/" });
+                  }}
+                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-error hover:bg-error-light/50 rounded-lg transition-colors w-full text-left"
+                >
+                  <LogOut className="size-5 text-error" /> Log out
+                </button>
+              )}
             </div>
           </div>
         </div>

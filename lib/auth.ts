@@ -31,13 +31,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!user || !user.email) return null;
 
-        // Admin-only credentials login
-        if (user.role !== "ADMIN") return null;
+        // Any user can log in if they have a hashed password
+        // Admins might also fall back to the env password if they don't have one
+        let hashToCheck = (user as any).hashedPassword;
+        if (user.role === "ADMIN" && !hashToCheck) {
+          hashToCheck = process.env.ADMIN_PASSWORD_HASH;
+        }
 
-        // Per-user hashedPassword takes priority; fall back to shared env hash
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const hashToCheck = (user as any).hashedPassword ?? process.env.ADMIN_PASSWORD_HASH;
-        if (!hashToCheck) return null;
+        if (!hashToCheck) return null; // No password set
 
         const valid = await bcrypt.compare(
           credentials.password as string,

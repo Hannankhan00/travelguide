@@ -2,8 +2,10 @@ import Link from "next/link";
 import { MapPin, Clock, Star, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/utils";
+import { WishlistButton } from "./WishlistButton";
 
 interface TourCardProps {
+  id:             string;
   slug:           string;
   title:          string;
   location:       string;
@@ -16,9 +18,14 @@ interface TourCardProps {
   category:       string;
   gradient:       string;          // CSS gradient string for placeholder image
   featured?:      boolean;
+  likelyToSellOut?: boolean;
+  coverImage?:    string;
+  durationType?:  string;
+  isWishlisted?:  boolean;
 }
 
 export function TourCard({
+  id,
   slug,
   title,
   location,
@@ -31,41 +38,69 @@ export function TourCard({
   category,
   gradient,
   featured,
+  likelyToSellOut,
+  coverImage,
+  durationType = "days",
+  isWishlisted = false,
 }: TourCardProps) {
   return (
-    <Link
-      href={`/tours/${slug}`}
-      className="group block rounded-2xl overflow-hidden bg-background border border-border
+    <div className="group relative rounded-2xl overflow-hidden bg-background border border-border
                  shadow-(--shadow-card) hover:shadow-lg hover:-translate-y-1
-                 transition-all duration-300"
-    >
-      {/* Image area */}
-      <div className="relative h-56 overflow-hidden">
-        {/* Gradient placeholder (replace with next/image when real photos are added) */}
-        <div
-          className="absolute inset-0 group-hover:scale-105 transition-transform duration-500"
-          style={{ background: gradient }}
+                 transition-all duration-300">
+      
+      {/* Wishlist Button Overlay - Absolutely positioned above the link */}
+      <div className="absolute top-3 right-3 z-20">
+        <WishlistButton 
+          tourId={id} 
+          isWishlistedInitial={isWishlisted} 
+          className="shadow-md"
         />
+      </div>
 
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-linear-to-t from-secondary/70 via-transparent to-transparent" />
+      <Link
+        href={`/tours/${slug}`}
+        className="block"
+      >
+        {/* Image area */}
+        <div className="relative h-56 overflow-hidden bg-muted">
+          {coverImage ? (
+            <img
+              src={coverImage}
+              alt={title}
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          ) : (
+            <div
+              className="absolute inset-0 group-hover:scale-105 transition-transform duration-500"
+              style={{ background: gradient }}
+            />
+          )}
 
-        {/* Category badge */}
-        <div className="absolute top-3 left-3">
-          <Badge variant="accent" className="text-xs font-semibold tracking-wide">
-            {category}
-          </Badge>
-        </div>
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-linear-to-t from-secondary/70 via-transparent to-transparent" />
 
-        {/* Featured ribbon */}
-        {featured && (
-          <div className="absolute top-3 right-3">
-            <Badge variant="primary" className="text-xs">
-              <Star className="size-3 fill-current" />
-              Featured
+          {/* Category badge */}
+          <div className="absolute top-3 left-3">
+            <Badge variant="accent" className="text-xs font-semibold tracking-wide">
+              {category}
             </Badge>
           </div>
-        )}
+
+          {/* Featured / Likely to sell out badges (moved down/left to avoid conflict with wishlist) */}
+          <div className="absolute top-14 left-3 flex flex-col gap-2 items-start opacity-90 group-hover:opacity-100 transition-opacity">
+            {featured && (
+              <Badge variant="primary" className="text-[10px] sm:text-xs shadow-sm bg-[#1B2847] border-[#1B2847] py-0.5">
+                <Star className="size-3 fill-current mr-1" />
+                Featured
+              </Badge>
+            )}
+            {likelyToSellOut && (
+              <Badge variant="error" className="text-[10px] sm:text-xs shadow-sm bg-[#C41230] border-[#C41230] text-white flex items-center gap-1 py-0.5">
+                <Clock className="size-3" />
+                Likely to Sell Out
+              </Badge>
+            )}
+          </div>
 
         {/* Location on image */}
         <div className="absolute bottom-3 left-3 flex items-center gap-1.5 text-white text-sm font-medium">
@@ -84,7 +119,7 @@ export function TourCard({
         <div className="flex items-center gap-4 text-sm text-muted mb-4">
           <div className="flex items-center gap-1.5">
             <Clock className="size-3.5" />
-            <span>{duration} {duration === 1 ? "day" : "days"}</span>
+            <span>{duration} {durationType}</span>
           </div>
           {maxGroupSize && (
             <div className="flex items-center gap-1.5">
@@ -124,6 +159,7 @@ export function TourCard({
           </div>
         </div>
       </div>
-    </Link>
+      </Link>
+    </div>
   );
 }

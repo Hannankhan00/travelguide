@@ -5,6 +5,17 @@ import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { slugify } from "@/lib/utils";
 
+/** Safely parse a JSON string — never throws, always returns a valid array */
+function safeJsonParse(raw: string | null | undefined, fallback: any[] = []): any[] {
+  if (!raw || raw.trim() === "") return fallback;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 async function assertAdmin() {
@@ -42,12 +53,10 @@ export async function saveTourAction(formData: FormData): Promise<ActionResult> 
   // ── Description ────────────────────────────────────────────
   const shortDescription = (formData.get("shortDescription") as string)?.trim();
   const description      = (formData.get("description") as string)?.trim();
-  const highlightsRaw    = formData.get("highlights") as string || "[]";
-  const highlights       = JSON.parse(highlightsRaw);
+  const highlights       = safeJsonParse(formData.get("highlights") as string);
 
   // ── Itinerary ──────────────────────────────────────────────
-  const itineraryRaw     = formData.get("itinerary") as string || "[]";
-  const itinerary        = JSON.parse(itineraryRaw);
+  const itinerary        = safeJsonParse(formData.get("itinerary") as string);
 
   // ── Logistics ──────────────────────────────────────────────
   const meetingPoint     = (formData.get("meetingPoint") as string)?.trim();
@@ -57,20 +66,17 @@ export async function saveTourAction(formData: FormData): Promise<ActionResult> 
   const maxGroupSize     = parseInt(formData.get("maxGroupSize") as string) || 10;
   const minGroupSize     = parseInt(formData.get("minGroupSize") as string) || 1;
   const dailyCapacity    = parseInt(formData.get("dailyCapacity") as string) || 10;
-  const languagesRaw     = formData.get("languages") as string || "[]";
-  const languages        = JSON.parse(languagesRaw);
+  const languages        = safeJsonParse(formData.get("languages") as string, ["English"]);
   const serviceProvider  = (formData.get("serviceProvider") as string)?.trim() || null;
 
   // ── Pricing ────────────────────────────────────────────────
   const basePrice        = parseFloat(formData.get("basePrice") as string) || 0;
   const childPriceRaw    = formData.get("childPrice") as string;
   const childPrice       = childPriceRaw ? parseFloat(childPriceRaw) : null;
-  const priceTiersRaw    = formData.get("priceTiers") as string || "[]";
-  const priceTiers       = JSON.parse(priceTiersRaw);
-  const includesRaw      = formData.get("includes") as string || "[]";
-  const excludesRaw      = formData.get("excludes") as string || "[]";
-  const includes         = JSON.parse(includesRaw);
-  const excludes         = JSON.parse(excludesRaw);
+  const priceTiers       = safeJsonParse(formData.get("priceTiers") as string);
+  const includes         = safeJsonParse(formData.get("includes") as string);
+  const excludes         = safeJsonParse(formData.get("excludes") as string);
+  const importantInfo    = safeJsonParse(formData.get("importantInfo") as string);
 
   // ── SEO ────────────────────────────────────────────────────
   const metaTitle        = (formData.get("metaTitle") as string)?.trim() || null;
@@ -123,6 +129,7 @@ export async function saveTourAction(formData: FormData): Promise<ActionResult> 
     priceTiers,
     includes,
     excludes,
+    importantInfo,
     metaTitle,
     metaDescription,
     featured,

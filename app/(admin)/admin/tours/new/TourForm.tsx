@@ -57,6 +57,9 @@ type TourData = {
   priceTiers:       PriceTier[];
   includes:         string[];
   excludes:         string[];
+  importantInfo:    string[];
+  coverImage:       string;
+  galleryImages:    string[];
   metaTitle:        string;
   metaDescription:  string;
   featured:         boolean;
@@ -67,6 +70,7 @@ type TourData = {
 const STEPS = [
   { id: "basics",      label: "Basics",      icon: MapPin     },
   { id: "description", label: "Description", icon: FileText   },
+  { id: "media",       label: "Media",       icon: Image      },
   { id: "itinerary",   label: "Itinerary",   icon: Route      },
   { id: "logistics",   label: "Logistics",   icon: Truck      },
   { id: "pricing",     label: "Pricing",     icon: DollarSign },
@@ -81,7 +85,8 @@ const DEFAULT_DATA: TourData = {
   itinerary: [{ order: 1, title: "", description: "", stayMinutes: "30", isOptional: false }],
   meetingPoint: "", endPoint: "", duration: "1", durationType: "days", maxGroupSize: "10",
   minGroupSize: "1", dailyCapacity: "10", languages: ["English"], serviceProvider: "",
-  basePrice: "", childPrice: "", priceTiers: [], includes: [""], excludes: [""],
+  basePrice: "", childPrice: "", priceTiers: [], includes: [""], excludes: [""], importantInfo: [""],
+  coverImage: "", galleryImages: ["", "", ""],
   metaTitle: "", metaDescription: "", featured: false, likelyToSellOut: false, status: "DRAFT",
 };
 
@@ -105,17 +110,17 @@ export function TourForm({ initialData }: TourFormProps) {
     setData((prev) => ({ ...prev, [key]: value }));
   }
 
-  function updateList(key: "highlights" | "includes" | "excludes", index: number, value: string) {
+  function updateList(key: "highlights" | "includes" | "excludes" | "importantInfo", index: number, value: string) {
     const list = [...data[key]];
     list[index] = value;
     update(key, list);
   }
 
-  function addListItem(key: "highlights" | "includes" | "excludes") {
+  function addListItem(key: "highlights" | "includes" | "excludes" | "importantInfo") {
     update(key, [...data[key], ""]);
   }
 
-  function removeListItem(key: "highlights" | "includes" | "excludes", index: number) {
+  function removeListItem(key: "highlights" | "includes" | "excludes" | "importantInfo", index: number) {
     update(key, data[key].filter((_, i) => i !== index));
   }
 
@@ -213,6 +218,7 @@ export function TourForm({ initialData }: TourFormProps) {
     formData.set("priceTiers", JSON.stringify(data.priceTiers.filter(t => t.minGuests && t.pricePerPerson)));
     formData.set("includes", JSON.stringify(data.includes.filter(Boolean)));
     formData.set("excludes", JSON.stringify(data.excludes.filter(Boolean)));
+    formData.set("importantInfo", JSON.stringify(data.importantInfo.filter(Boolean)));
     formData.set("metaTitle", data.metaTitle);
     formData.set("metaDescription", data.metaDescription);
     formData.set("featured", data.featured ? "true" : "false");
@@ -325,6 +331,55 @@ export function TourForm({ initialData }: TourFormProps) {
               <button type="button" onClick={() => addListItem("highlights")} className="mt-2 flex items-center gap-1.5 text-xs text-[#C41230] font-medium hover:underline">
                 <Plus size={12} /> Add highlight
               </button>
+            </div>
+          </div>
+        );
+
+      // ─── MEDIA ────────────────────────
+      case "media":
+        return (
+          <div className="space-y-6">
+            <div>
+              <label className={labelCls}>Cover Image <span className="text-[#C41230]">*</span></label>
+              <div className="mt-2 border-2 border-dashed border-[#E4E0D9] rounded-xl p-8 text-center hover:bg-[#FAFAFA] transition-colors">
+                <Image className="mx-auto text-[#A8A29E] mb-3" size={32} />
+                <p className="text-sm font-medium text-[#111]">Upload Cover Image</p>
+                <p className="text-xs text-[#A8A29E] mt-1">This will be the main photo shown on listings and the detail page hero.</p>
+                <input type="file" className="block w-full max-w-xs mx-auto mt-4 text-xs text-[#7A746D] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-[#1B2847] file:text-white file:text-xs file:font-semibold hover:file:bg-[#2A3B66] cursor-pointer" accept="image/*" />
+              </div>
+            </div>
+
+            <div>
+              <label className={labelCls}>Gallery Images <span className="text-[#A8A29E] font-normal">(add as many as you like)</span></label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
+                {data.galleryImages.map((_, i) => (
+                  <div key={i} className="border-2 border-dashed border-[#E4E0D9] rounded-xl p-5 text-center hover:bg-[#FAFAFA] transition-colors relative flex flex-col items-center justify-center min-h-[140px] group">
+                    <Image className="text-[#E4E0D9] mb-2" size={24} />
+                    <p className="text-xs font-medium text-[#7A746D]">Image {i + 1}</p>
+                    <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" />
+                    {data.galleryImages.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => update("galleryImages", data.galleryImages.filter((_, idx) => idx !== i))}
+                        className="absolute top-2 right-2 p-1 bg-white rounded-full shadow-md text-[#A8A29E] hover:text-[#C41230] opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Remove slot"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {/* Add more button */}
+                <button
+                  type="button"
+                  onClick={() => update("galleryImages", [...data.galleryImages, ""])}
+                  className="border-2 border-dashed border-[#C41230]/30 rounded-xl p-5 flex flex-col items-center justify-center min-h-[140px] text-[#C41230] hover:bg-[#FFF5F5] transition-colors cursor-pointer"
+                >
+                  <Plus className="mb-2" size={24} />
+                  <p className="text-xs font-semibold">Add Image Slot</p>
+                </button>
+              </div>
+              <p className={hintCls}>Upload additional images to showcase the full tour experience. The more the better!</p>
             </div>
           </div>
         );
@@ -491,6 +546,30 @@ export function TourForm({ initialData }: TourFormProps) {
               </div>
               <p className={hintCls}>Press Enter to add a language</p>
             </div>
+            
+            <div className="md:col-span-2 pt-6 border-t border-[#E4E0D9]">
+              <label className={labelCls}>Important Information (Know Before You Go)</label>
+              <div className="space-y-3 mt-2">
+                {data.importantInfo.map((info, i) => (
+                  <div key={`info-${i}`} className="flex items-start gap-2">
+                    <div className="mt-2.5 w-1.5 h-1.5 rounded-full bg-[#1B2847] shrink-0" />
+                    <input
+                      className={inputCls}
+                      placeholder="E.g., Passport required, Dress code, Physical exertion..."
+                      value={info}
+                      onChange={(e) => updateList("importantInfo", i, e.target.value)}
+                    />
+                    <button type="button" onClick={() => removeListItem("importantInfo", i)} className="p-2 text-[#A8A29E] hover:text-[#C41230] hover:bg-[#FEE2E2] rounded-lg transition-colors" title="Remove">
+                      <X className="size-5" />
+                    </button>
+                  </div>
+                ))}
+                <button type="button" onClick={() => addListItem("importantInfo")} className="text-sm font-semibold text-[#1B2847] hover:text-[#C41230] flex items-center gap-1 mt-2">
+                  <Plus className="size-4" /> Add information point
+                </button>
+              </div>
+            </div>
+
           </div>
         );
 
@@ -640,6 +719,9 @@ export function TourForm({ initialData }: TourFormProps) {
                 </div>
               </div>
             </div>
+
+
+
             <div>
               <label className={labelCls}>Initial Status</label>
               <select className={inputCls} value={data.status} onChange={(e) => update("status", e.target.value)}>

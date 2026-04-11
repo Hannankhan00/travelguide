@@ -64,15 +64,19 @@ model User {
   emailVerified  DateTime?
   image          String?
   role           UserRole  @default(CUSTOMER)
-  hashedPassword String?   // used for admin credential login
+  hashedPassword String?   // used for credential login
   phone          String?
   nationality    String?
+  country        String?
+  state          String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
   accounts      Account[]
   sessions      Session[]
   bookings      Booking[]
+  reviews       Review[]
+  wishlists     Wishlist[]
   messages      ChatMessage[]
   conversations ChatConversation[] @relation("CustomerConversations")
 }
@@ -95,6 +99,7 @@ model Tour {
   highlights       Json           // string[]
   includes         Json           // string[]
   excludes         Json           // string[]
+  importantInfo    Json           @default("[]") // string[]
   itinerary        Json           // { order: number; title: string; description: string; stayMinutes: string; isOptional: boolean }[]
   duration         Float          // time value
   durationType     String         @default("days") // "hours" | "days"
@@ -129,10 +134,26 @@ model Tour {
   availability TourAvailability[]
   bookings     Booking[]
   discounts    DiscountCode[]
+  reviews      Review[]
+  wishlists    Wishlist[]
 
   @@index([status, featured])
   @@index([slug])
   @@index([category])
+}
+
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String
+  tourId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tour Tour @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tourId])
+  @@index([userId])
+  @@index([tourId])
 }
 
 enum TourCategory {
@@ -170,6 +191,24 @@ model TourImage {
   tour Tour @relation(fields: [tourId], references: [id], onDelete: Cascade)
 
   @@index([tourId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  tourId    String
+  userId    String
+  rating    Int      // 1-5 stars
+  message   String   @db.Text
+  photoUrl  String?  // optional review photo
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tour Tour @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tourId, userId]) // one review per user per tour
+  @@index([tourId])
+  @@index([userId])
 }
 
 model TourAvailability {

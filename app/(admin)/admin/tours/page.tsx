@@ -3,7 +3,7 @@ import { ToursClient } from "./ToursClient";
 
 async function getTours() {
   try {
-    return await prisma.tour.findMany({
+    const tours = await prisma.tour.findMany({
       orderBy: { createdAt: "desc" },
       include: {
         images: {
@@ -15,7 +15,15 @@ async function getTours() {
         },
       },
     });
-  } catch {
+
+    return tours.map((tour) => ({
+      ...tour,
+      basePrice: tour.basePrice ? Number(tour.basePrice) : 0,
+      childPrice: tour.childPrice ? Number(tour.childPrice) : null,
+      rating: tour.rating ? Number(tour.rating) : null,
+    }));
+  } catch (error) {
+    console.error("Failed to fetch tours:", error);
     return [];
   }
 }
