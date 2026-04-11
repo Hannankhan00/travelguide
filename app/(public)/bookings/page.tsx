@@ -51,7 +51,7 @@ export default async function CustomerBookingsPage() {
                 <div key={booking.id} className="bg-white rounded-2xl border border-[#E4E0D9] shadow-sm overflow-hidden flex flex-col md:flex-row group transition-all hover:shadow-md">
                   
                   {/* Image Column */}
-                  <div className="md:w-[280px] h-48 md:h-auto relative shrink-0">
+                  <div className="md:w-70 h-48 md:h-auto relative shrink-0">
                     {primaryImage ? (
                       <Image src={primaryImage} alt={booking.tour.title} fill className="object-cover" />
                     ) : (

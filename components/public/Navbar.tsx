@@ -2,10 +2,9 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Menu, X, MapPin, ChevronDown, Heart, User, LogIn, LogOut, Bell, Sun, HelpCircle, Smartphone, ChevronRight, Ticket } from "lucide-react";
+import { Menu, X, MapPin, Heart, User, LogIn, LogOut, Bell, HelpCircle, ChevronRight, Ticket } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { COMPANY_NAME, NAV_LINKS } from "@/lib/constants";
-import { Button } from "@/components/ui/button";
 import { signOut } from "next-auth/react";
 
 interface NavbarProps {
@@ -90,38 +89,38 @@ export function Navbar({ transparent = false, isLoggedIn = false }: NavbarProps)
           <div className="hidden md:flex items-center gap-6">
             {isLoggedIn && (
               <Link href="/bookings" className="group flex flex-col items-center justify-center gap-1 transition-colors relative">
-                <Ticket className={cn("size-[22px]", isWhite ? "text-[#111111]" : "text-white")} />
+                <Ticket className={cn("size-5.5", isWhite ? "text-[#111111]" : "text-white")} />
                 <span className={cn("text-[11px] font-bold tracking-wide", isWhite ? "text-[#111111]" : "text-white")}>
                   Bookings
                 </span>
               </Link>
             )}
 
-            <button className="group flex flex-col items-center justify-center gap-1 transition-colors relative">
-              <Heart className={cn("size-[22px]", isWhite ? "text-[#111111]" : "text-white")} />
+            <Link href="/wishlist" className="group flex flex-col items-center justify-center gap-1 transition-colors relative">
+              <Heart className={cn("size-5.5", isWhite ? "text-[#111111]" : "text-white")} />
               <span className={cn("text-[11px] font-bold tracking-wide", isWhite ? "text-[#111111]" : "text-white")}>
                 Wishlist
               </span>
-            </button>
+            </Link>
 
             <div className="relative" ref={profileRef}>
               <button 
                 onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                 className="group flex flex-col items-center justify-center gap-1 transition-colors relative"
               >
-                <User className={cn("size-[22px]", isWhite ? "text-[#111111]" : "text-white")} />
+                <User className={cn("size-5.5", isWhite ? "text-[#111111]" : "text-white")} />
                 <span className={cn("text-[11px] font-bold tracking-wide", isWhite ? "text-[#111111]" : "text-white")}>
                   Profile
                 </span>
                 
                 {/* Active Indicator exactly matching screenshot red line */}
                 {profileMenuOpen && (
-                  <div className="absolute -bottom-[9px] left-0 right-0 h-[2px] bg-[#C41230]" />
+                  <div className="absolute -bottom-2.25 left-0 right-0 h-0.5 bg-[#C41230]" />
                 )}
               </button>
 
               {profileMenuOpen && (
-                <div className="absolute top-[42px] right-0 w-[280px] bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-[#E4E0D9] overflow-hidden animate-zoom-in origin-top-right text-[#111111]">
+                <div className="absolute top-10.5 right-0 w-70 bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-[#E4E0D9] overflow-hidden animate-zoom-in origin-top-right text-[#111111]">
                   <div className="px-5 py-4">
                     <h3 className="text-[17px] font-extrabold" style={{ fontFamily: "var(--font-sans)" }}>Profile</h3>
                   </div>
@@ -133,7 +132,7 @@ export function Navbar({ transparent = false, isLoggedIn = false }: NavbarProps)
                         onClick={() => setProfileMenuOpen(false)}
                         className="flex items-center gap-4 px-5 py-3 hover:bg-[#F8F7F5] transition-colors"
                       >
-                        <LogIn className="size-[22px]" />
+                        <LogIn className="size-5.5" />
                         <span className="text-[15px] font-semibold">Log in or sign up</span>
                       </Link>
                     ) : (
@@ -144,7 +143,7 @@ export function Navbar({ transparent = false, isLoggedIn = false }: NavbarProps)
                         }}
                         className="flex items-center gap-4 px-5 py-3 hover:bg-[#FEE2E2] hover:text-[#C41230] transition-colors w-full text-left"
                       >
-                        <LogOut className="size-[22px]" />
+                        <LogOut className="size-5.5" />
                         <span className="text-[15px] font-semibold">Log out</span>
                       </button>
                     )}
@@ -153,16 +152,16 @@ export function Navbar({ transparent = false, isLoggedIn = false }: NavbarProps)
 
                     <button className="flex items-center justify-between px-5 py-3 hover:bg-[#F8F7F5] transition-colors w-full text-left">
                       <div className="flex items-center gap-4">
-                        <Bell className="size-[22px]" />
+                        <Bell className="size-5.5" />
                         <span className="text-[15px] font-semibold">Updates</span>
                       </div>
-                      <ChevronRight className="size-[18px] text-[#A8A29E]" />
+                      <ChevronRight className="size-4.5 text-[#A8A29E]" />
                     </button>
 
                     <div className="h-px bg-[#E4E0D9] mx-5 my-2" />
 
                     <button className="flex items-center gap-4 px-5 py-3 hover:bg-[#F8F7F5] transition-colors w-full text-left">
-                      <HelpCircle className="size-[22px]" />
+                      <HelpCircle className="size-5.5" />
                       <span className="text-[15px] font-semibold">Support</span>
                     </button>
                   </div>

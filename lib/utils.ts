@@ -69,3 +69,40 @@ export function getCapacityPercent(booked: number, max: number): number {
   if (max === 0) return 100;
   return Math.round((booked / max) * 100);
 }
+
+export type PriceTier = {
+  minGuests: number;
+  maxGuests: number;
+  pricePerPerson: number;
+};
+
+/**
+ * Returns the price-per-person for a given group size.
+ * When tiers are defined, ALL passengers pay the matched tier rate (vehicle-based pricing).
+ * Falls back to basePrice if no tier matches.
+ */
+export function getPriceForGroupSize(
+  priceTiers: PriceTier[] | null | undefined,
+  totalGuests: number,
+  basePrice: number
+): number {
+  if (!priceTiers || priceTiers.length === 0) return basePrice;
+  const tier = priceTiers.find(
+    (t) => totalGuests >= t.minGuests && totalGuests <= t.maxGuests
+  );
+  return tier ? tier.pricePerPerson : basePrice;
+}
+
+/** Parse priceTiers from a raw JSON value (DB or form) */
+export function parsePriceTiers(raw: unknown): PriceTier[] {
+  if (!raw) return [];
+  const arr = typeof raw === "string" ? JSON.parse(raw) : raw;
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .map((t: any) => ({
+      minGuests: Number(t.minGuests),
+      maxGuests: Number(t.maxGuests),
+      pricePerPerson: Number(t.pricePerPerson),
+    }))
+    .filter((t) => t.minGuests > 0 && t.pricePerPerson > 0);
+}

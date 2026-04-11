@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { parsePriceTiers, getPriceForGroupSize } from "@/lib/utils";
 
 export async function submitBookingAction(formData: FormData) {
   const tourId = formData.get("tourId") as string;
@@ -21,6 +22,20 @@ export async function submitBookingAction(formData: FormData) {
   if (!firstName || !lastName || !email || !phone) {
     return { error: "Please fill in all required fields." };
   }
+
+  // Recalculate price server-side — never trust the client value
+  const tour = await prisma.tour.findUnique({ where: { id: tourId } });
+  if (!tour) return { error: "Tour not found." };
+
+  const basePrice = Number(tour.basePrice);
+  const childPrice = tour.childPrice ? Number(tour.childPrice) : basePrice;
+  const priceTiers = parsePriceTiers((tour as any).priceTiers);
+  const hasTiers = priceTiers.length > 0;
+  const totalGuests = adultsNum + childrenNum;
+  const tierPrice = getPriceForGroupSize(priceTiers, totalGuests, basePrice);
+  const calculatedTotal = hasTiers
+    ? totalGuests * tierPrice
+    : adultsNum * basePrice + childrenNum * childPrice;
 
   // Get current user if logged in
   const session = await auth();
@@ -43,8 +58,8 @@ export async function submitBookingAction(formData: FormData) {
         numAdults: adultsNum,
         numChildren: childrenNum,
         specialRequests: specialRequests + (pickupLocation ? `\nPickup: ${pickupLocation}` : ""),
-        subtotal: totalPrice,
-        totalAmount: totalPrice,
+        subtotal: calculatedTotal,
+        totalAmount: calculatedTotal,
         discountAmount: 0,
         currency: "USD",
         paymentMethod: "STRIPE", // Mock

@@ -1,21 +1,33 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { Clock, MapPin, Users, CheckCircle, Calendar, ChevronRight } from "lucide-react";
+import { Clock, MapPin, Users, CheckCircle, XCircle, ChevronRight, Star, Globe, Zap } from "lucide-react";
 import Link from "next/link";
 import { TourGallery, GalleryCarousel } from "@/components/public/TourGallery";
 import { ReviewSection } from "@/components/public/ReviewSection";
 import { BookingWidget } from "@/components/public/BookingWidget";
 import { WishlistButton } from "@/components/public/WishlistButton";
+import { MobileBookingCTA } from "@/components/public/MobileBookingCTA";
+import { parsePriceTiers } from "@/lib/utils";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
+const DIFFICULTY_LABEL: Record<string, string> = {
+  EASY: "Easy",
+  MODERATE: "Moderate",
+  CHALLENGING: "Challenging",
+};
+const DIFFICULTY_COLOR: Record<string, string> = {
+  EASY: "bg-[#DCFCE7] text-[#15803D]",
+  MODERATE: "bg-[#FEF3C7] text-[#B45309]",
+  CHALLENGING: "bg-[#FEE2E2] text-[#C41230]",
+};
+
 export default async function TourDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  
-  // Get current user session
+
   const session = await auth();
   const currentUserId = session?.user?.id ?? null;
 
@@ -29,47 +41,52 @@ export default async function TourDetailPage({ params }: PageProps) {
           user: { select: { name: true, image: true, id: true } },
         },
       },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any,
   });
 
-  if (!tour || tour.status !== "PUBLISHED") {
-    notFound();
-  }
+  if (!tour || tour.status !== "PUBLISHED") notFound();
 
-  // Fetch wishlist status separately using raw SQL to avoid runtime errors with the stale client
   let isWishlisted = false;
   if (currentUserId) {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const results: any[] = await prisma.$queryRaw`SELECT id FROM Wishlist WHERE userId = ${currentUserId} AND tourId = ${tour.id} LIMIT 1`;
       isWishlisted = results.length > 0;
-    } catch (e) {
-      console.error("Wishlist slug check raw SQL failed:", e);
-    }
+    } catch {}
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tourData = tour as any;
 
-  // Safe JSON array parser
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const safeArr = (v: unknown): any[] => {
     if (!v) return [];
     if (Array.isArray(v)) return v;
-    if (typeof v === "string") { try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch { return []; } }
+    if (typeof v === "string") {
+      try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch { return []; }
+    }
     return [];
   };
 
-  const includes = safeArr(tourData.includes) as string[];
-  const excludes = safeArr(tourData.excludes) as string[];
-  const highlights = safeArr(tourData.highlights) as string[];
-  const importantInfo = safeArr(tourData.importantInfo) as string[];
-  const itinerary = safeArr(tourData.itinerary) as { order: number; title: string; description: string; stayMinutes: string; isOptional: boolean }[];
+  const includes     = safeArr(tourData.includes).filter(Boolean) as string[];
+  const excludes     = safeArr(tourData.excludes).filter(Boolean) as string[];
+  const highlights   = safeArr(tourData.highlights).filter(Boolean) as string[];
+  const importantInfo = safeArr(tourData.importantInfo).filter(Boolean) as string[];
+  const languages    = safeArr(tourData.languages).filter(Boolean) as string[];
+  const itinerary    = safeArr(tourData.itinerary) as {
+    order: number; title: string; description: string; stayMinutes: string; isOptional: boolean;
+  }[];
 
-  const basePrice = Number(tourData.basePrice);
-  const coverImage = (tourData.images as any[]).find(i => i.isPrimary)?.url || tourData.images[0]?.url;
+  const basePrice   = Number(tourData.basePrice);
+  const priceTiers  = parsePriceTiers(tourData.priceTiers);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const coverImage  = (tourData.images as any[]).find(i => i.isPrimary)?.url || tourData.images[0]?.url;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const allImages   = (tourData.images as any[]).map(i => ({ url: i.url, altText: i.altText }));
+  const avgRating   = Number(tourData.rating ?? 0);
 
-  // Serialize all images for client components
-  const allImages = (tourData.images as any[]).map(i => ({ url: i.url, altText: i.altText }));
-
-  // Format reviews
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const reviews = (tourData.reviews as any[]).map(r => ({
     id: r.id,
     rating: r.rating,
@@ -79,10 +96,11 @@ export default async function TourDetailPage({ params }: PageProps) {
     user: { name: r.user.name, image: r.user.image },
   }));
 
-  const avgRating = Number(tourData.rating ?? 0);
+  const descParagraphs = tour.description.split("\n").filter(p => p.trim().length > 0);
 
   return (
-    <div className="bg-[#F8F7F5] min-h-screen pt-24 md:pt-28 pb-20">
+    <div className="bg-[#F8F7F5] min-h-screen pt-24 md:pt-28 pb-28 md:pb-20">
+
       {/* Breadcrumbs & Wishlist */}
       <div className="max-w-7xl mx-auto px-6 lg:px-10 pb-6">
         <div className="flex items-center justify-between gap-4">
@@ -93,17 +111,11 @@ export default async function TourDetailPage({ params }: PageProps) {
             <ChevronRight className="size-4 mx-2 shrink-0" />
             <span className="text-[#111] font-medium truncate">{tour.title}</span>
           </div>
-
-          <WishlistButton 
-            tourId={tour.id} 
-            isWishlistedInitial={isWishlisted} 
-            showText={true}
-            className="shrink-0"
-          />
+          <WishlistButton tourId={tour.id} isWishlistedInitial={isWishlisted} showText={true} className="shrink-0" />
         </div>
       </div>
 
-      {/* Hero Gallery (Client Component — with "View Gallery" button + lightbox) */}
+      {/* Hero Gallery */}
       <div className="max-w-7xl mx-auto px-6 lg:px-10 mb-10">
         <TourGallery
           coverImage={coverImage}
@@ -117,15 +129,42 @@ export default async function TourDetailPage({ params }: PageProps) {
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
 
-          {/* Left Column (Details) */}
+          {/* ── Left Column ─────────────────────── */}
           <div className="lg:col-span-2 space-y-12">
 
             {/* Header */}
             <div>
-              <div className="inline-block bg-[#1B2847] text-white text-xs font-bold px-3 py-1 rounded-md mb-4 tracking-widest uppercase">
-                {tour.category}
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <span className="bg-[#1B2847] text-white text-xs font-bold px-3 py-1 rounded-md tracking-widest uppercase">
+                  {tour.category.replace(/_/g, " ")}
+                </span>
+                {tourData.difficulty && (
+                  <span className={`text-xs font-bold px-3 py-1 rounded-md ${DIFFICULTY_COLOR[tourData.difficulty] ?? "bg-[#F3F4F6] text-[#6B7280]"}`}>
+                    <Zap className="size-3 inline mr-1" />
+                    {DIFFICULTY_LABEL[tourData.difficulty] ?? tourData.difficulty}
+                  </span>
+                )}
               </div>
+
               <h1 className="text-4xl md:text-5xl font-display font-bold text-[#111] leading-tight mb-4">{tour.title}</h1>
+
+              {/* Rating row */}
+              {avgRating > 0 && (
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="flex">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className={`size-5 ${i < Math.floor(avgRating) ? "text-[#D4AF37] fill-[#D4AF37]" : "text-[#E4E0D9] fill-[#E4E0D9]"}`} />
+                    ))}
+                  </div>
+                  <span className="font-bold text-[#111]">{avgRating.toFixed(1)}</span>
+                  {tourData.reviewCount > 0 && (
+                    <a href="#reviews" className="text-sm text-[#7A746D] hover:underline">
+                      ({tourData.reviewCount} {tourData.reviewCount === 1 ? "review" : "reviews"})
+                    </a>
+                  )}
+                </div>
+              )}
+
               <p className="text-xl text-[#545454] leading-relaxed mb-6">{tour.shortDescription}</p>
 
               {/* Quick Info Bar */}
@@ -136,33 +175,37 @@ export default async function TourDetailPage({ params }: PageProps) {
                 </div>
                 <div className="flex items-center gap-2 text-[#111]">
                   <Users className="size-5 text-[#C41230]" />
-                  <span className="font-medium">Up to {tour.maxGroupSize} group size</span>
+                  <span className="font-medium">Up to {tour.maxGroupSize} people</span>
                 </div>
                 <div className="flex items-center gap-2 text-[#111]">
                   <MapPin className="size-5 text-[#C41230]" />
                   <span className="font-medium">{tour.location}</span>
                 </div>
+                {languages.length > 0 && (
+                  <div className="flex items-center gap-2 text-[#111]">
+                    <Globe className="size-5 text-[#C41230]" />
+                    <span className="font-medium">{languages.join(", ")}</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* About / Description */}
+            {/* About */}
             <section>
               <h2 className="text-2xl font-bold font-display text-[#111] mb-6">About this activity</h2>
-              <div className="prose prose-lg text-[#545454] max-w-none space-y-4">
-                {tour.description.split('\n').map((para, i) => (
-                  <p key={i}>{para}</p>
-                ))}
+              <div className="space-y-4 text-lg text-[#545454] leading-relaxed">
+                {descParagraphs.map((para, i) => <p key={i}>{para}</p>)}
               </div>
             </section>
 
             {/* Highlights */}
-            {highlights.filter(Boolean).length > 0 && (
+            {highlights.length > 0 && (
               <section className="bg-white p-8 rounded-2xl border border-[#E4E0D9] shadow-sm">
                 <h2 className="text-2xl font-bold font-display text-[#111] mb-6">Experience Highlights</h2>
-                <ul className="space-y-4 text-lg text-[#545454]">
-                  {highlights.filter(Boolean).map((hl, i) => (
-                    <li key={i} className="flex gap-4">
-                      <CheckCircle className="size-6 text-[#15803D] flex-shrink-0 mt-0.5" />
+                <ul className="space-y-4">
+                  {highlights.map((hl, i) => (
+                    <li key={i} className="flex gap-4 text-lg text-[#545454]">
+                      <CheckCircle className="size-6 text-[#15803D] shrink-0 mt-0.5" />
                       <span>{hl}</span>
                     </li>
                   ))}
@@ -170,38 +213,90 @@ export default async function TourDetailPage({ params }: PageProps) {
               </section>
             )}
 
+            {/* Includes / Excludes */}
+            {(includes.length > 0 || excludes.length > 0) && (
+              <section className="bg-white p-8 rounded-2xl border border-[#E4E0D9] shadow-sm">
+                <h2 className="text-2xl font-bold font-display text-[#111] mb-6">What&apos;s included</h2>
+                <div className="grid md:grid-cols-2 gap-8">
+                  {includes.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold text-[#15803D] uppercase text-xs tracking-widest mb-4">Included</h3>
+                      <ul className="space-y-3">
+                        {includes.map((item, i) => (
+                          <li key={i} className="flex gap-3 text-[#545454]">
+                            <CheckCircle className="size-5 text-[#15803D] shrink-0 mt-0.5" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {excludes.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold text-[#C41230] uppercase text-xs tracking-widest mb-4">Not included</h3>
+                      <ul className="space-y-3">
+                        {excludes.map((item, i) => (
+                          <li key={i} className="flex gap-3 text-[#545454]">
+                            <XCircle className="size-5 text-[#C41230] shrink-0 mt-0.5" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
             {/* Important Info */}
-            {importantInfo.filter(Boolean).length > 0 && (
+            {importantInfo.length > 0 && (
               <section className="bg-[#FFF4E5] p-8 rounded-2xl border border-[#FFE8C2] shadow-sm">
                 <h2 className="text-2xl font-bold font-display text-[#B45309] mb-4">Know Before You Go</h2>
-                <ul className="space-y-3 text-[#92400E] list-disc list-inside">
-                  {importantInfo.filter(Boolean).map((info, i) => (
-                    <li key={i}>{info}</li>
+                <ul className="space-y-3 text-[#92400E]">
+                  {importantInfo.map((info, i) => (
+                    <li key={i} className="flex gap-3">
+                      <span className="text-[#B45309] font-bold mt-0.5">•</span>
+                      <span>{info}</span>
+                    </li>
                   ))}
                 </ul>
               </section>
             )}
 
-            {/* Itinerary */}
-            {itinerary && itinerary.length > 0 && (
+            {/* Itinerary — clean vertical timeline */}
+            {itinerary.length > 0 && (
               <section>
                 <h2 className="text-2xl font-bold font-display text-[#111] mb-8">Itinerary</h2>
-                <div className="space-y-8 relative before:absolute before:inset-0 before:ml-[1.125rem] before:bg-[#E4E0D9] before:w-0.5 md:before:mx-auto md:before:translate-x-0">
+                <div className="relative pl-10 space-y-0">
+                  {/* Vertical line */}
+                  <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-[#E4E0D9]" />
+
                   {itinerary.map((stop, i) => (
-                    <div key={i} className="relative flex flex-col md:flex-row items-start md:items-center justify-between group">
-                      <div className="absolute left-0 w-10 h-10 rounded-full bg-white border-4 border-[#1B2847] flex items-center justify-center font-bold text-[#1B2847] z-10 md:left-1/2 md:-ml-5 group-hover:scale-110 group-hover:border-[#C41230] group-hover:text-[#C41230] transition-all">
+                    <div key={i} className={`relative pb-8 last:pb-0 ${stop.isOptional ? "opacity-60" : ""}`}>
+                      {/* Step circle — always anchored to the line */}
+                      <div className={`absolute flex items-center justify-center font-bold text-sm z-10 transition-colors rounded-full bg-white
+                        ${stop.isOptional
+                          ? "-left-5 w-7 h-7 border-2 border-dashed border-[#A8A29E] text-[#A8A29E]"
+                          : "-left-6 w-9 h-9 border-4 border-[#1B2847] text-[#1B2847] hover:border-[#C41230] hover:text-[#C41230]"
+                        }`}>
                         {stop.order}
                       </div>
-                      <div className={`ml-16 md:ml-0 md:w-[45%] bg-white p-6 rounded-2xl border border-[#E4E0D9] shadow-sm ${i % 2 !== 0 ? 'md:order-1 md:ml-auto' : ''}`}>
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="text-xl font-bold text-[#111]">{stop.title}</h3>
+
+                      {/* Card — optional ones are indented further */}
+                      <div className={`p-6 rounded-2xl border shadow-sm
+                        ${stop.isOptional
+                          ? "ml-10 bg-[#FAFAFA] border-dashed border-[#D6D3CF]"
+                          : "ml-4 bg-white border-[#E4E0D9]"
+                        }`}>
+                        <div className="flex justify-between items-start mb-2 gap-4">
+                          <h3 className={`text-xl font-bold ${stop.isOptional ? "text-[#6B7280]" : "text-[#111]"}`}>{stop.title}</h3>
                           {stop.isOptional && (
-                            <span className="text-xs bg-[#F3F4F6] text-[#6B7280] font-semibold px-2 py-1 rounded-md">Optional</span>
+                            <span className="text-xs bg-[#F3F4F6] text-[#9CA3AF] border border-dashed border-[#D1D5DB] font-semibold px-2 py-1 rounded-md shrink-0 italic">Optional</span>
                           )}
                         </div>
                         <p className="text-[#545454] mb-4">{stop.description}</p>
                         <div className="flex items-center gap-1.5 text-sm font-medium text-[#7A746D]">
-                          <Clock className="size-4" /> Stop: {stop.stayMinutes} minutes
+                          <Clock className="size-4" /> {stop.stayMinutes} min at this stop
                         </div>
                       </div>
                     </div>
@@ -210,47 +305,62 @@ export default async function TourDetailPage({ params }: PageProps) {
               </section>
             )}
 
-            {/* Logistics & Meeting Point */}
-            <section className="grid md:grid-cols-2 gap-8 pt-8 border-t border-[#E4E0D9]">
-              <div>
-                <h3 className="text-xl font-bold font-display text-[#111] mb-4">Meeting Point</h3>
-                <p className="text-[#545454] text-lg">{tourData.meetingPoint}</p>
+            {/* Meeting & End Point */}
+            <section className="grid md:grid-cols-2 gap-6 pt-8 border-t border-[#E4E0D9]">
+              <div className="bg-white p-6 rounded-2xl border border-[#E4E0D9] shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPin className="size-5 text-[#C41230]" />
+                  <h3 className="text-lg font-bold font-display text-[#111]">Meeting Point</h3>
+                </div>
+                <p className="text-[#545454]">{tourData.meetingPoint}</p>
               </div>
               {tourData.endPoint && (
-                <div>
-                  <h3 className="text-xl font-bold font-display text-[#111] mb-4">End Point</h3>
-                  <p className="text-[#545454] text-lg">{tourData.endPoint}</p>
+                <div className="bg-white p-6 rounded-2xl border border-[#E4E0D9] shadow-sm">
+                  <div className="flex items-center gap-2 mb-3">
+                    <MapPin className="size-5 text-[#1B2847]" />
+                    <h3 className="text-lg font-bold font-display text-[#111]">End Point</h3>
+                  </div>
+                  <p className="text-[#545454]">{tourData.endPoint}</p>
                 </div>
               )}
             </section>
 
-            {/* Photo Gallery Carousel (bottom of page) */}
-            {allImages.length > 1 && (
-              <GalleryCarousel images={allImages} />
-            )}
+            {/* Photo Gallery Carousel */}
+            {allImages.length > 1 && <GalleryCarousel images={allImages} />}
 
-            {/* Reviews Section */}
-            <ReviewSection
-              tourId={tourData.id}
-              reviews={reviews}
-              currentUserId={currentUserId}
-              averageRating={avgRating}
-              reviewCount={tourData.reviewCount}
-            />
+            {/* Reviews */}
+            <div id="reviews">
+              <ReviewSection
+                tourId={tourData.id}
+                reviews={reviews}
+                currentUserId={currentUserId}
+                averageRating={avgRating}
+                reviewCount={tourData.reviewCount}
+              />
+            </div>
           </div>
 
-          {/* Right Column (Sticky Booking Widget) */}
-          <div className="lg:col-span-1">
-            <BookingWidget 
-              tourId={tourData.id} 
-              basePrice={basePrice} 
-              childPrice={tourData.childPrice ? Number(tourData.childPrice) : null} 
-              likelyToSellOut={tourData.likelyToSellOut} 
+          {/* ── Right Column (Booking Widget) ─── */}
+          <div className="lg:col-span-1 hidden lg:block">
+            <BookingWidget
+              tourId={tourData.id}
+              basePrice={basePrice}
+              childPrice={tourData.childPrice ? Number(tourData.childPrice) : null}
+              likelyToSellOut={tourData.likelyToSellOut}
+              priceTiers={priceTiers}
+              maxGroupSize={tourData.maxGroupSize}
             />
           </div>
 
         </div>
       </div>
+
+      {/* Mobile sticky CTA */}
+      <MobileBookingCTA
+        tourId={tourData.id}
+        basePrice={basePrice}
+        priceTiers={priceTiers}
+      />
     </div>
   );
 }

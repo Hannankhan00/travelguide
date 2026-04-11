@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { CalendarDays } from "lucide-react";
 import { TourForm } from "../new/TourForm";
 
 async function getTour(id: string) {
@@ -84,9 +86,17 @@ export default async function EditTourPage(
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-[#111]">Edit Tour</h1>
-        <p className="text-sm text-[#7A746D] mt-0.5">{tour.title}</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-[#111]">Edit Tour</h1>
+          <p className="text-sm text-[#7A746D] mt-0.5">{tour.title}</p>
+        </div>
+        <Link
+          href={`/admin/tours/${tour.id}/availability`}
+          className="flex items-center gap-2 bg-[#1B2847] hover:bg-[#243560] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
+        >
+          <CalendarDays className="size-4" /> Manage Availability
+        </Link>
       </div>
       <TourForm initialData={initialData} />
     </div>

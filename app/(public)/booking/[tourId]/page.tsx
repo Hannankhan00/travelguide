@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { CheckoutForm } from "@/components/public/CheckoutForm";
 import { MapPin, Calendar, Users, Clock } from "lucide-react";
 import Image from "next/image";
+import { parsePriceTiers, getPriceForGroupSize } from "@/lib/utils";
 
 interface BookingPageProps {
   params: Promise<{ tourId: string }>;
@@ -47,7 +48,13 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
   const basePrice = Number(tour.basePrice);
   const childPrice = tour.childPrice ? Number(tour.childPrice) : basePrice;
-  const totalPrice = (adults * basePrice) + (children * childPrice);
+  const priceTiers = parsePriceTiers((tour as any).priceTiers);
+  const hasTiers = priceTiers.length > 0;
+  const totalGuests = adults + children;
+  const tierPrice = getPriceForGroupSize(priceTiers, totalGuests, basePrice);
+  const totalPrice = hasTiers
+    ? totalGuests * tierPrice
+    : adults * basePrice + children * childPrice;
   
   const primaryImage = tour.images.find(img => img.isPrimary)?.url || tour.images[0]?.url;
 
@@ -115,15 +122,24 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                 </div>
 
                 <div className="border-t border-[#E4E0D9] pt-4 space-y-2 mb-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[#545454]">Adult x {adults}</span>
-                    <span className="font-semibold text-[#111]">${(adults * basePrice).toFixed(2)}</span>
-                  </div>
-                  {children > 0 && (
+                  {hasTiers ? (
                     <div className="flex justify-between text-sm">
-                      <span className="text-[#545454]">Child x {children}</span>
-                      <span className="font-semibold text-[#111]">${(children * childPrice).toFixed(2)}</span>
+                      <span className="text-[#545454]">{totalGuests} people × ${tierPrice}/person</span>
+                      <span className="font-semibold text-[#111]">${totalPrice.toFixed(2)}</span>
                     </div>
+                  ) : (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[#545454]">Adult x {adults}</span>
+                        <span className="font-semibold text-[#111]">${(adults * basePrice).toFixed(2)}</span>
+                      </div>
+                      {children > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-[#545454]">Child x {children}</span>
+                          <span className="font-semibold text-[#111]">${(children * childPrice).toFixed(2)}</span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
 
