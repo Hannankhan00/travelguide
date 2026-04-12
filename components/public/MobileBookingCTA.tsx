@@ -25,7 +25,7 @@ export function MobileBookingCTA({ tourId, basePrice, priceTiers = [] }: Props) 
       </div>
       <Link
         href={`/booking/${tourId}`}
-        className="flex-1 max-w-[200px] bg-[#C41230] hover:bg-[#A00F27] text-white font-bold text-base py-3 px-6 rounded-xl text-center transition-colors shadow-md"
+        className="flex-1 max-w-50 bg-[#C41230] hover:bg-[#A00F27] text-white font-bold text-base py-3 px-6 rounded-xl text-center transition-colors shadow-md"
       >
         Book Now
       </Link>
