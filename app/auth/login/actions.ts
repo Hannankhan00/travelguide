@@ -5,7 +5,14 @@ import { AuthError } from "next-auth";
 
 export async function googleSignInAction(formData: FormData) {
   const redirectTo = (formData.get("redirectTo") as string) || "/";
-  await signIn("google", { redirectTo });
+  try {
+    await signIn("google", { redirectTo });
+  } catch (error) {
+    // NEXT_REDIRECT is not an error — rethrow so Next.js handles the navigation
+    if ((error as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw error;
+    console.error("[Google Sign-In Error]", error);
+    return { error: "Google sign-in failed. Please try again." };
+  }
 }
 
 export async function clientSignOutAction() {

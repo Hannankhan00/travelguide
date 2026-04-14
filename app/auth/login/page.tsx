@@ -19,6 +19,8 @@ function LoginForm() {
     ? "Verification link has expired. Please register again or request a new link."
     : linkError === "invalid_link"
     ? "Invalid verification link. Please check your email or register again."
+    : linkError === "OAuthAccountNotLinked"
+    ? "An account already exists with this email. Please sign in with your password instead."
     : null;
 
   async function handleCredentialsSubmit(formData: FormData) {
@@ -128,11 +130,17 @@ function LoginForm() {
             </div>
 
             {/* Google Sign In */}
-            <form action={googleSignInAction}>
+            <form action={async (formData) => {
+              setLoadingGoogle(true);
+              const result = await googleSignInAction(formData);
+              if (result?.error) {
+                setError(result.error);
+                setLoadingGoogle(false);
+              }
+            }}>
               <button
                 type="submit"
                 disabled={loadingGoogle || isPending}
-                onClick={() => setLoadingGoogle(true)}
                 className="w-full h-12 rounded-lg border border-[#E4E0D9] bg-white text-sm font-medium text-[#111111] hover:bg-[#F8F7F5] active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-3 shadow-sm"
               >
                 {loadingGoogle ? (

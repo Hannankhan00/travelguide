@@ -211,12 +211,19 @@ function AuthModalContent() {
             <div className="flex-1 h-px bg-[#E4E0D9]" />
           </div>
 
-          <form action={googleSignInAction}>
+          <form action={async (formData) => {
+            setLoadingGoogle(true);
+            setError(null);
+            const result = await googleSignInAction(formData);
+            if (result?.error) {
+              setError(result.error);
+              setLoadingGoogle(false);
+            }
+          }}>
             <input type="hidden" name="redirectTo" value={pathname} />
             <button
               type="submit"
               disabled={loadingGoogle || isPending}
-              onClick={() => setLoadingGoogle(true)}
               className="w-full h-11 rounded-lg border border-[#E4E0D9] bg-white text-sm font-bold text-[#111] hover:bg-[#FAFAFA] active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-3 shadow-sm"
             >
               {loadingGoogle ? (
