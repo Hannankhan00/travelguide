@@ -1,7 +1,7 @@
 "use client";
 
 import { COMPANY_NAME } from "@/lib/constants";
-import { MapPin, ArrowRight, Mail, RefreshCw, CheckCircle } from "lucide-react";
+import { MapPin, ArrowRight, Mail, RefreshCw, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { useState, useTransition } from "react";
 import { registerUserAction, resendVerificationAction } from "./actions";
 import Link from "next/link";
@@ -11,6 +11,7 @@ export default function RegisterPage() {
   const [error, setError]            = useState<string | null>(null);
   const [verifyEmail, setVerifyEmail] = useState<string | null>(null);
   const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
+  const [showPassword, setShowPassword] = useState(false);
 
   function handleSubmit(formData: FormData) {
     setError(null);
@@ -165,13 +166,24 @@ export default function RegisterPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-[#111] mb-1.5">Password <span className="text-[#C41230]">*</span></label>
-                <input
-                  type="password"
-                  name="password"
-                  required
-                  placeholder="Create a strong password"
-                  className="w-full h-12 px-4 rounded-lg border border-[#E4E0D9] text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#1B2847]/20 focus:border-[#1B2847] transition-all"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    required
+                    placeholder="Create a strong password"
+                    className="w-full h-12 px-4 pr-12 rounded-lg border border-[#E4E0D9] text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#1B2847]/20 focus:border-[#1B2847] transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(p => !p)}
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-[#A8A29E] hover:text-[#1B2847] transition-colors"
+                    tabIndex={-1}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

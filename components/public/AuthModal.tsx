@@ -2,11 +2,11 @@
 
 import { useState, useTransition, useEffect } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { X, MapPin, ArrowRight } from "lucide-react";
+import { X, MapPin, ArrowRight, Eye, EyeOff, Mail, RefreshCw, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { COMPANY_NAME } from "@/lib/constants";
 import { googleSignInAction, credentialsSignInAction } from "@/app/auth/login/actions";
-import { registerUserAction } from "@/app/auth/register/actions";
+import { registerUserAction, resendVerificationAction } from "@/app/auth/register/actions";
 
 import { Suspense } from "react";
 
@@ -20,6 +20,10 @@ function AuthModalContent() {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
 
   useEffect(() => {
     if (authMode === "login" || authMode === "register") {
@@ -39,6 +43,8 @@ function AuthModalContent() {
 
   function switchMode(newMode: "login" | "register") {
     setError(null);
+    setUnverifiedEmail(null);
+    setResendState("idle");
     const newParams = new URLSearchParams(searchParams?.toString() || "");
     newParams.set("auth", newMode);
     router.replace(`${pathname}?${newParams.toString()}`, { scroll: false });
@@ -46,13 +52,27 @@ function AuthModalContent() {
 
   async function handleLoginSubmit(formData: FormData) {
     setError(null);
+    setUnverifiedEmail(null);
     startTransition(async () => {
       const result = await credentialsSignInAction(formData);
       if (result?.error) {
+        if (result.needsVerification && result.email) {
+          setUnverifiedEmail(result.email);
+        }
         setError(result.error);
       } else {
         closeModal();
       }
+    });
+  }
+
+  function handleResend() {
+    if (!unverifiedEmail || resendState === "sending") return;
+    setResendState("sending");
+    startTransition(async () => {
+      await resendVerificationAction(unverifiedEmail);
+      setResendState("sent");
+      setTimeout(() => setResendState("idle"), 5000);
     });
   }
 
@@ -69,11 +89,11 @@ function AuthModalContent() {
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 pb-20 sm:pb-6 animate-fade-in">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6 pb-20 sm:pb-6 animate-fade-in">
       <div className="absolute inset-0 bg-[#111111]/60 backdrop-blur-sm" onClick={closeModal} />
       
-      <div className="relative w-full max-w-[440px] bg-white rounded-2xl shadow-2xl overflow-hidden animate-zoom-in">
-        <div className="h-1.5 bg-gradient-to-r from-[#C41230] via-[#C8A84B] to-[#1B2847]" />
+      <div className="relative w-full max-w-110 bg-white rounded-2xl shadow-2xl overflow-hidden animate-zoom-in">
+        <div className="h-1.5 bg-linear-to-r from-[#C41230] via-[#C8A84B] to-[#1B2847]" />
 
         <button 
           onClick={closeModal}
@@ -97,9 +117,37 @@ function AuthModalContent() {
             </p>
           </div>
 
-          {error && (
+          {error && !unverifiedEmail && (
             <div className="mb-5 p-3 bg-[#FEE2E2] text-[#C41230] text-xs font-semibold rounded-lg border border-[#FCA5A5]/50 text-center animate-in slide-in-from-top-1">
               {error}
+            </div>
+          )}
+
+          {unverifiedEmail && (
+            <div className="mb-5 p-3 bg-[#EEF4FF] rounded-xl border border-[#BFDBFE] animate-in slide-in-from-top-1">
+              <div className="flex items-start gap-2.5 mb-2">
+                <Mail className="w-4 h-4 text-[#1B2847] mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-[#1B2847]">Email not verified</p>
+                  <p className="text-[11px] text-[#7A746D] mt-0.5">
+                    Verify <strong>{unverifiedEmail}</strong> to sign in.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resendState !== "idle" || isPending}
+                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#1B2847] hover:text-[#C41230] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {resendState === "sending" ? (
+                  <><span className="w-3 h-3 border-2 border-[#1B2847]/30 border-t-[#1B2847] rounded-full animate-spin" /> Sending...</>
+                ) : resendState === "sent" ? (
+                  <><CheckCircle className="w-3 h-3 text-[#1B7849]" /> Verification email sent!</>
+                ) : (
+                  <><RefreshCw className="w-3 h-3" /> Resend verification email</>
+                )}
+              </button>
             </div>
           )}
 
@@ -122,13 +170,24 @@ function AuthModalContent() {
                   <label className="block text-sm font-semibold text-[#111]">Password</label>
                   <Link href="/auth/forgot-password" className="text-[11px] font-bold text-[#C41230] hover:underline">Forgot?</Link>
                 </div>
-                <input
-                  type="password"
-                  name="password"
-                  required
-                  placeholder="••••••••"
-                  className="w-full h-11 px-4 rounded-lg bg-[#F8F7F5] border border-transparent focus:bg-white text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#C41230]/20 focus:border-[#C41230] transition-all"
-                />
+                <div className="relative">
+                  <input
+                    type={showLoginPassword ? "text" : "password"}
+                    name="password"
+                    required
+                    placeholder="••••••••"
+                    className="w-full h-11 px-4 pr-11 rounded-lg bg-[#F8F7F5] border border-transparent focus:bg-white text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#C41230]/20 focus:border-[#C41230] transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPassword(p => !p)}
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-[#A8A29E] hover:text-[#111] transition-colors"
+                    tabIndex={-1}
+                    aria-label={showLoginPassword ? "Hide password" : "Show password"}
+                  >
+                    {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <button
@@ -162,14 +221,23 @@ function AuthModalContent() {
                   className="w-full h-11 px-4 rounded-lg bg-[#F8F7F5] border border-transparent focus:bg-white text-[#111] placeholder:text-[#A8A29E] text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2847]/20 focus:border-[#1B2847] transition-all"
                 />
               </div>
-              <div>
+              <div className="relative">
                 <input
-                  type="password"
+                  type={showRegisterPassword ? "text" : "password"}
                   name="password"
                   required
                   placeholder="Create Password *"
-                  className="w-full h-11 px-4 rounded-lg bg-[#F8F7F5] border border-transparent focus:bg-white text-[#111] placeholder:text-[#A8A29E] text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2847]/20 focus:border-[#1B2847] transition-all"
+                  className="w-full h-11 px-4 pr-11 rounded-lg bg-[#F8F7F5] border border-transparent focus:bg-white text-[#111] placeholder:text-[#A8A29E] text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2847]/20 focus:border-[#1B2847] transition-all"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowRegisterPassword(p => !p)}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-[#A8A29E] hover:text-[#1B2847] transition-colors"
+                  tabIndex={-1}
+                  aria-label={showRegisterPassword ? "Hide password" : "Show password"}
+                >
+                  {showRegisterPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <input

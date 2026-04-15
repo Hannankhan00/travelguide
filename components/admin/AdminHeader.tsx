@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { Menu, Bell, Search, ChevronRight } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -51,16 +52,18 @@ export function AdminHeader({ onMobileMenuClick, user }: AdminHeaderProps) {
             {crumbs.map((crumb, i) => (
               <span key={crumb.href} className="flex items-center gap-1">
                 {i > 0 && <ChevronRight className="w-3.5 h-3.5 text-[#A8A29E] shrink-0" />}
-                <span
-                  className={cn(
-                    "truncate",
-                    crumb.isLast
-                      ? "font-semibold text-[#111111]"
-                      : "text-[#7A746D]"
-                  )}
-                >
-                  {crumb.label}
-                </span>
+                {crumb.isLast ? (
+                  <span className="font-semibold text-[#111111] truncate">
+                    {crumb.label}
+                  </span>
+                ) : (
+                  <Link
+                    href={crumb.href}
+                    className="text-[#7A746D] hover:text-[#111111] transition-colors truncate"
+                  >
+                    {crumb.label}
+                  </Link>
+                )}
               </span>
             ))}
           </nav>
@@ -72,7 +75,7 @@ export function AdminHeader({ onMobileMenuClick, user }: AdminHeaderProps) {
       {/* Right actions */}
       <div className="flex items-center gap-2">
         {/* Search (hidden on small screens) */}
-        <div className="hidden md:flex items-center gap-2 h-9 px-3 rounded-lg bg-[#F8F7F5] border border-[#E4E0D9] text-sm text-[#A8A29E] cursor-pointer hover:bg-[#F1EFE9] transition-colors min-w-[200px]">
+        <div className="hidden md:flex items-center gap-2 h-9 px-3 rounded-lg bg-[#F8F7F5] border border-[#E4E0D9] text-sm text-[#A8A29E] cursor-pointer hover:bg-[#F1EFE9] transition-colors min-w-50">
           <Search className="w-3.5 h-3.5 shrink-0" />
           <span>Search…</span>
           <kbd className="ml-auto text-[10px] font-mono bg-white border border-[#E4E0D9] rounded px-1 py-0.5 text-[#A8A29E]">⌘K</kbd>

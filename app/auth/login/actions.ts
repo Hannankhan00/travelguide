@@ -45,7 +45,7 @@ export async function credentialsSignInAction(formData: FormData) {
             select: { emailVerified: true, role: true },
           });
           if (u && !u.emailVerified && u.role !== "ADMIN") {
-            return { error: "Please verify your email before signing in. Check your inbox for the verification link." };
+            return { error: "Please verify your email before signing in.", needsVerification: true, email };
           }
           return { error: "Invalid email or password." };
         }

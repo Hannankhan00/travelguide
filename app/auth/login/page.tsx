@@ -1,17 +1,20 @@
 "use client";
 
 import { googleSignInAction, credentialsSignInAction } from "./actions";
+import { resendVerificationAction } from "@/app/auth/register/actions";
 import { COMPANY_NAME } from "@/lib/constants";
-import { MapPin, ArrowRight, CheckCircle, AlertTriangle } from "lucide-react";
+import { MapPin, ArrowRight, CheckCircle, AlertTriangle, Mail, RefreshCw } from "lucide-react";
 import { useState, useTransition, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 function LoginForm() {
-  const [loadingGoogle, setLoadingGoogle] = useState(false);
-  const [isPending, startTransition]      = useTransition();
-  const [error, setError]                 = useState<string | null>(null);
-  const searchParams                      = useSearchParams();
+  const [loadingGoogle, setLoadingGoogle]         = useState(false);
+  const [isPending, startTransition]              = useTransition();
+  const [error, setError]                         = useState<string | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail]     = useState<string | null>(null);
+  const [resendState, setResendState]             = useState<"idle" | "sending" | "sent">("idle");
+  const searchParams                              = useSearchParams();
 
   const verified   = searchParams.get("verified") === "1";
   const linkError  = searchParams.get("error");
@@ -25,11 +28,25 @@ function LoginForm() {
 
   async function handleCredentialsSubmit(formData: FormData) {
     setError(null);
+    setUnverifiedEmail(null);
     startTransition(async () => {
       const result = await credentialsSignInAction(formData);
       if (result?.error) {
+        if (result.needsVerification && result.email) {
+          setUnverifiedEmail(result.email);
+        }
         setError(result.error);
       }
+    });
+  }
+
+  function handleResend() {
+    if (!unverifiedEmail || resendState === "sending") return;
+    setResendState("sending");
+    startTransition(async () => {
+      await resendVerificationAction(unverifiedEmail);
+      setResendState("sent");
+      setTimeout(() => setResendState("idle"), 5000);
     });
   }
 
@@ -74,9 +91,37 @@ function LoginForm() {
               </div>
             )}
 
-            {error && (
+            {error && !unverifiedEmail && (
               <div className="mb-6 p-4 bg-[#FEE2E2] text-[#C41230] text-sm rounded-lg border border-[#FCA5A5]/50">
                 {error}
+              </div>
+            )}
+
+            {unverifiedEmail && (
+              <div className="mb-6 p-4 bg-[#EEF4FF] rounded-xl border border-[#BFDBFE]">
+                <div className="flex items-start gap-3 mb-3">
+                  <Mail className="w-5 h-5 text-[#1B2847] mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-[#1B2847]">Email not verified</p>
+                    <p className="text-xs text-[#7A746D] mt-0.5">
+                      Verify <strong>{unverifiedEmail}</strong> to sign in.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resendState !== "idle" || isPending}
+                  className="inline-flex items-center gap-2 text-xs font-semibold text-[#1B2847] hover:text-[#C41230] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {resendState === "sending" ? (
+                    <><span className="w-3.5 h-3.5 border-2 border-[#1B2847]/30 border-t-[#1B2847] rounded-full animate-spin" /> Sending...</>
+                  ) : resendState === "sent" ? (
+                    <><CheckCircle className="w-3.5 h-3.5 text-[#1B7849]" /> Verification email sent!</>
+                  ) : (
+                    <><RefreshCw className="w-3.5 h-3.5" /> Resend verification email</>
+                  )}
+                </button>
               </div>
             )}
 
