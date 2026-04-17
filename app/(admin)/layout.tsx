@@ -6,7 +6,13 @@ export default async function AdminAuthLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  let session = null;
+  try {
+    session = await auth();
+  } catch (e) {
+    console.error("Auth error in AdminAuthLayout:", e);
+    redirect("/admin/login");
+  }
 
   if (!session?.user) {
     redirect("/admin/login");

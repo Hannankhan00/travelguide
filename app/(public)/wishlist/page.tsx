@@ -9,7 +9,12 @@ export const metadata = {
 };
 
 export default async function WishlistPage() {
-  const session = await auth();
+  let session = null;
+  try {
+    session = await auth();
+  } catch (e) {
+    console.error("Auth error in WishlistPage:", e);
+  }
 
   if (!session?.user) {
     redirect("/?auth=login");

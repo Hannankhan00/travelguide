@@ -6,7 +6,12 @@ import Link from "next/link";
 import { BookingCard } from "@/components/public/BookingCard";
 
 export default async function CustomerBookingsPage() {
-  const session = await auth();
+  let session = null;
+  try {
+    session = await auth();
+  } catch (e) {
+    console.error("Auth error in CustomerBookingsPage:", e);
+  }
 
   if (!session?.user) redirect("/?auth=login");
 

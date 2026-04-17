@@ -7,7 +7,13 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  let session = null;
+  try {
+    session = await auth();
+  } catch (e) {
+    console.error("Auth error in AdminLayout:", e);
+    redirect("/admin/login");
+  }
 
   // Guard: redirect to admin login if not authenticated or not admin
   if (!session?.user) {

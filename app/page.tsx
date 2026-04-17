@@ -11,20 +11,27 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
 export default async function HomePage() {
-  const [session, destinations] = await Promise.all([
-    auth(),
-    prisma.destination.findMany({
-      where:   { isActive: true },
-      orderBy: { order: "asc" },
-      include: {
-        places: {
-          where:   { isActive: true },
-          orderBy: { order: "asc" },
-          select:  { id: true, name: true, subtitle: true, imageUrl: true, linkQuery: true },
-        },
+  let session = null;
+  try {
+    session = await auth();
+  } catch (e) {
+    console.error("Auth error on HomePage:", e);
+  }
+
+  const destinations = await prisma.destination.findMany({
+    where:   { isActive: true },
+    orderBy: { order: "asc" },
+    include: {
+      places: {
+        where:   { isActive: true },
+        orderBy: { order: "asc" },
+        select:  { id: true, name: true, subtitle: true, imageUrl: true, linkQuery: true },
       },
-    }).catch(() => []),
-  ]);
+    },
+  }).catch((e) => {
+    console.error("Destinations query error on HomePage:", e);
+    return [];
+  });
 
   return (
     <>

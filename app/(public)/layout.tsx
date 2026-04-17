@@ -5,7 +5,12 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth();
+  let session = null;
+  try {
+    session = await auth();
+  } catch (e) {
+    console.error("Auth error in PublicLayout:", e);
+  }
 
   const destinations = await prisma.destination.findMany({
     where: { isActive: true },
@@ -17,7 +22,10 @@ export default async function PublicLayout({ children }: { children: React.React
         select: { id: true, name: true, subtitle: true, imageUrl: true, linkQuery: true },
       },
     },
-  }).catch(() => []);
+  }).catch((e) => {
+    console.error("Destinations query error in PublicLayout:", e);
+    return [];
+  });
 
   return (
     <>

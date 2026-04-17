@@ -20,7 +20,12 @@ interface PageProps {
 }
 
 export default async function PublicToursPage({ searchParams }: PageProps) {
-  const session = await auth();
+  let session = null;
+  try {
+    session = await auth();
+  } catch (e) {
+    console.error("Auth error in PublicToursPage:", e);
+  }
   const userId  = session?.user?.id;
   const sp      = await searchParams;
 

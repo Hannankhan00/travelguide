@@ -28,7 +28,12 @@ const DIFFICULTY_COLOR: Record<string, string> = {
 export default async function TourDetailPage({ params }: PageProps) {
   const { slug } = await params;
 
-  const session = await auth();
+  let session = null;
+  try {
+    session = await auth();
+  } catch (e) {
+    console.error("Auth error in TourDetailPage:", e);
+  }
   const currentUserId = session?.user?.id ?? null;
 
   const tour = await prisma.tour.findUnique({

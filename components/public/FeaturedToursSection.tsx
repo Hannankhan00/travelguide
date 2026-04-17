@@ -5,7 +5,12 @@ import { auth } from "@/lib/auth";
 import { TourCard } from "./TourCard";
 
 export async function FeaturedToursSection() {
-  const session = await auth();
+  let session = null;
+  try {
+    session = await auth();
+  } catch (e) {
+    console.error("Auth error in FeaturedToursSection:", e);
+  }
   const userId = session?.user?.id;
 
   const tours = await prisma.tour.findMany({
@@ -21,6 +26,9 @@ export async function FeaturedToursSection() {
         take: 1
       }
     } as any
+  }).catch((e) => {
+    console.error("Featured tours query error:", e);
+    return [];
   });
 
   // Absolute fallback for stale PrismaClient: use queryRaw

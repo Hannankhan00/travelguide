@@ -35,7 +35,12 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     notFound();
   }
 
-  const session = await auth();
+  let session = null;
+  try {
+    session = await auth();
+  } catch (e) {
+    console.error("Auth error in BookingPage:", e);
+  }
 
   // Create a minimal user profile object to preload
   let userProfile = null;
