@@ -120,9 +120,11 @@ model Tour {
   difficulty       TourDifficulty @default(MODERATE)
   languages        Json           // string[] — guide languages
   serviceProvider  String?        // plain text field, no login
+  tourType         TourType       @default(GROUP)
+  baseGroupSize    Int            @default(4)   // for GROUP: 1..baseGroupSize guests = basePrice; every extra unit adds basePrice
   basePrice        Decimal        @db.Decimal(10, 2)
   childPrice       Decimal?       @db.Decimal(10, 2)
-  priceTiers       Json?          // { minGuests: number, maxGuests: number, pricePerPerson: number }[]
+  priceTiers       Json?          // legacy — unused for new tours
   status           TourStatus     @default(DRAFT)
   featured         Boolean        @default(false)
   likelyToSellOut  Boolean        @default(false)
@@ -181,6 +183,11 @@ enum TourStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
+}
+
+enum TourType {
+  SOLO
+  GROUP
 }
 
 model TourImage {

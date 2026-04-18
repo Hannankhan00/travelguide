@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { emitNewMessage } from "@/lib/socket";
+import { emitNewMessage } from "@/lib/pusher";
 import { sendEmail, guideMessageHtml } from "@/lib/email";
 import { COMPANY_NAME } from "@/lib/constants";
 

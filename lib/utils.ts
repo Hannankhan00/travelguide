@@ -93,6 +93,15 @@ export function getPriceForGroupSize(
   return tier ? tier.pricePerPerson : basePrice;
 }
 
+/**
+ * Group pricing: every `baseGroupSize` guests (or fraction thereof) adds one `basePrice` unit.
+ * e.g. baseGroupSize=4, basePrice=$120: 1-4=$120, 5-8=$240, 9-12=$360
+ */
+export function calcGroupPrice(totalGuests: number, baseGroupSize: number, basePrice: number): number {
+  if (totalGuests <= 0) return basePrice;
+  return Math.ceil(totalGuests / baseGroupSize) * basePrice;
+}
+
 /** Parse priceTiers from a raw JSON value (DB or form) */
 export function parsePriceTiers(raw: unknown): PriceTier[] {
   if (!raw) return [];

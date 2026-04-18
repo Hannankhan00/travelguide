@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { parsePriceTiers, getPriceForGroupSize, generateBookingRef } from "@/lib/utils";
+import { calcGroupPrice, generateBookingRef } from "@/lib/utils";
 
 export async function submitBookingAction(formData: FormData) {
   const tourId      = formData.get("tourId")       as string;
@@ -56,17 +56,24 @@ export async function submitBookingAction(formData: FormData) {
   }
 
   // ── Recalculate price server-side ─────────────────────────────────────────
-  const basePrice  = Number(tour.basePrice);
-  const childPrice = tour.childPrice ? Number(tour.childPrice) : basePrice;
-  const priceTiers = parsePriceTiers((tour as any).priceTiers);
-  const hasTiers   = priceTiers.length > 0;
-  const tierPrice  = getPriceForGroupSize(priceTiers, totalGuests, basePrice);
-  const calculatedTotal = hasTiers
-    ? totalGuests * tierPrice
+  const basePrice     = Number(tour.basePrice);
+  const childPrice    = tour.childPrice ? Number(tour.childPrice) : basePrice;
+  const tourType      = ((tour as any).tourType as "SOLO" | "GROUP") ?? "GROUP";
+  const baseGroupSize = Number((tour as any).baseGroupSize ?? 4);
+  const calculatedTotal = tourType === "GROUP"
+    ? calcGroupPrice(totalGuests, baseGroupSize, basePrice)
     : adultsNum * basePrice + childrenNum * childPrice;
 
-  const session    = await auth();
-  const customerId = session?.user?.id ?? null;
+  const session = await auth();
+  const isLoggedIn = !!session?.user?.email;
+  let customerId: string | null = null;
+  if (session?.user?.email) {
+    const dbUser = await prisma.user.findUnique({
+      where:  { email: session.user.email },
+      select: { id: true },
+    });
+    customerId = dbUser?.id ?? null;
+  }
 
   // ── Duplicate booking guard ───────────────────────────────────────────────
   const existing = await prisma.booking.findFirst({
@@ -92,8 +99,8 @@ export async function submitBookingAction(formData: FormData) {
       type AvailRow = {
         id: string;
         status: string;
-        bookedCount: number;
-        maxCapacity: number;
+        bookedCount: number | bigint;
+        maxCapacity: number | bigint;
         priceOverride: string | null;
       };
 
@@ -107,12 +114,25 @@ export async function submitBookingAction(formData: FormData) {
 
       const avail = rows[0] ?? null;
 
+      // Cast BigInt to Number (mysql2 may return INT columns as BigInt)
+      const bookedCount  = avail ? Number(avail.bookedCount)  : 0;
+      const maxCapacity  = avail ? Number(avail.maxCapacity)  : Number(tour.dailyCapacity);
+      const spotsLeft    = maxCapacity - bookedCount;
+
       if (avail) {
         if (avail.status === "CLOSED" || avail.status === "CANCELLED") {
           throw new Error("UNAVAILABLE");
         }
-        if (avail.status === "FULL" || avail.bookedCount + totalGuests > avail.maxCapacity) {
+        if (avail.status === "FULL") {
           throw new Error("FULL");
+        }
+        if (spotsLeft < 1) {
+          throw new Error(`CAPACITY:${spotsLeft}`);
+        }
+      } else {
+        // No availability record — guard against dailyCapacity
+        if (bookedCount >= maxCapacity) {
+          throw new Error(`CAPACITY:0`);
         }
       }
 
@@ -144,14 +164,14 @@ export async function submitBookingAction(formData: FormData) {
         },
       });
 
-      // Increment bookedCount + auto-mark FULL if at capacity
+      // Each booking consumes 1 slot (not totalGuests)
       if (avail) {
-        const newCount = avail.bookedCount + totalGuests;
+        const newCount = bookedCount + 1;
         await tx.tourAvailability.update({
           where: { id: avail.id },
           data: {
             bookedCount: newCount,
-            ...(newCount >= avail.maxCapacity ? { status: "FULL" as const } : {}),
+            ...(newCount >= maxCapacity ? { status: "FULL" as const } : {}),
           },
         });
       }
@@ -163,14 +183,18 @@ export async function submitBookingAction(formData: FormData) {
     bookingRef = result.bookingRef;
   } catch (err: any) {
     if (err.message === "FULL") {
-      return { error: "Sorry, this date is now fully booked. Please choose another date." };
+      return { error: "Sorry, this date is fully booked. Please choose another date." };
     }
     if (err.message === "UNAVAILABLE") {
-      return { error: "This date is no longer available." };
+      return { error: "This date is no longer available. Please choose another date." };
+    }
+    if (typeof err.message === "string" && err.message.startsWith("CAPACITY:")) {
+      const spots = err.message.split(":")[1];
+      return { error: `This date only has ${spots} spot${spots === "1" ? "" : "s"} available. Please reduce your group size or choose another date.` };
     }
     console.error("Booking error:", err);
     return { error: "Failed to process reservation. Please try again." };
   }
 
-  redirect(customerId ? "/bookings?success=true" : `/?success=true&ref=${bookingRef}`);
+  redirect(isLoggedIn ? "/bookings?success=true" : `/?success=true&ref=${bookingRef}`);
 }

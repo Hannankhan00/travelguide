@@ -16,8 +16,9 @@ function LoginForm() {
   const [resendState, setResendState]             = useState<"idle" | "sending" | "sent">("idle");
   const searchParams                              = useSearchParams();
 
-  const verified   = searchParams.get("verified") === "1";
-  const linkError  = searchParams.get("error");
+  const verified      = searchParams.get("verified") === "1";
+  const callbackUrl   = searchParams.get("callbackUrl") || "/";
+  const linkError     = searchParams.get("error");
   const linkBanner = linkError === "link_expired"
     ? "Verification link has expired. Please register again or request a new link."
     : linkError === "invalid_link"
@@ -73,7 +74,9 @@ function LoginForm() {
                 Welcome Back
               </h1>
               <p className="text-sm text-[#7A746D] mt-1">
-                Sign in to book tours and leave reviews
+                {callbackUrl.startsWith("/booking/")
+                  ? "Please sign in to complete your booking"
+                  : "Sign in to book tours and leave reviews"}
               </p>
             </div>
 
@@ -125,8 +128,15 @@ function LoginForm() {
               </div>
             )}
 
+            {callbackUrl.startsWith("/booking/") && (
+              <div className="mb-6 p-4 bg-[#FFF0F2] border border-[#C41230]/20 rounded-xl text-sm text-[#C41230] font-medium">
+                You need to be signed in to book a tour. Log in below and you'll be taken straight to checkout.
+              </div>
+            )}
+
             {/* Credentials Login */}
             <form action={handleCredentialsSubmit} className="space-y-4 mb-6">
+              <input type="hidden" name="redirectTo" value={callbackUrl} />
               <div>
                 <label className="block text-sm font-semibold text-[#111] mb-1.5">Email Address</label>
                 <input
@@ -182,6 +192,7 @@ function LoginForm() {
                 setLoadingGoogle(false);
               }
             }}>
+              <input type="hidden" name="redirectTo" value={callbackUrl} />
               <button
                 type="submit"
                 disabled={loadingGoogle || isPending}
@@ -208,7 +219,10 @@ function LoginForm() {
 
             <p className="text-center text-sm text-[#7A746D] mt-8">
               Don&apos;t have an account?{" "}
-              <Link href="/auth/register" className="font-semibold text-[#1B2847] hover:underline">
+              <Link
+                href={`/auth/register${callbackUrl !== "/" ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`}
+                className="font-semibold text-[#1B2847] hover:underline"
+              >
                 Sign up
               </Link>
             </p>

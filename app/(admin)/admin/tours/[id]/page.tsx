@@ -38,6 +38,8 @@ export default async function EditTourPage(
 
   const initialData = {
     tourId:           tour.id,
+    tourType:         ((tour as any).tourType as "SOLO" | "GROUP") ?? "GROUP",
+    baseGroupSize:    String((tour as any).baseGroupSize ?? 4),
     title:            tour.title,
     slug:             tour.slug,
     category:         tour.category,

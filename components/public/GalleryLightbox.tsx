@@ -10,7 +10,11 @@ interface GalleryLightboxProps {
 }
 
 export function GalleryLightbox({ images, initialIndex = 0, onClose }: GalleryLightboxProps) {
-  const [current, setCurrent] = useState(initialIndex);
+  const [current, setCurrent] = useState(() =>
+    images.length > 0 ? Math.min(initialIndex, images.length - 1) : 0
+  );
+
+  if (!images.length) return null;
 
   const goNext = useCallback(() => setCurrent((c) => (c + 1) % images.length), [images.length]);
   const goPrev = useCallback(() => setCurrent((c) => (c - 1 + images.length) % images.length), [images.length]);

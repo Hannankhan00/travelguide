@@ -2,18 +2,24 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { emitNewMessage } from "@/lib/socket";
+import { emitNewMessage } from "@/lib/pusher";
 
 // Get or create a BOOKING_SUPPORT conversation for a booking
 export async function getOrCreateConversation(bookingId: string) {
   const session = await auth();
-  if (!session?.user?.id) return { error: "Not authenticated" };
+  if (!session?.user?.email) return { error: "Not authenticated" };
+
+  const dbUser = await prisma.user.findUnique({
+    where:  { email: session.user.email },
+    select: { id: true },
+  });
+  if (!dbUser) return { error: "Not authenticated" };
 
   const booking = await prisma.booking.findUnique({
     where:  { id: bookingId },
     select: { id: true, customerId: true, tour: { select: { title: true } } },
   });
-  if (!booking || booking.customerId !== session.user.id) return { error: "Not found" };
+  if (!booking || booking.customerId !== dbUser.id) return { error: "Not found" };
 
   const existing = await prisma.chatConversation.findUnique({
     where: { bookingId },
@@ -30,7 +36,7 @@ export async function getOrCreateConversation(bookingId: string) {
     data: {
       type:       "BOOKING_SUPPORT",
       bookingId,
-      customerId: session.user.id,
+      customerId: dbUser.id,
       status:     "OPEN",
     },
     include: { messages: true },
@@ -41,19 +47,25 @@ export async function getOrCreateConversation(bookingId: string) {
 // Send a message as CUSTOMER
 export async function sendCustomerMessage(conversationId: string, content: string) {
   const session = await auth();
-  if (!session?.user?.id) return { error: "Not authenticated" };
+  if (!session?.user?.email) return { error: "Not authenticated" };
+
+  const dbUser = await prisma.user.findUnique({
+    where:  { email: session.user.email },
+    select: { id: true, name: true },
+  });
+  if (!dbUser) return { error: "Not authenticated" };
 
   const convo = await prisma.chatConversation.findUnique({
     where:  { id: conversationId },
     select: { id: true, customerId: true },
   });
-  if (!convo || convo.customerId !== session.user.id) return { error: "Not found" };
+  if (!convo || convo.customerId !== dbUser.id) return { error: "Not found" };
 
   const msg = await prisma.chatMessage.create({
     data: {
       conversationId,
-      senderId:   session.user.id,
-      senderName: session.user.name ?? session.user.email ?? "Customer",
+      senderId:   dbUser.id,
+      senderName: dbUser.name ?? session.user.email ?? "Customer",
       senderRole: "CUSTOMER",
       content:    content.trim(),
     },

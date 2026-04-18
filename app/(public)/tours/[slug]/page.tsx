@@ -8,7 +8,6 @@ import { ReviewSection } from "@/components/public/ReviewSection";
 import { BookingWidget } from "@/components/public/BookingWidget";
 import { WishlistButton } from "@/components/public/WishlistButton";
 import { MobileBookingCTA } from "@/components/public/MobileBookingCTA";
-import { parsePriceTiers } from "@/lib/utils";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -83,8 +82,9 @@ export default async function TourDetailPage({ params }: PageProps) {
     order: number; title: string; description: string; stayMinutes: string; isOptional: boolean;
   }[];
 
-  const basePrice   = Number(tourData.basePrice);
-  const priceTiers  = parsePriceTiers(tourData.priceTiers);
+  const basePrice     = Number(tourData.basePrice);
+  const tourType      = (tourData.tourType as "SOLO" | "GROUP") ?? "GROUP";
+  const baseGroupSize = Number(tourData.baseGroupSize ?? 4);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const coverImage  = (tourData.images as any[]).find(i => i.isPrimary)?.url || tourData.images[0]?.url;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -390,10 +390,11 @@ export default async function TourDetailPage({ params }: PageProps) {
           <div className="lg:col-span-1 hidden lg:block">
             <BookingWidget
               tourId={tourData.id}
+              tourType={tourType}
               basePrice={basePrice}
+              baseGroupSize={baseGroupSize}
               childPrice={tourData.childPrice ? Number(tourData.childPrice) : null}
               likelyToSellOut={tourData.likelyToSellOut}
-              priceTiers={priceTiers}
               maxGroupSize={tourData.maxGroupSize}
             />
           </div>
@@ -404,8 +405,9 @@ export default async function TourDetailPage({ params }: PageProps) {
       {/* Mobile sticky CTA */}
       <MobileBookingCTA
         tourId={tourData.id}
+        tourType={tourType}
         basePrice={basePrice}
-        priceTiers={priceTiers}
+        baseGroupSize={baseGroupSize}
       />
     </div>
   );

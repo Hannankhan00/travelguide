@@ -1,11 +1,16 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { Calendar } from "lucide-react";
+import { Calendar, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { BookingCard } from "@/components/public/BookingCard";
 
-export default async function CustomerBookingsPage() {
+export default async function CustomerBookingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | undefined }>;
+}) {
+  const sp = await searchParams;
   let session = null;
   try {
     session = await auth();
@@ -54,6 +59,16 @@ export default async function CustomerBookingsPage() {
   return (
     <div className="bg-[#F8F7F5] min-h-screen pt-28 pb-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        {sp.success === "true" && (
+          <div className="mb-6 flex items-start gap-3 bg-[#DCFCE7] border border-[#86EFAC]/50 text-[#166534] rounded-xl px-5 py-4">
+            <CheckCircle className="size-5 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-bold">Booking confirmed!</p>
+              <p className="text-sm mt-0.5">Your reservation is confirmed. Check the details below.</p>
+            </div>
+          </div>
+        )}
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold font-display text-[#111]">My Bookings</h1>

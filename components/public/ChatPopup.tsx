@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
-import { io, Socket } from "socket.io-client";
+import { useEffect, useState, useTransition, useRef } from "react";
+import { getPusherClient } from "@/lib/pusher";
 import { X, Send, Loader2, MessageCircle, CheckCheck } from "lucide-react";
 import {
   getOrCreateConversation,
@@ -35,11 +35,18 @@ export function ChatPopup({ bookingId, tourTitle, onClose }: Props) {
   const [loading,        setLoading]        = useState(true);
   const [error,          setError]          = useState<string | null>(null);
   const [sending,        startSend]         = useTransition();
-  const socketRef  = useRef<Socket | null>(null);
-  const bottomRef  = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Load / create conversation, then join socket room
+  function mergeMessages(prev: Message[], incoming: Message[]) {
+    const ids = new Set(prev.map((m) => m.id));
+    const fresh = incoming.filter((m) => !ids.has(m.id));
+    return fresh.length ? [...prev, ...fresh] : prev;
+  }
+
+  // Load conversation + set up socket
   useEffect(() => {
+    let channelName: string | null = null;
+
     getOrCreateConversation(bookingId).then((res) => {
       if ("error" in res && res.error) { setError(res.error); setLoading(false); return; }
       if (!("conversation" in res) || !res.conversation) { setLoading(false); return; }
@@ -50,25 +57,16 @@ export function ChatPopup({ bookingId, tourTitle, onClose }: Props) {
       markConversationRead(convo.id, "CUSTOMER");
       setLoading(false);
 
-      // Connect socket and join room
-      const socket = io({ path: "/api/socket", transports: ["websocket"] });
-      socketRef.current = socket;
-      socket.emit("join_conversation", convo.id);
+      channelName = `conversation-${convo.id}`;
+      const channel = getPusherClient().subscribe(channelName);
 
-      socket.on("new_message", (msg: Message) => {
-        setMessages((prev) => {
-          if (prev.some((m) => m.id === msg.id)) return prev;
-          return [...prev, msg];
-        });
-        if (msg.senderRole !== "CUSTOMER") {
-          markConversationRead(convo.id, "CUSTOMER");
-        }
+      channel.bind("new_message", (msg: Message) => {
+        setMessages((prev) => mergeMessages(prev, [msg]));
+        if (msg.senderRole !== "CUSTOMER") markConversationRead(convo.id, "CUSTOMER");
       });
     });
 
-    return () => {
-      socketRef.current?.disconnect();
-    };
+    return () => { if (channelName) getPusherClient().unsubscribe(channelName); };
   }, [bookingId]);
 
   // Scroll to bottom on new messages
@@ -84,7 +82,7 @@ export function ChatPopup({ bookingId, tourTitle, onClose }: Props) {
       const res = await sendCustomerMessage(conversationId, text);
       if ("message" in res && res.message) {
         const m = res.message as unknown as Message;
-        setMessages((prev) => prev.some((x) => x.id === m.id) ? prev : [...prev, m]);
+        setMessages((prev) => mergeMessages(prev, [m]));
       }
     });
   }

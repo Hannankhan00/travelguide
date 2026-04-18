@@ -16,6 +16,7 @@ import {
   X,
   Globe,
   UserCheck,
+  Tag,
 } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
 import { signOutAction } from "@/app/(admin)/admin/actions";
@@ -27,6 +28,7 @@ const navItems = [
   { label: "Destinations", href: "/admin/destinations",   icon: Globe           },
   { label: "Customers",    href: "/admin/customers",      icon: UserCheck       },
   { label: "Users",        href: "/admin/users",          icon: Users           },
+  { label: "Discounts",    href: "/admin/discounts",      icon: Tag             },
   { label: "Analytics",    href: "/admin/analytics",      icon: BarChart3       },
   { label: "Chat",         href: "/admin/chat",           icon: MessageSquare   },
   { label: "Settings",     href: "/admin/settings",       icon: Settings        },

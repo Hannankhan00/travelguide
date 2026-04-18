@@ -69,6 +69,10 @@ export async function saveTourAction(formData: FormData): Promise<ActionResult> 
   const languages        = safeJsonParse(formData.get("languages") as string, ["English"]);
   const serviceProvider  = (formData.get("serviceProvider") as string)?.trim() || null;
 
+  // ── Tour type ──────────────────────────────────────────────
+  const tourType      = (formData.get("tourType") as string) || "GROUP";
+  const baseGroupSize = parseInt(formData.get("baseGroupSize") as string) || 4;
+
   // ── Pricing ────────────────────────────────────────────────
   const basePrice        = parseFloat(formData.get("basePrice") as string) || 0;
   const childPriceRaw    = formData.get("childPrice") as string;
@@ -102,6 +106,8 @@ export async function saveTourAction(formData: FormData): Promise<ActionResult> 
   }
 
   const data = {
+    tourType:         tourType as "SOLO" | "GROUP",
+    baseGroupSize,
     title,
     slug,
     category:         category as "CULTURAL" | "ADVENTURE" | "FOOD_AND_DRINK" | "NATURE" | "CITY_TOUR" | "DAY_TRIP" | "MULTI_DAY" | "PRIVATE" | "GROUP",

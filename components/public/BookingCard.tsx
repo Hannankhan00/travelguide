@@ -234,7 +234,7 @@ export function BookingCard({ booking }: BookingCardProps) {
             ].map(({ label, value }) => (
               <div key={label} className="grid gap-4 px-6 py-3.5" style={{ gridTemplateColumns: "160px 1fr" }}>
                 <p className="text-xs font-semibold text-[#7A746D] pt-0.5">{label}</p>
-                <p className="text-sm text-[#111]">{value}</p>
+                <div className="text-sm text-[#111]">{value}</div>
               </div>
             ))}
           </div>

@@ -30,6 +30,8 @@ export type PriceTier = {
 
 type TourData = {
   tourId?:          string;
+  tourType:         "SOLO" | "GROUP";
+  baseGroupSize:    string;
   title:            string;
   slug:             string;
   category:         string;
@@ -79,6 +81,7 @@ const STEPS = [
 
 
 const DEFAULT_DATA: TourData = {
+  tourType: "GROUP", baseGroupSize: "4",
   title: "", slug: "", category: "CULTURAL", difficulty: "MODERATE",
   location: "", prefecture: "", country: "", countryCode: "", stateCode: "",
   shortDescription: "", description: "", highlights: [""],
@@ -191,6 +194,8 @@ export function TourForm({ initialData }: TourFormProps) {
   function handleSave(asDraft = true) {
     const formData = new FormData();
     if (data.tourId) formData.set("tourId", data.tourId);
+    formData.set("tourType", data.tourType);
+    formData.set("baseGroupSize", data.baseGroupSize);
     formData.set("title", data.title);
     formData.set("slug", data.slug || slugify(data.title));
     formData.set("category", data.category);
@@ -277,6 +282,32 @@ export function TourForm({ initialData }: TourFormProps) {
                   <option value="MODERATE">Moderate</option>
                   <option value="CHALLENGING">Challenging</option>
                 </select>
+              </div>
+
+              {/* Tour Type */}
+              <div className="md:col-span-2">
+                <label className={labelCls}>Tour Type <span className="text-[#C41230]">*</span></label>
+                <div className="flex gap-3">
+                  {(["SOLO", "GROUP"] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => update("tourType", t)}
+                      className={`flex-1 py-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+                        data.tourType === t
+                          ? "border-[#C41230] bg-[#FFF0F2] text-[#C41230]"
+                          : "border-[#E4E0D9] text-[#545454] hover:border-[#1B2847]"
+                      }`}
+                    >
+                      {t === "SOLO" ? "👤 Solo / Private" : "👥 Group"}
+                    </button>
+                  ))}
+                </div>
+                <p className={hintCls}>
+                  {data.tourType === "SOLO"
+                    ? "For single travellers — no group pricing. One booking = one person."
+                    : "For groups — price scales per group unit (set in Pricing step)."}
+                </p>
               </div>
             </div>
 
@@ -589,61 +620,81 @@ export function TourForm({ initialData }: TourFormProps) {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className={labelCls}>Adult Price (USD) <span className="text-[#C41230]">*</span></label>
+                <label className={labelCls}>
+                  {data.tourType === "SOLO" ? "Price (USD)" : "Base Group Price (USD)"}
+                  {" "}<span className="text-[#C41230]">*</span>
+                </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A29E] text-sm">$</span>
                   <input type="number" step="0.01" min="0" className={inputCls + " pl-7"} value={data.basePrice} onChange={(e) => update("basePrice", e.target.value)} placeholder="0.00" />
                 </div>
-                <p className={hintCls}>Price per adult person</p>
+                <p className={hintCls}>
+                  {data.tourType === "SOLO"
+                    ? "Fixed price per booking (one person)"
+                    : `Price for up to ${data.baseGroupSize || "N"} guests — increases per group unit above that`}
+                </p>
               </div>
-              <div>
-                <label className={labelCls}>Child Price (USD) <span className="text-[#A8A29E] font-normal">(optional)</span></label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A29E] text-sm">$</span>
-                  <input type="number" step="0.01" min="0" className={inputCls + " pl-7"} value={data.childPrice} onChange={(e) => update("childPrice", e.target.value)} placeholder="0.00" />
+
+              {data.tourType === "SOLO" && (
+                <div>
+                  <label className={labelCls}>Child Price (USD) <span className="text-[#A8A29E] font-normal">(optional)</span></label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A29E] text-sm">$</span>
+                    <input type="number" step="0.01" min="0" className={inputCls + " pl-7"} value={data.childPrice} onChange={(e) => update("childPrice", e.target.value)} placeholder="0.00" />
+                  </div>
+                  <p className={hintCls}>Leave blank to use the same price</p>
                 </div>
-                <p className={hintCls}>Leave blank if no child pricing</p>
-              </div>
+              )}
             </div>
 
-            <div className="pt-4 border-t border-[#E4E0D9]">
-              <div className="mb-3">
-                <h3 className="text-sm font-semibold text-[#111]">Group Size Tiered Pricing</h3>
-                <p className="text-xs text-[#A8A29E] mt-0.5">Define discounts for larger groups. E.g. 1-5 guests = $100, 6-10 guests = $80.</p>
-              </div>
-              
-              <div className="space-y-3">
-                {(data.priceTiers || []).map((tier, i) => (
-                  <div key={i} className="flex flex-wrap items-center gap-2 p-3 border border-[#E4E0D9] rounded-lg bg-[#FAFAFA]">
-                    <div className="flex items-center gap-2">
-                      <input type="number" min="1" className={`${inputCls} w-20 text-center`} placeholder="Min" value={tier.minGuests} onChange={(e) => updatePriceTier(i, "minGuests", e.target.value)} />
-                      <span className="text-sm text-[#A8A29E]">to</span>
-                      <input type="number" min="1" className={`${inputCls} w-20 text-center`} placeholder="Max" value={tier.maxGuests} onChange={(e) => updatePriceTier(i, "maxGuests", e.target.value)} />
-                      <span className="text-sm text-[#7A746D] ml-1">guests</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 ml-auto">
-                      <span className="text-sm text-[#7A746D]">=</span>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A29E] text-sm">$</span>
-                        <input type="number" step="0.01" min="0" className={`${inputCls} w-28 pl-7`} placeholder="Price/pp" value={tier.pricePerPerson} onChange={(e) => updatePriceTier(i, "pricePerPerson", e.target.value)} />
-                      </div>
-                      <button type="button" onClick={() => removePriceTier(i)} className="p-1.5 text-[#A8A29E] hover:text-[#DC2626] transition-colors ml-1" title="Remove Tier">
-                        <X size={16} />
-                      </button>
-                    </div>
+            {/* Group Pricing Section */}
+            {data.tourType === "GROUP" && (
+              <div className="pt-4 border-t border-[#E4E0D9]">
+                <div className="mb-4">
+                  <h3 className="text-sm font-semibold text-[#111]">Group Pricing Settings</h3>
+                  <p className="text-xs text-[#A8A29E] mt-0.5">
+                    Set the base group size. Guests up to this size pay the base price. Every additional group unit adds one more base price.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className={labelCls}>Base Group Size <span className="text-[#C41230]">*</span></label>
+                    <input
+                      type="number" min="1" max="50"
+                      className={inputCls}
+                      value={data.baseGroupSize}
+                      onChange={(e) => update("baseGroupSize", e.target.value)}
+                      placeholder="4"
+                    />
+                    <p className={hintCls}>Groups of 1–{data.baseGroupSize || "N"} pay the base price</p>
                   </div>
-                ))}
+
+                  {/* Live pricing preview */}
+                  {data.basePrice && data.baseGroupSize && (
+                    <div className="bg-[#F8F7F5] rounded-xl border border-[#E4E0D9] p-4">
+                      <p className="text-xs font-semibold text-[#545454] uppercase tracking-wide mb-2">Price Preview</p>
+                      <div className="space-y-1.5 text-sm">
+                        {Array.from({ length: 3 }, (_, i) => {
+                          const n = Number(data.baseGroupSize);
+                          const p = Number(data.basePrice);
+                          const guests = i === 0 ? 1 : i === 1 ? n + 1 : n * 2 + 1;
+                          const total  = Math.ceil(guests / n) * p;
+                          return (
+                            <div key={i} className="flex justify-between">
+                              <span className="text-[#545454]">
+                                {i === 0 ? `1–${n}` : i === 1 ? `${n + 1}–${n * 2}` : `${n * 2 + 1}–${n * 3}`} guests
+                              </span>
+                              <span className="font-semibold text-[#111]">${total.toFixed(0)}</span>
+                            </div>
+                          );
+                        })}
+                        <p className="text-[10px] text-[#A8A29E] pt-1 border-t border-[#E4E0D9]">Pattern continues: +${Number(data.basePrice).toFixed(0)} per {data.baseGroupSize} guests</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              
-              <button
-                type="button"
-                onClick={addPriceTier}
-                className="mt-3 flex items-center gap-1.5 text-sm font-medium text-[#C41230] hover:underline"
-              >
-                <Plus size={14} /> Add Pricing Tier
-              </button>
-            </div>
+            )}
 
             <div className="pt-4 border-t border-[#E4E0D9]">
               <label className={labelCls}>What&apos;s Included</label>

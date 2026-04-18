@@ -211,6 +211,48 @@ export async function toggleDiscountActiveAction(id: string): Promise<DiscountRe
   }
 }
 
+// ── Update discount code ──────────────────────────────────────────────────────
+
+export async function updateDiscountCodeAction(id: string, data: {
+  description?:     string;
+  discountType:     "PERCENTAGE" | "FIXED_AMOUNT";
+  discountValue:    number;
+  tourId?:          string | null;
+  validFrom:        string;
+  validUntil?:      string | null;
+  maxUses?:         number | null;
+  minBookingAmount?: number | null;
+  isActive:         boolean;
+}): Promise<DiscountResult> {
+  await assertAdmin();
+
+  if (!data.discountValue) return { error: "Discount value is required." };
+  if (data.discountType === "PERCENTAGE" && (data.discountValue <= 0 || data.discountValue > 100)) {
+    return { error: "Percentage discount must be between 1 and 100." };
+  }
+
+  try {
+    await prisma.discountCode.update({
+      where: { id },
+      data: {
+        description:      data.description ?? null,
+        discountType:     data.discountType,
+        discountValue:    data.discountValue,
+        tourId:           data.tourId ?? null,
+        validFrom:        new Date(data.validFrom),
+        validUntil:       data.validUntil ? new Date(data.validUntil) : null,
+        maxUses:          data.maxUses ?? null,
+        minBookingAmount: data.minBookingAmount ?? null,
+        isActive:         data.isActive,
+      },
+    });
+    revalidatePath("/admin/discounts");
+    return { success: "Discount code updated." };
+  } catch {
+    return { error: "Failed to update discount code." };
+  }
+}
+
 // ── Delete discount code ──────────────────────────────────────────────────────
 
 export async function deleteDiscountCodeAction(id: string): Promise<DiscountResult> {

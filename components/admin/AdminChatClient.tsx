@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { io, Socket } from "socket.io-client";
+import { getPusherClient } from "@/lib/pusher";
 import {
   MessageCircle, Send, Loader2, CheckCheck, CheckCircle2, Circle, User,
 } from "lucide-react";
@@ -59,8 +59,13 @@ function ThreadPanel({ convo }: { convo: ConversationSummary }) {
   const [loading,   setLoading]   = useState(true);
   const [sending,   startSend]    = useTransition();
   const [resolving, startResolve] = useTransition();
-  const bottomRef  = useRef<HTMLDivElement>(null);
-  const socketRef  = useRef<Socket | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  function mergeMessages(prev: Message[], incoming: Message[]) {
+    const ids = new Set(prev.map((m) => m.id));
+    const fresh = incoming.filter((m) => !ids.has(m.id));
+    return fresh.length ? [...prev, ...fresh] : prev;
+  }
 
   useEffect(() => {
     setLoading(true);
@@ -72,23 +77,15 @@ function ThreadPanel({ convo }: { convo: ConversationSummary }) {
       adminMarkRead(convo.id);
     });
 
-    const socket = io({ path: "/api/socket", transports: ["websocket"] });
-    socketRef.current = socket;
-    socket.emit("join_conversation", convo.id);
+    const channelName = `conversation-${convo.id}`;
+    const channel = getPusherClient().subscribe(channelName);
 
-    socket.on("new_message", (msg: Message) => {
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === msg.id)) return prev;
-        return [...prev, msg];
-      });
-      if (msg.senderRole !== "ADMIN") {
-        adminMarkRead(convo.id);
-      }
+    channel.bind("new_message", (msg: Message) => {
+      setMessages((prev) => mergeMessages(prev, [msg]));
+      if (msg.senderRole !== "ADMIN") adminMarkRead(convo.id);
     });
 
-    return () => {
-      socket.disconnect();
-    };
+    return () => { getPusherClient().unsubscribe(channelName); };
   }, [convo.id]);
 
   useEffect(() => {
@@ -103,7 +100,7 @@ function ThreadPanel({ convo }: { convo: ConversationSummary }) {
       const res = await sendAdminMessage(convo.id, text);
       if ("message" in res && res.message) {
         const m = res.message as unknown as Message;
-        setMessages((prev) => prev.some((x) => x.id === m.id) ? prev : [...prev, m]);
+        setMessages((prev) => mergeMessages(prev, [m]));
       }
     });
   }

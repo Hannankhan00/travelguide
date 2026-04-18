@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { CheckoutForm } from "@/components/public/CheckoutForm";
 import { MapPin, Calendar, Users, Clock } from "lucide-react";
 import Image from "next/image";
-import { parsePriceTiers, getPriceForGroupSize } from "@/lib/utils";
+import { calcGroupPrice } from "@/lib/utils";
 
 interface BookingPageProps {
   params: Promise<{ tourId: string }>;
@@ -42,6 +42,11 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     console.error("Auth error in BookingPage:", e);
   }
 
+  if (!session?.user) {
+    const returnUrl = `/booking/${tourId}?date=${dateParam}&adults=${adultsParam}&children=${childrenParam ?? "0"}`;
+    redirect(`/auth/login?callbackUrl=${encodeURIComponent(returnUrl)}`);
+  }
+
   // Create a minimal user profile object to preload
   let userProfile = null;
   if (session?.user?.email) {
@@ -51,15 +56,16 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     });
   }
 
-  const basePrice = Number(tour.basePrice);
-  const childPrice = tour.childPrice ? Number(tour.childPrice) : basePrice;
-  const priceTiers = parsePriceTiers((tour as any).priceTiers);
-  const hasTiers = priceTiers.length > 0;
-  const totalGuests = adults + children;
-  const tierPrice = getPriceForGroupSize(priceTiers, totalGuests, basePrice);
-  const totalPrice = hasTiers
-    ? totalGuests * tierPrice
+  const basePrice     = Number(tour.basePrice);
+  const childPrice    = tour.childPrice ? Number(tour.childPrice) : basePrice;
+  const tourType      = ((tour as any).tourType as "SOLO" | "GROUP") ?? "GROUP";
+  const baseGroupSize = Number((tour as any).baseGroupSize ?? 4);
+  const totalGuests   = adults + children;
+  const isGroup       = tourType === "GROUP";
+  const totalPrice    = isGroup
+    ? calcGroupPrice(totalGuests, baseGroupSize, basePrice)
     : adults * basePrice + children * childPrice;
+  const groupUnits    = isGroup ? Math.ceil(totalGuests / baseGroupSize) : 0;
   
   const primaryImage = tour.images.find(img => img.isPrimary)?.url || tour.images[0]?.url;
 
@@ -127,9 +133,9 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                 </div>
 
                 <div className="border-t border-[#E4E0D9] pt-4 space-y-2 mb-4">
-                  {hasTiers ? (
+                  {isGroup ? (
                     <div className="flex justify-between text-sm">
-                      <span className="text-[#545454]">{totalGuests} people × ${tierPrice}/person</span>
+                      <span className="text-[#545454]">{groupUnits} × ${basePrice} (per {baseGroupSize} guests)</span>
                       <span className="font-semibold text-[#111]">${totalPrice.toFixed(2)}</span>
                     </div>
                   ) : (

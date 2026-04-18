@@ -2,60 +2,49 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Users, CheckCircle, Clock, ChevronDown } from "lucide-react";
-import { getPriceForGroupSize, formatPrice, type PriceTier } from "@/lib/utils";
+import { CheckCircle, Clock } from "lucide-react";
+import { calcGroupPrice, formatPrice } from "@/lib/utils";
 import { AvailabilityCalendar, type AvailRecord } from "@/components/public/AvailabilityCalendar";
 
 interface BookingWidgetProps {
   tourId: string;
+  tourType: "SOLO" | "GROUP";
   basePrice: number;
+  baseGroupSize: number;
   childPrice?: number | null;
   likelyToSellOut: boolean;
-  priceTiers?: PriceTier[];
   maxGroupSize?: number;
 }
 
 export function BookingWidget({
   tourId,
+  tourType,
   basePrice,
+  baseGroupSize,
   childPrice,
   likelyToSellOut,
-  priceTiers = [],
   maxGroupSize,
 }: BookingWidgetProps) {
   const router = useRouter();
 
-  const [date,      setDate]      = useState("");
-  const [dateRec,   setDateRec]   = useState<AvailRecord | null>(null);
-  const [adults,    setAdults]    = useState(2);
-  const [children,  setChildren]  = useState(0);
-  const [showTiers, setShowTiers] = useState(false);
+  const [date,    setDate]    = useState("");
+  const [dateRec, setDateRec] = useState<AvailRecord | null>(null);
+  const [adults,  setAdults]  = useState(tourType === "SOLO" ? 1 : 2);
+  const [children, setChildren] = useState(0);
 
-  const totalGuests = adults + children;
-  const hasTiers    = priceTiers.length > 0;
+  const isSolo      = tourType === "SOLO";
+  const totalGuests = isSolo ? 1 : adults + children;
+  const max         = isSolo ? 1 : (maxGroupSize ?? 20);
 
-  // If the selected date has a price override, use it instead of tier/base
   const priceOverride = dateRec?.priceOverride ? Number(dateRec.priceOverride) : null;
 
-  const effectivePPP = priceOverride !== null
-    ? priceOverride
-    : hasTiers
-    ? getPriceForGroupSize(priceTiers, totalGuests, basePrice)
-    : basePrice;
-
-  const activeTier = hasTiers && priceOverride === null
-    ? priceTiers.find((t) => totalGuests >= t.minGuests && totalGuests <= t.maxGuests) ?? null
-    : null;
-
   const totalPrice = priceOverride !== null
-    ? totalGuests * priceOverride
-    : hasTiers
-    ? totalGuests * effectivePPP
-    : adults * basePrice + children * (childPrice ?? basePrice);
+    ? (isSolo ? priceOverride : totalGuests * priceOverride)
+    : isSolo
+      ? (adults * basePrice + children * (childPrice ?? basePrice))
+      : calcGroupPrice(totalGuests, baseGroupSize, basePrice);
 
-  const displayBasePrice = hasTiers
-    ? Math.min(...priceTiers.map((t) => t.pricePerPerson))
-    : basePrice;
+  const groupUnits = isSolo ? 1 : Math.ceil(totalGuests / baseGroupSize);
 
   const handleDateSelect = (d: string, rec: AvailRecord | null) => {
     setDate(d);
@@ -67,59 +56,34 @@ export function BookingWidget({
     const sp = new URLSearchParams({
       date,
       adults:   adults.toString(),
-      children: children.toString(),
+      children: isSolo ? "0" : children.toString(),
     });
     router.push(`/booking/${tourId}?${sp.toString()}`);
   };
-
-  const max = maxGroupSize ?? 20;
 
   return (
     <div className="sticky top-24 bg-white rounded-2xl border border-[#E4E0D9] p-6 shadow-xl shadow-black/5">
 
       {/* ── Price Header ── */}
       <div className="mb-6 border-b border-[#E4E0D9] pb-6">
-        <span className="text-[#7A746D] text-sm block mb-1">Price from</span>
+        <span className="text-[#7A746D] text-sm block mb-1">
+          {isSolo ? "Price" : "Price from"}
+        </span>
         <div className="flex items-end gap-2 text-[#111]">
-          <span className="text-4xl font-display font-bold">${displayBasePrice}</span>
-          <span className="text-[#7A746D] mb-1">/ person</span>
+          <span className="text-4xl font-display font-bold">${basePrice}</span>
+          <span className="text-[#7A746D] mb-1">
+            {isSolo ? "/ person" : `/ ${baseGroupSize} guests`}
+          </span>
         </div>
+        {!isSolo && (
+          <p className="text-xs text-[#7A746D] mt-1.5">
+            +${basePrice} for every additional {baseGroupSize} guests
+          </p>
+        )}
         {likelyToSellOut && (
           <p className="text-[#C41230] text-sm font-medium flex items-center gap-1.5 mt-3">
             <Clock className="size-4" /> High demand. Book soon!
           </p>
-        )}
-
-        {hasTiers && (
-          <button
-            onClick={() => setShowTiers((v) => !v)}
-            className="mt-3 flex items-center gap-1.5 text-sm font-medium text-[#1B2847] hover:text-[#C41230] transition-colors"
-          >
-            <ChevronDown className={`size-4 transition-transform ${showTiers ? "rotate-180" : ""}`} />
-            View group pricing
-          </button>
-        )}
-        {hasTiers && showTiers && (
-          <div className="mt-3 rounded-lg border border-[#E4E0D9] overflow-hidden text-sm">
-            <div className="grid grid-cols-2 bg-[#F8F7F5] px-3 py-2 font-semibold text-[#545454] text-xs uppercase tracking-wide">
-              <span>Group size</span>
-              <span className="text-right">Per person</span>
-            </div>
-            {priceTiers.map((tier, i) => {
-              const isActive = activeTier === tier;
-              return (
-                <div
-                  key={i}
-                  className={`grid grid-cols-2 px-3 py-2 border-t border-[#E4E0D9] transition-colors ${
-                    isActive ? "bg-[#FFF0F2] text-[#C41230] font-semibold" : "text-[#111]"
-                  }`}
-                >
-                  <span>{tier.minGuests}–{tier.maxGuests} people</span>
-                  <span className="text-right">${tier.pricePerPerson}</span>
-                </div>
-              );
-            })}
-          </div>
         )}
       </div>
 
@@ -135,72 +99,59 @@ export function BookingWidget({
 
       {/* ── Guest Counters ── */}
       <div className="space-y-4 mb-6">
-        <div className="grid grid-cols-2 gap-4">
-          {/* Adults */}
-          <div>
-            <label className="text-sm font-semibold text-[#111] block mb-2">Adults</label>
-            <div className="flex items-center justify-between border border-[#E4E0D9] rounded-lg bg-[#F8F7F5] p-1">
-              <button
-                onClick={() => setAdults(Math.max(1, adults - 1))}
-                disabled={adults <= 1}
-                className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white text-[#111] shadow-sm disabled:opacity-50"
-              >−</button>
-              <span className="font-semibold w-6 text-center text-[#111]">{adults}</span>
-              <button
-                onClick={() => setAdults(Math.min(max - children, adults + 1))}
-                disabled={adults + children >= max}
-                className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white text-[#111] shadow-sm disabled:opacity-50"
-              >+</button>
+        {isSolo ? (
+          <p className="text-sm text-[#7A746D] bg-[#F8F7F5] rounded-lg px-3 py-2">
+            This is a solo / private tour — priced per person.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-4">
+            {/* Adults */}
+            <div>
+              <label className="text-sm font-semibold text-[#111] block mb-2">Adults</label>
+              <div className="flex items-center justify-between border border-[#E4E0D9] rounded-lg bg-[#F8F7F5] p-1">
+                <button
+                  onClick={() => setAdults(Math.max(1, adults - 1))}
+                  disabled={adults <= 1}
+                  className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white text-[#111] shadow-sm disabled:opacity-50"
+                >−</button>
+                <span className="font-semibold w-6 text-center text-[#111]">{adults}</span>
+                <button
+                  onClick={() => setAdults(Math.min(max - children, adults + 1))}
+                  disabled={adults + children >= max}
+                  className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white text-[#111] shadow-sm disabled:opacity-50"
+                >+</button>
+              </div>
             </div>
-          </div>
-          {/* Children */}
-          <div>
-            <label className="text-sm font-semibold text-[#111] block mb-2">Children</label>
-            <div className="flex items-center justify-between border border-[#E4E0D9] rounded-lg bg-[#F8F7F5] p-1">
-              <button
-                onClick={() => setChildren(Math.max(0, children - 1))}
-                disabled={children <= 0}
-                className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white text-[#111] shadow-sm disabled:opacity-50"
-              >−</button>
-              <span className="font-semibold w-6 text-center text-[#111]">{children}</span>
-              <button
-                onClick={() => setChildren(Math.min(max - adults, children + 1))}
-                disabled={adults + children >= max}
-                className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white text-[#111] shadow-sm disabled:opacity-50"
-              >+</button>
+            {/* Children */}
+            <div>
+              <label className="text-sm font-semibold text-[#111] block mb-2">Children</label>
+              <div className="flex items-center justify-between border border-[#E4E0D9] rounded-lg bg-[#F8F7F5] p-1">
+                <button
+                  onClick={() => setChildren(Math.max(0, children - 1))}
+                  disabled={children <= 0}
+                  className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white text-[#111] shadow-sm disabled:opacity-50"
+                >−</button>
+                <span className="font-semibold w-6 text-center text-[#111]">{children}</span>
+                <button
+                  onClick={() => setChildren(Math.min(max - adults, children + 1))}
+                  disabled={adults + children >= max}
+                  className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white text-[#111] shadow-sm disabled:opacity-50"
+                >+</button>
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Live tier notice */}
-        {hasTiers && priceOverride === null && (
-          <div className={`rounded-lg px-3 py-2 text-sm flex items-center gap-2 transition-colors ${
-            activeTier ? "bg-[#FFF0F2] text-[#C41230]" : "bg-[#FFF8E1] text-[#B45309]"
-          }`}>
-            <Users className="size-4 shrink-0" />
-            {activeTier
-              ? <span><strong>{totalGuests} people</strong> — ${activeTier.pricePerPerson}/person (group rate)</span>
-              : <span>Group of <strong>{totalGuests}</strong> — base rate applies</span>
-            }
           </div>
         )}
+
       </div>
 
       {/* ── Price Breakdown ── */}
       <div className="border-t border-[#E4E0D9] pt-4 mb-6 space-y-2 text-sm">
         {priceOverride !== null ? (
-          <>
-            <div className="flex justify-between">
-              <span className="text-[#545454]">{totalGuests} × ${priceOverride}/person <span className="text-[#C41230] text-xs font-semibold">(special)</span></span>
-              <span className="font-semibold text-[#111]">${totalPrice.toFixed(2)}</span>
-            </div>
-          </>
-        ) : hasTiers ? (
           <div className="flex justify-between">
-            <span className="text-[#545454]">{totalGuests} × ${effectivePPP}/person</span>
+            <span className="text-[#545454]">{isSolo ? "1" : totalGuests} × ${priceOverride}/person <span className="text-[#C41230] text-xs font-semibold">(special)</span></span>
             <span className="font-semibold text-[#111]">${totalPrice.toFixed(2)}</span>
           </div>
-        ) : (
+        ) : isSolo ? (
           <>
             <div className="flex justify-between">
               <span className="text-[#545454]">Adults × {adults}</span>
@@ -213,6 +164,11 @@ export function BookingWidget({
               </div>
             )}
           </>
+        ) : (
+          <div className="flex justify-between">
+            <span className="text-[#545454]">{groupUnits} × ${basePrice} (per {baseGroupSize} guests)</span>
+            <span className="font-semibold text-[#111]">${totalPrice.toFixed(2)}</span>
+          </div>
         )}
         <div className="flex justify-between items-center pt-2 border-t border-[#E4E0D9]">
           <span className="font-semibold text-[#111]">Total Price</span>
