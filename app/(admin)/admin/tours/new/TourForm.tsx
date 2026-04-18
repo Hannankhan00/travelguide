@@ -10,7 +10,7 @@ import {
 import { slugify } from "@/lib/utils";
 import { TOUR_CATEGORIES } from "@/lib/constants";
 import { LocationPicker } from "@/components/admin/LocationPicker";
-import { saveTourAction, type ActionResult } from "../actions";
+import { saveTourAction, addTourImageAction, type ActionResult } from "../actions";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -269,7 +269,16 @@ export function TourForm({ initialData }: TourFormProps) {
     startTransition(async () => {
       const res = await saveTourAction(formData);
       setResult(res);
-      if (res.success) {
+      if (res.success && res.tourId) {
+        // Save cover image
+        if (data.coverImage) {
+          await addTourImageAction(res.tourId, data.coverImage, data.title, true);
+        }
+        // Save gallery images
+        const gallery = data.galleryImages.filter(Boolean);
+        for (const url of gallery) {
+          await addTourImageAction(res.tourId, url, data.title, false);
+        }
         router.push("/admin/tours");
         router.refresh();
       }
