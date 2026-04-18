@@ -1,6 +1,7 @@
 import Link from "next/link";
+import Image from "next/image";
 import { MapPin, Mail, Phone, Share2, Tv, Play } from "lucide-react";
-import { COMPANY_NAME, COMPANY_EMAIL, COMPANY_PHONE, NAV_LINKS } from "@/lib/constants";
+import { COMPANY_NAME, COMPANY_EMAIL, COMPANY_PHONE } from "@/lib/constants";
 
 const TOUR_LINKS = [
   { label: "Cultural Tours",   href: "/tours?category=CULTURAL"       },
@@ -27,11 +28,16 @@ export function Footer() {
 
           {/* Brand column */}
           <div className="lg:col-span-1">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <MapPin className="size-4 text-white" />
+            <Link href="/" className="inline-block mb-4">
+              <div className="bg-white rounded-xl p-2">
+                <Image
+                  src="/asstes/footer.PNG"
+                  alt="GoTripJapan"
+                  width={120}
+                  height={120}
+                  className="h-20 w-auto object-contain"
+                />
               </div>
-              <span className="font-display font-semibold text-lg">{COMPANY_NAME}</span>
             </Link>
             <p className="text-white/50 text-sm leading-relaxed mb-6">
               Crafting unforgettable Japan experiences since 2016. Every tour is

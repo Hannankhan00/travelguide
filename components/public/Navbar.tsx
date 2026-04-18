@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Menu, X, MapPin, Heart, User, LogIn, LogOut, Bell, HelpCircle, ChevronRight, Ticket, Globe, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { COMPANY_NAME, NAV_LINKS } from "@/lib/constants";
+import { NAV_LINKS } from "@/lib/constants";
 import { signOut } from "next-auth/react";
 
 interface DestinationNav {
@@ -63,19 +64,17 @@ export function Navbar({ transparent = false, isLoggedIn = false, destinations =
         <div className="flex items-center justify-between h-18 py-3">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <div className={cn(
-              "w-8 h-8 rounded-lg flex items-center justify-center",
-              isWhite ? "bg-primary" : "bg-white/20 backdrop-blur-sm"
-            )}>
-              <MapPin className="size-4 text-white" />
+          <Link href="/" className="flex items-center shrink-0">
+            <div className={cn(!isWhite && "bg-white/90 backdrop-blur-sm rounded-xl px-2 py-1")}>
+              <Image
+                src="/asstes/logoo.PNG"
+                alt="GoTripJapan"
+                width={160}
+                height={40}
+                className="h-10 w-auto object-contain"
+                priority
+              />
             </div>
-            <span className={cn(
-              "font-display font-semibold text-lg tracking-tight",
-              isWhite ? "text-foreground" : "text-white"
-            )}>
-              {COMPANY_NAME}
-            </span>
           </Link>
 
           {/* Desktop nav */}

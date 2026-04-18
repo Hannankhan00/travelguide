@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import {
   Plus, Trash2, Pencil, Check, X, ChevronUp, ChevronDown,
-  Globe, Image as ImageIcon, ExternalLink, EyeOff,
+  Globe, Image as ImageIcon, ExternalLink, EyeOff, Upload, Loader2,
 } from "lucide-react";
 import {
   createDestination, updateDestination, deleteDestination, reorderDestination,
@@ -39,11 +39,32 @@ export function DestinationsClient({ destinations: init }: Props) {
   const [editDestName, setEditDestName] = useState("");
 
   // ── Place form ──
-  const [showPlaceForm, setShowPlaceForm] = useState(false);
-  const [editPlaceId,   setEditPlaceId]   = useState<string | null>(null);
-  const [placeForm, setPlaceForm] = useState({
+  const [showPlaceForm,   setShowPlaceForm]   = useState(false);
+  const [editPlaceId,     setEditPlaceId]     = useState<string | null>(null);
+  const [placeForm,       setPlaceForm]       = useState({
     name: "", subtitle: "", imageUrl: "", linkQuery: "", isActive: true,
   });
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const imgInputRef = useRef<HTMLInputElement>(null);
+
+  async function uploadPlaceImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImg(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res  = await fetch("/api/upload", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!res.ok) { alert(json.error ?? "Upload failed."); return; }
+      setPlaceForm((f) => ({ ...f, imageUrl: json.url }));
+    } catch {
+      alert("Upload failed: network error.");
+    } finally {
+      setUploadingImg(false);
+      if (imgInputRef.current) imgInputRef.current.value = "";
+    }
+  }
 
   const refresh = (fn: () => Promise<void>) => {
     startTransition(async () => {
@@ -224,8 +245,32 @@ export function DestinationsClient({ destinations: init }: Props) {
                     <input value={placeForm.subtitle} onChange={(e) => setPlaceForm(f => ({ ...f, subtitle: e.target.value }))} className={inputCls} placeholder="Attraction in Tokyo, Japan" />
                   </div>
                   <div>
-                    <label className={labelCls}>Image URL</label>
-                    <input value={placeForm.imageUrl} onChange={(e) => setPlaceForm(f => ({ ...f, imageUrl: e.target.value }))} className={inputCls} placeholder="https://..." />
+                    <label className={labelCls}>Image</label>
+                    <div className="flex items-center gap-2">
+                      {placeForm.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={placeForm.imageUrl} alt="" className="h-9 w-14 object-cover rounded-lg border border-[#E4E0D9] shrink-0" />
+                      ) : (
+                        <div className="h-9 w-14 rounded-lg border border-dashed border-[#E4E0D9] flex items-center justify-center shrink-0">
+                          <ImageIcon className="size-4 text-[#D6D3CF]" />
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => imgInputRef.current?.click()}
+                        disabled={uploadingImg}
+                        className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-[#E4E0D9] text-xs font-semibold text-[#545454] hover:bg-[#F8F7F5] disabled:opacity-50 transition-colors"
+                      >
+                        {uploadingImg ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
+                        {uploadingImg ? "Uploading…" : placeForm.imageUrl ? "Replace" : "Upload"}
+                      </button>
+                      {placeForm.imageUrl && (
+                        <button type="button" onClick={() => setPlaceForm(f => ({ ...f, imageUrl: "" }))} className="p-1.5 text-[#A8A29E] hover:text-[#C41230]">
+                          <X className="size-3.5" />
+                        </button>
+                      )}
+                      <input ref={imgInputRef} type="file" accept="image/*" className="hidden" onChange={uploadPlaceImage} />
+                    </div>
                   </div>
                   <div>
                     <label className={labelCls}>Tours link query (default: name)</label>

@@ -108,8 +108,10 @@ export function TourForm({ initialData }: TourFormProps) {
   const [langInput, setLangInput] = useState("");
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
+  const [uploadingBulk, setUploadingBulk] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const bulkInputRef = useRef<HTMLInputElement>(null);
 
   // ── Upload helper ─────────────────────────
   async function uploadFile(file: File): Promise<string | null> {
@@ -152,6 +154,22 @@ export function TourForm({ initialData }: TourFormProps) {
       }
     } finally {
       setUploadingSlot(null);
+    }
+  }
+
+  async function handleBulkUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    const remaining = 15 - data.galleryImages.length;
+    const toUpload  = files.slice(0, remaining);
+    setUploadingBulk(true);
+    try {
+      const urls = await Promise.all(toUpload.map(uploadFile));
+      const valid = urls.filter(Boolean) as string[];
+      if (valid.length) update("galleryImages", [...data.galleryImages, ...valid]);
+    } finally {
+      setUploadingBulk(false);
+      if (bulkInputRef.current) bulkInputRef.current.value = "";
     }
   }
 
@@ -483,83 +501,77 @@ export function TourForm({ initialData }: TourFormProps) {
                 Gallery Images
                 <span className="text-[#A8A29E] font-normal"> (min 4 · max 15)</span>
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-2">
-                {data.galleryImages.map((url, i) => (
-                  <div
-                    key={i}
-                    onClick={() => uploadingSlot === null && !url && galleryInputRefs.current[i]?.click()}
-                    className={`relative rounded-xl border-2 border-dashed overflow-hidden flex flex-col items-center justify-center min-h-28 group transition-colors
-                      ${url ? "border-[#C41230]/20 cursor-default" : "border-[#E4E0D9] hover:bg-[#FAFAFA] cursor-pointer"}`}
-                  >
-                    {url ? (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={url} alt={`Gallery ${i + 1}`} className="w-full h-28 object-cover" />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); galleryInputRefs.current[i]?.click(); }}
-                            className="bg-white text-[#111] p-1.5 rounded-lg"
-                          ><Upload size={12} /></button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const next = [...data.galleryImages];
-                              next[i] = "";
-                              update("galleryImages", next);
-                            }}
-                            className="bg-white text-[#C41230] p-1.5 rounded-lg"
-                          ><X size={12} /></button>
-                        </div>
-                      </>
-                    ) : uploadingSlot === i ? (
-                      <Loader2 className="text-[#C41230] animate-spin" size={22} />
-                    ) : (
-                      <>
-                        <ImageIcon className="text-[#D6D3CF] mb-1" size={22} />
-                        <p className="text-[10px] text-[#A8A29E] font-medium">Image {i + 1}</p>
-                      </>
-                    )}
 
-                    {/* Remove slot button (only when no image and more than 4 slots) */}
-                    {!url && data.galleryImages.length > 4 && uploadingSlot !== i && (
+              {/* Fixed 4 slots — one by one */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
+                {[0, 1, 2, 3].map((i) => {
+                  const url = data.galleryImages[i] ?? "";
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => uploadingSlot === null && !url && galleryInputRefs.current[i]?.click()}
+                      className={`relative rounded-xl border-2 border-dashed overflow-hidden flex flex-col items-center justify-center min-h-28 group transition-colors
+                        ${url ? "border-[#C41230]/20 cursor-default" : "border-[#E4E0D9] hover:bg-[#FAFAFA] cursor-pointer"}`}
+                    >
+                      {url ? (
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={url} alt={`Gallery ${i + 1}`} className="w-full h-28 object-cover" />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <button type="button" onClick={(e) => { e.stopPropagation(); galleryInputRefs.current[i]?.click(); }} className="bg-white text-[#111] p-1.5 rounded-lg"><Upload size={12} /></button>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); const n = [...data.galleryImages]; n[i] = ""; update("galleryImages", n); }} className="bg-white text-[#C41230] p-1.5 rounded-lg"><X size={12} /></button>
+                          </div>
+                        </>
+                      ) : uploadingSlot === i ? (
+                        <Loader2 className="text-[#C41230] animate-spin" size={22} />
+                      ) : (
+                        <>
+                          <ImageIcon className="text-[#D6D3CF] mb-1" size={22} />
+                          <p className="text-[10px] text-[#A8A29E] font-medium">Image {i + 1}</p>
+                        </>
+                      )}
+                      <input ref={(el) => { galleryInputRefs.current[i] = el; }} type="file" accept="image/*" className="hidden" onChange={(e) => handleGalleryUpload(e, i)} />
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Extra images — bulk upload */}
+              {data.galleryImages.length < 15 && (
+                <div
+                  onClick={() => !uploadingBulk && bulkInputRef.current?.click()}
+                  className="mt-3 border-2 border-dashed border-[#C41230]/30 rounded-xl p-5 flex items-center justify-center gap-3 hover:bg-[#FFF5F5] transition-colors cursor-pointer"
+                >
+                  {uploadingBulk ? (
+                    <><Loader2 className="text-[#C41230] animate-spin" size={18} /><p className="text-sm text-[#C41230] font-medium">Uploading…</p></>
+                  ) : (
+                    <><Upload className="text-[#C41230]" size={18} /><p className="text-sm font-semibold text-[#C41230]">Upload extra photos at once</p><p className="text-xs text-[#A8A29E] ml-1">({data.galleryImages.filter(Boolean).length}/15 used · select multiple)</p></>
+                  )}
+                  <input ref={bulkInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleBulkUpload} />
+                </div>
+              )}
+
+              {/* Extra images preview */}
+              {data.galleryImages.slice(4).some(Boolean) && (
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-3">
+                  {data.galleryImages.slice(4).map((url, j) => url ? (
+                    <div key={j} className="relative group rounded-lg overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt={`Extra ${j + 1}`} className="w-full h-20 object-cover" />
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          update("galleryImages", data.galleryImages.filter((_, idx) => idx !== i));
-                        }}
-                        className="absolute top-1.5 right-1.5 p-0.5 bg-white rounded-full shadow text-[#A8A29E] hover:text-[#C41230] opacity-0 group-hover:opacity-100 transition-opacity"
-                      ><X size={12} /></button>
-                    )}
+                        onClick={() => update("galleryImages", data.galleryImages.filter((_, idx) => idx !== j + 4))}
+                        className="absolute top-1 right-1 bg-black/60 text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      ><X size={11} /></button>
+                    </div>
+                  ) : null)}
+                </div>
+              )}
 
-                    <input
-                      ref={(el) => { galleryInputRefs.current[i] = el; }}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleGalleryUpload(e, i)}
-                    />
-                  </div>
-                ))}
-
-                {/* Add slot */}
-                {data.galleryImages.length < 15 && (
-                  <button
-                    type="button"
-                    onClick={() => update("galleryImages", [...data.galleryImages, ""])}
-                    className="border-2 border-dashed border-[#C41230]/30 rounded-xl flex flex-col items-center justify-center min-h-28 text-[#C41230] hover:bg-[#FFF5F5] transition-colors"
-                  >
-                    <Plus size={22} className="mb-1" />
-                    <p className="text-[10px] font-semibold">{data.galleryImages.length}/15</p>
-                  </button>
-                )}
-              </div>
               <p className={hintCls}>
                 {data.galleryImages.filter(Boolean).length < 4
                   ? `At least 4 photos required — ${4 - data.galleryImages.filter(Boolean).length} more needed.`
-                  : `${data.galleryImages.filter(Boolean).length} of 15 uploaded. More photos = higher conversion.`}
+                  : `${data.galleryImages.filter(Boolean).length} of 15 uploaded.`}
               </p>
             </div>
           </div>
