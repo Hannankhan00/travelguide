@@ -3,10 +3,10 @@
  *  Set NEXT_PUBLIC_COMPANY_NAME in .env to override the placeholder.
  * ─────────────────────────────────────────────────────────────────────────── */
 export const COMPANY_NAME =
-  process.env.NEXT_PUBLIC_COMPANY_NAME ?? "Japan Tours";
+  process.env.NEXT_PUBLIC_COMPANY_NAME ?? "GoTripJapan";
 
 export const COMPANY_EMAIL =
-  process.env.NEXT_PUBLIC_COMPANY_EMAIL ?? "hello@japantours.com";
+  process.env.NEXT_PUBLIC_COMPANY_EMAIL ?? "contact@gotripjapan.com";
 
 export const COMPANY_PHONE =
   process.env.NEXT_PUBLIC_COMPANY_PHONE ?? "";

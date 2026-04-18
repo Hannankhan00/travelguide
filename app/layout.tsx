@@ -17,21 +17,40 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? "https://gotripjapan.com"),
   title: {
-    default: "Japan Tours",
-    template: "%s | Japan Tours",
+    default: "GoTripJapan",
+    template: "%s | GoTripJapan",
   },
   description:
-    "Discover handcrafted Japan tours led by expert local guides. Book your perfect Japan experience today.",
-  keywords: ["Japan tours", "Japan travel", "guided tours Japan", "Tokyo tours", "Kyoto tours"],
+    "GoTripJapan offers handcrafted, expert-guided tours across Japan. Explore Tokyo, Kyoto, Osaka and beyond with local guides. Book your perfect Japan experience today.",
+  keywords: [
+    "GoTripJapan", "Japan tours", "Japan travel", "guided tours Japan",
+    "Tokyo tours", "Kyoto tours", "Osaka tours", "Japan holiday", "Japan trip",
+    "private Japan tours", "cultural Japan tours", "Japan adventure tours",
+  ],
   openGraph: {
     type: "website",
     locale: "en_US",
-    siteName: "Japan Tours",
+    siteName: "GoTripJapan",
+    title: "GoTripJapan",
+    description:
+      "GoTripJapan offers handcrafted, expert-guided tours across Japan. Explore Tokyo, Kyoto, Osaka and beyond with local guides.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@gotripjapan",
+    title: "GoTripJapan",
+    description:
+      "Handcrafted Japan tours led by expert local guides. Book your perfect Japan experience with GoTripJapan.",
+  },
+  alternates: {
+    canonical: "/",
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: { index: true, follow: true },
   },
 };
 

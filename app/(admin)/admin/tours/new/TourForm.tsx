@@ -746,8 +746,8 @@ export function TourForm({ initialData }: TourFormProps) {
             <div className="bg-[#F8F7F5] rounded-xl p-4 border border-[#E4E0D9]">
               <p className="text-xs font-semibold text-[#7A746D] uppercase tracking-wide mb-3">Search Preview</p>
               <div className="space-y-0.5">
-                <p className="text-[#1a0dab] text-base font-medium truncate">{data.metaTitle || data.title || "Tour Title"} | Japan Tours</p>
-                <p className="text-[#006621] text-xs truncate">japantours.com/tours/{data.slug || "tour-slug"}</p>
+                <p className="text-[#1a0dab] text-base font-medium truncate">{data.metaTitle || data.title || "Tour Title"} | GoTripJapan</p>
+                <p className="text-[#006621] text-xs truncate">gotripjapan.com/tours/{data.slug || "tour-slug"}</p>
                 <p className="text-[#545454] text-xs line-clamp-2">{data.metaDescription || data.shortDescription || "Tour description will appear here…"}</p>
               </div>
             </div>

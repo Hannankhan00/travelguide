@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import {
   Plus, Trash2, Pencil, Check, X, ChevronUp, ChevronDown,
-  Globe, MapPin, Image as ImageIcon, ExternalLink, EyeOff,
+  Globe, Image as ImageIcon, ExternalLink, EyeOff,
 } from "lucide-react";
 import {
   createDestination, updateDestination, deleteDestination, reorderDestination,
@@ -26,7 +26,7 @@ const inputCls = "w-full h-9 rounded-lg border border-[#E4E0D9] px-3 text-sm tex
 const labelCls = "text-xs font-semibold text-[#545454] block mb-1";
 
 export function DestinationsClient({ destinations: init }: Props) {
-  const [destinations, setDestinations] = useState<DestRow[]>(init);
+  const [destinations] = useState<DestRow[]>(init);
   const [selected,     setSelected]     = useState<string | null>(init[0]?.id ?? null);
   const [isPending,    startTransition]  = useTransition();
 
@@ -124,7 +124,7 @@ export function DestinationsClient({ destinations: init }: Props) {
           )}
 
           {/* Destination list */}
-          <ul className="divide-y divide-[#E4E0D9] max-h-[520px] overflow-y-auto">
+          <ul className="divide-y divide-[#E4E0D9] max-h-130 overflow-y-auto">
             {destinations.map((d) => (
               <li
                 key={d.id}

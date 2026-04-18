@@ -1,6 +1,7 @@
 import { Navbar } from "@/components/public/Navbar";
 import { Footer } from "@/components/public/Footer";
 import { AuthModal } from "@/components/public/AuthModal";
+import { CookieConsent } from "@/components/public/CookieConsent";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -33,6 +34,7 @@ export default async function PublicLayout({ children }: { children: React.React
       <main className="flex-1">{children}</main>
       <Footer />
       <AuthModal />
+      <CookieConsent />
     </>
   );
 }

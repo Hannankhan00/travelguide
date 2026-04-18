@@ -116,11 +116,11 @@ function SidebarInner({
       <div className={cn("flex items-center gap-3 px-4 h-16 border-b border-white/10 shrink-0", collapsed && "justify-center px-0")}>
         {/* Japan torii gate icon (SVG mark) */}
         <div className="shrink-0 w-8 h-8 rounded-lg bg-[#C41230] flex items-center justify-center shadow-sm">
-          <span className="text-white font-bold text-xs">JT</span>
+          <span className="text-white font-bold text-xs">GT</span>
         </div>
         {!collapsed && (
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-white truncate leading-tight">Japan Tours</p>
+            <p className="text-sm font-semibold text-white truncate leading-tight">GoTripJapan</p>
             <p className="text-[10px] text-white/50 leading-tight">Admin Portal</p>
           </div>
         )}

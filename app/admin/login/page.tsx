@@ -72,7 +72,7 @@ export default function AdminLoginPage() {
                 type="email"
                 required
                 autoComplete="email"
-                placeholder="admin@japantours.com"
+                placeholder="admin@gotripjapan.com"
                 className="w-full h-11 px-3.5 rounded-lg border border-[#D1D5DB] bg-white text-sm text-[#111] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C41230]/20 focus:border-[#C41230] transition-all"
               />
             </div>

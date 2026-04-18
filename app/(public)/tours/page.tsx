@@ -4,8 +4,8 @@ import { ToursFilterBar } from "@/components/public/ToursFilterBar";
 import { auth } from "@/lib/auth";
 
 export const metadata = {
-  title: "Tours & Experiences | Japan Tours",
-  description: "Browse our curated selection of cultural, adventure, and guided tours across Japan.",
+  title: "Tours & Experiences",
+  description: "Browse GoTripJapan's curated selection of cultural, adventure, and guided tours across Japan.",
 };
 
 interface PageProps {
