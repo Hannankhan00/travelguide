@@ -1,15 +1,15 @@
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 
-const DESTINATIONS = [
-  { name: "Tokyo",     image: "/asstes/hero-tokyo.png",  query: "Tokyo"     },
-  { name: "Kyoto",     image: "/asstes/hero-kyoto.png",  query: "Kyoto"     },
-  { name: "Osaka",     image: "/asstes/hero-fuji.png",   query: "Osaka"     },
-  { name: "Mt. Fuji",  image: "/asstes/hero-fuji.png",   query: "Mt. Fuji"  },
-  { name: "Nara",      image: "/asstes/hero-kyoto.png",  query: "Nara"      },
-  { name: "Hiroshima", image: "/asstes/hero-tokyo.png",  query: "Hiroshima" },
-];
+export async function DestinationsSection() {
+  const places = await prisma.place.findMany({
+    where: { isActive: true },
+    orderBy: { order: "asc" },
+    take: 12,
+  });
 
-export function DestinationsSection() {
+  if (places.length === 0) return null;
+
   return (
     <section className="py-8 border-b border-[#e8e8e8]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -17,22 +17,26 @@ export function DestinationsSection() {
           Things to do wherever you&apos;re going
         </h2>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-          {DESTINATIONS.map((dest) => (
+          {places.map((place) => (
             <Link
-              key={dest.name}
-              href={`/tours?q=${encodeURIComponent(dest.query)}`}
+              key={place.id}
+              href={`/tours?q=${encodeURIComponent(place.linkQuery ?? place.name)}`}
               className="group text-center cursor-pointer"
             >
-              <div className="rounded-[10px] overflow-hidden h-27.5 mb-2 group-hover:opacity-85 transition-opacity">
-                <img
-                  src={dest.image}
-                  alt={dest.name}
-                  loading="lazy"
-                  className="w-full h-full object-cover"
-                />
+              <div className="rounded-[10px] overflow-hidden h-27.5 mb-2 bg-[#E7E8EE] group-hover:opacity-85 transition-opacity">
+                {place.imageUrl ? (
+                  <img
+                    src={place.imageUrl}
+                    alt={place.name}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-linear-to-br from-[#0C447C] to-[#185FA5]" />
+                )}
               </div>
               <p className="text-[13px] font-semibold text-[#111] group-hover:text-[#185FA5] transition-colors">
-                {dest.name}
+                {place.name}
               </p>
             </Link>
           ))}

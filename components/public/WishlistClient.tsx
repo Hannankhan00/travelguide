@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, Clock, Star, Users, Heart, Calendar } from "lucide-react";
+import { MapPin, Clock, Star, Users, Heart } from "lucide-react";
 import { toggleWishlistAction } from "@/app/actions/wishlist";
 import { toast } from "sonner";
 import { formatPrice } from "@/lib/utils";
@@ -25,7 +25,7 @@ interface WishlistTour {
 
 export function WishlistClient({ initialTours }: { initialTours: WishlistTour[] }) {
   const [tours, setTours] = useState(initialTours);
-  const [removingId, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   const handleRemove = (tourId: string) => {
     startTransition(async () => {
@@ -44,7 +44,7 @@ export function WishlistClient({ initialTours }: { initialTours: WishlistTour[] 
       <div className="bg-white rounded-2xl border border-[#E4E0D9] p-12 text-center shadow-sm max-w-2xl mx-auto">
         <Heart className="size-12 text-[#E4E0D9] mx-auto mb-4" />
         <h3 className="text-xl font-bold font-display text-[#111] mb-2">Your wishlist is empty</h3>
-        <p className="text-[#7A746D] mb-6">Looks like you haven't saved any tours yet.</p>
+        <p className="text-[#7A746D] mb-6">Looks like you havent saved any tours yet.</p>
         <Link
           href="/tours"
           className="inline-block bg-[#C41230] text-white font-bold px-6 py-3 rounded-lg hover:bg-[#A00F27] transition-colors"
@@ -63,11 +63,11 @@ export function WishlistClient({ initialTours }: { initialTours: WishlistTour[] 
           className="bg-white rounded-2xl border border-[#E4E0D9] shadow-sm overflow-hidden flex flex-col md:flex-row group transition-all hover:shadow-md"
         >
           {/* Image */}
-          <div className="md:w-[260px] h-48 md:h-auto relative shrink-0">
+          <div className="md:w-65 h-48 md:h-auto relative shrink-0">
             {tour.coverImage ? (
               <Image src={tour.coverImage} alt={tour.title} fill className="object-cover" />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-[#1B2847] to-[#C41230]" />
+              <div className="w-full h-full bg-linear-to-br from-[#1B2847] to-[#C41230]" />
             )}
             <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-[#111] text-xs font-bold px-2 py-1 rounded-md shadow-sm">
               {tour.category}

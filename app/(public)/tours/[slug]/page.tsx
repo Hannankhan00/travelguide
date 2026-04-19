@@ -385,6 +385,9 @@ export default async function TourDetailPage({ params }: PageProps) {
         tourType={tourType}
         basePrice={basePrice}
         baseGroupSize={baseGroupSize}
+        childPrice={tourData.childPrice ? Number(tourData.childPrice) : null}
+        likelyToSellOut={tourData.likelyToSellOut}
+        maxGroupSize={tourData.maxGroupSize}
       />
     </div>
   );

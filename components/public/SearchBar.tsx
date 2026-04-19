@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Search, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 const POPULAR = ["Tokyo", "Kyoto", "Osaka", "Mt. Fuji", "Nara", "Hiroshima"];
 
@@ -31,7 +31,7 @@ export function SearchBar() {
     <div className="w-full max-w-3xl mx-auto" id="search-bar">
       <form
         onSubmit={handleSearch}
-        className="flex items-center bg-white rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.12)] overflow-visible h-[52px] relative"
+        className="flex items-center bg-white rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.12)] overflow-visible h-13 relative"
       >
         {/* Search input */}
         <div className="flex-1 flex items-center pl-6 pr-3 h-full min-w-0">
@@ -52,7 +52,7 @@ export function SearchBar() {
           <button
             type="button"
             onClick={() => { setShowDateMenu(!showDateMenu); setShowGuestsMenu(false); }}
-            className="flex items-center gap-2 px-5 h-[52px] text-sm text-[#191C20] hover:bg-[#F8F9FF] transition-colors whitespace-nowrap"
+            className="flex items-center gap-2 px-5 h-13 text-sm text-[#191C20] hover:bg-[#F8F9FF] transition-colors whitespace-nowrap"
           >
             <span className="font-medium">{date}</span>
             <ChevronDown className="size-3.5 text-[#7A746D]" />
@@ -83,7 +83,7 @@ export function SearchBar() {
           <button
             type="button"
             onClick={() => { setShowGuestsMenu(!showGuestsMenu); setShowDateMenu(false); }}
-            className="flex items-center gap-2 px-5 h-[52px] text-sm text-[#191C20] hover:bg-[#F8F9FF] transition-colors whitespace-nowrap"
+            className="flex items-center gap-2 px-5 h-13 text-sm text-[#191C20] hover:bg-[#F8F9FF] transition-colors whitespace-nowrap"
           >
             <span className="font-medium">{guests} traveler{guests > 1 ? "s" : ""}</span>
             <ChevronDown className="size-3.5 text-[#7A746D]" />
@@ -109,7 +109,7 @@ export function SearchBar() {
         {/* Search button */}
         <button
           type="submit"
-          className="flex items-center justify-center gap-2 px-6 h-[42px] mx-1.5 rounded-full bg-[#185FA5] hover:bg-[#0C447C] text-white font-bold text-sm transition-colors shrink-0"
+          className="flex items-center justify-center gap-2 px-6 h-10.5 mx-1.5 rounded-full bg-[#185FA5] hover:bg-[#0C447C] text-white font-bold text-sm transition-colors shrink-0"
         >
           Search
         </button>

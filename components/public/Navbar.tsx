@@ -20,7 +20,7 @@ interface NavbarProps {
   destinations?: DestinationNav[];
 }
 
-export function Navbar({ transparent = false, isLoggedIn = false, destinations = [] }: NavbarProps) {
+export function Navbar({ isLoggedIn = false, destinations = [] }: NavbarProps) {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -69,7 +69,7 @@ export function Navbar({ transparent = false, isLoggedIn = false, destinations =
               alt="GoTripJapan"
               width={200}
               height={50}
-              className="h-12 w-auto object-contain"
+              className="h-14 w-auto object-contain"
               priority
             />
           </Link>

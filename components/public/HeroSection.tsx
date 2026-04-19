@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { SearchBar } from "./SearchBar";
 import { HeroFeaturedCards } from "./HeroFeaturedCards";
 
@@ -23,11 +24,12 @@ export function HeroSection({ featuredTours = [] }: Props) {
     <section className="relative min-h-[92vh] flex flex-col justify-center overflow-hidden" id="hero-section">
       {/* Single background image — Mt. Fuji */}
       <div className="absolute inset-0">
-        <img
+        <Image
           src="/asstes/hero-mt.jpg"
           alt="Mount Fuji at dawn"
-          fetchPriority="high"
-          className="absolute inset-0 w-full h-full object-cover"
+          fill
+          priority
+          className="object-cover"
         />
         {/* Cinematic overlay */}
         <div

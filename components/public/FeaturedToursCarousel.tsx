@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { MapPin, Clock, Star, Users, ChevronLeft, ChevronRight, TrendingUp } from "lucide-react";
 import { WishlistButton } from "./WishlistButton";
 
@@ -117,16 +118,18 @@ export function FeaturedToursCarousel({ tours }: Props) {
             {tours.map((tour) => (
               <div
                 key={tour.id}
-                className="flex-shrink-0 w-[320px] sm:w-[340px] snap-start group"
+                className="shrink-0 w-[320px] sm:w-85 snap-start group"
               >
                 <div className="relative rounded-2xl overflow-hidden bg-white shadow-[0_2px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_40px_rgba(0,0,0,0.1)] hover:-translate-y-1 transition-all duration-300">
                   {/* Image */}
                   <div className="relative h-52 overflow-hidden">
                     {tour.coverImage ? (
-                      <img
+                      <Image
                         src={tour.coverImage}
                         alt={tour.title}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
                       <div
@@ -134,7 +137,7 @@ export function FeaturedToursCarousel({ tours }: Props) {
                         style={{ background: "linear-gradient(135deg, #0C447C 0%, #185FA5 100%)" }}
                       />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent" />
 
                     {/* Wishlist */}
                     <div className="absolute top-3 right-3 z-10">

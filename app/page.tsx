@@ -72,7 +72,7 @@ export default async function HomePage() {
     duration: tour.duration,
     durationType: tour.durationType ?? "days",
     basePrice: Number(tour.basePrice),
-    rating: Number(tour.rating ?? 5),
+    rating: Number(tour.rating ?? 0),
     reviewCount: tour.reviewCount ?? 0,
     maxGroupSize: tour.maxGroupSize,
     category: tour.category ?? "",

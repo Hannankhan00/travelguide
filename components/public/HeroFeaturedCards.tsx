@@ -5,13 +5,7 @@ import Link from "next/link";
 import { Star } from "lucide-react";
 
 function useVisible() {
-  const [visible, setVisible] = useState(() => {
-    if (typeof window === "undefined") return 3;
-    const w = window.innerWidth;
-    if (w >= 1024) return 3;
-    if (w >= 640) return 2;
-    return 1;
-  });
+  const [visible, setVisible] = useState(3);
   useEffect(() => {
     function update() {
       const w = window.innerWidth;
@@ -19,6 +13,7 @@ function useVisible() {
       else if (w >= 640) setVisible(2);
       else setVisible(1);
     }
+    update();
     window.addEventListener("resize", update, { passive: true });
     return () => window.removeEventListener("resize", update);
   }, []);
@@ -118,22 +113,24 @@ export function HeroFeaturedCards({ tours }: Props) {
                   <p className="text-[12px] text-[#666] mb-1.5 line-clamp-1">
                     {tour.duration} {tour.durationType} · {tour.location}
                   </p>
-                  <div className="flex items-center gap-1 mb-1.5">
-                    <div className="flex">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`size-3 ${
-                            i < Math.floor(tour.rating)
-                              ? "text-[#EF9F27] fill-[#EF9F27]"
-                              : "text-[#E4E0D9] fill-[#E4E0D9]"
-                          }`}
-                        />
-                      ))}
+                  {tour.reviewCount > 0 && (
+                    <div className="flex items-center gap-1 mb-1.5">
+                      <div className="flex">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`size-3 ${
+                              i < Math.floor(tour.rating)
+                                ? "text-[#EF9F27] fill-[#EF9F27]"
+                                : "text-[#E4E0D9] fill-[#E4E0D9]"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-[11px] font-bold text-[#111]">{tour.rating.toFixed(1)}</span>
+                      <span className="text-[11px] text-[#999]">({tour.reviewCount.toLocaleString()})</span>
                     </div>
-                    <span className="text-[11px] font-bold text-[#111]">{tour.rating}</span>
-                    <span className="text-[11px] text-[#999]">({tour.reviewCount.toLocaleString()})</span>
-                  </div>
+                  )}
                   <p className="text-[12px] text-[#555]">
                     From{" "}
                     <span className="font-extrabold text-[#EF9F27] text-[15px]">

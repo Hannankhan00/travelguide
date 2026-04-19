@@ -2,18 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Star } from "lucide-react";
 import { WishlistButton } from "./WishlistButton";
 
 function useVisible() {
-  const [visible, setVisible] = useState(() => {
-    if (typeof window === "undefined") return 4;
-    const w = window.innerWidth;
-    if (w >= 1024) return 4;
-    if (w >= 768) return 3;
-    if (w >= 640) return 2;
-    return 1;
-  });
+  const [visible, setVisible] = useState(4);
   useEffect(() => {
     function update() {
       const w = window.innerWidth;
@@ -22,6 +16,7 @@ function useVisible() {
       else if (w >= 640) setVisible(2);
       else setVisible(1);
     }
+    update();
     window.addEventListener("resize", update, { passive: true });
     return () => window.removeEventListener("resize", update);
   }, []);
@@ -144,11 +139,12 @@ function TourCard({ tour, formatPrice }: { tour: RowTour; formatPrice: (p: numbe
       {/* Image */}
       <div className="relative h-48 overflow-hidden">
         {tour.coverImage ? (
-          <img
+          <Image
             src={tour.coverImage}
             alt={tour.title}
-            loading="lazy"
-            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
           <div
