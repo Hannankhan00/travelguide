@@ -73,7 +73,7 @@ export function ReviewSection({ tourId, reviews, currentUserId, averageRating, r
           <p className="text-[#7A746D] mb-5">Sign in or create an account to write a review.</p>
           <Link
             href="?auth=login"
-            className="inline-flex items-center gap-2 bg-[#1B2847] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#2A3B66] transition-colors"
+            className="inline-flex items-center gap-2 bg-[#0C447C] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#08315E] transition-colors"
           >
             <LogIn className="size-4" /> Sign In to Review
           </Link>
@@ -88,7 +88,7 @@ export function ReviewSection({ tourId, reviews, currentUserId, averageRating, r
 
           {/* Star rating */}
           <div className="mb-5">
-            <label className="text-sm font-semibold text-[#111] block mb-2">Your Rating <span className="text-[#C41230]">*</span></label>
+            <label className="text-sm font-semibold text-[#111] block mb-2">Your Rating <span className="text-[#185FA5]">*</span></label>
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map((s) => (
                 <button
@@ -113,13 +113,13 @@ export function ReviewSection({ tourId, reviews, currentUserId, averageRating, r
 
           {/* Message */}
           <div className="mb-5">
-            <label className="text-sm font-semibold text-[#111] block mb-2">Your Review <span className="text-[#C41230]">*</span></label>
+            <label className="text-sm font-semibold text-[#111] block mb-2">Your Review <span className="text-[#185FA5]">*</span></label>
             <textarea
               rows={4}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Share your experience — what did you enjoy? What stood out? Would you recommend this tour?"
-              className="w-full px-4 py-3 border border-[#E4E0D9] rounded-xl text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#C41230]/20 focus:border-[#C41230] transition-all resize-none"
+              className="w-full px-4 py-3 border border-[#E4E0D9] rounded-xl text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#185FA5]/20 focus:border-[#185FA5] transition-all resize-none"
             />
             <p className="text-xs text-[#A8A29E] mt-1">{message.length} characters (minimum 10)</p>
           </div>
@@ -136,7 +136,7 @@ export function ReviewSection({ tourId, reviews, currentUserId, averageRating, r
 
           {/* Feedback */}
           {result?.error && (
-            <div className="bg-[#FEE2E2] text-[#C41230] text-sm px-4 py-3 rounded-lg mb-4">{result.error}</div>
+            <div className="bg-[#FEE2E2] text-[#185FA5] text-sm px-4 py-3 rounded-lg mb-4">{result.error}</div>
           )}
           {result?.success && (
             <div className="bg-[#F0FFF4] text-[#15803D] text-sm px-4 py-3 rounded-lg mb-4">{result.success}</div>
@@ -146,7 +146,7 @@ export function ReviewSection({ tourId, reviews, currentUserId, averageRating, r
             type="button"
             onClick={handleSubmit}
             disabled={isPending || rating === 0 || message.length < 10}
-            className="w-full bg-[#C41230] hover:bg-[#A00F27] disabled:bg-[#E4E0D9] disabled:text-[#A8A29E] text-white font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-[#185FA5] hover:bg-[#12487F] disabled:bg-[#E4E0D9] disabled:text-[#A8A29E] text-white font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             {isPending ? <><Loader2 className="size-4 animate-spin" /> Submitting…</> : "Submit Review"}
           </button>
@@ -159,7 +159,7 @@ export function ReviewSection({ tourId, reviews, currentUserId, averageRating, r
           {reviews.map((review) => (
             <div key={review.id} className="bg-white border border-[#E4E0D9] rounded-2xl p-6 shadow-sm">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-full bg-[#1B2847] text-white flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
+                <div className="w-10 h-10 rounded-full bg-[#0C447C] text-white flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
                   {review.user.image ? (
                     <img src={review.user.image} alt="" className="w-full h-full object-cover" />
                   ) : (

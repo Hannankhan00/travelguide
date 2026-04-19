@@ -38,20 +38,20 @@ export default function RegisterPage() {
   // ── Verification pending screen ──────────────────────────────────────────────
   if (verifyEmail) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#F8F7F5] via-white to-[#F1EFE9] px-4 pt-24 pb-16">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#F8F9FF] via-white to-[#F1F5F9] px-4 pt-24 pb-16">
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-150 h-150 rounded-full bg-[#C41230]/5" />
-          <div className="absolute -bottom-40 -left-40 w-125 h-125 rounded-full bg-[#1B2847]/5" />
+          <div className="absolute -top-40 -right-40 w-150 h-150 rounded-full bg-[#185FA5]/5" />
+          <div className="absolute -bottom-40 -left-40 w-125 h-125 rounded-full bg-[#0C447C]/5" />
         </div>
 
         <div className="w-full max-w-lg relative z-10">
           <div className="bg-white rounded-2xl shadow-[0_20px_60px_-12px_rgba(0,0,0,0.12),0_0_0_1px_rgba(228,224,217,0.8)] overflow-hidden">
-            <div className="h-1.5 bg-linear-to-r from-[#C41230] via-[#C8A84B] to-[#1B2847]" />
+            <div className="h-1.5 bg-linear-to-r from-[#185FA5] via-[#EF9F27] to-[#0C447C]" />
 
             <div className="p-8 text-center">
               {/* Icon */}
               <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#EEF4FF] mb-6">
-                <Mail className="w-10 h-10 text-[#1B2847]" />
+                <Mail className="w-10 h-10 text-[#0C447C]" />
               </div>
 
               <h1 className="text-2xl font-bold text-[#111111] mb-2" style={{ fontFamily: "var(--font-playfair)" }}>
@@ -59,11 +59,11 @@ export default function RegisterPage() {
               </h1>
               <p className="text-[#7A746D] mb-6 leading-relaxed">
                 We've sent a verification link to<br />
-                <strong className="text-[#1B2847]">{verifyEmail}</strong>
+                <strong className="text-[#0C447C]">{verifyEmail}</strong>
               </p>
 
               {/* Info card */}
-              <div className="bg-[#F8F7F5] rounded-xl p-5 mb-6 text-left border border-[#E4E0D9]">
+              <div className="bg-[#F8F9FF] rounded-xl p-5 mb-6 text-left border border-[#E7E8EE]">
                 <div className="flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-[#1B7849] mt-0.5 shrink-0" />
                   <div>
@@ -86,10 +86,10 @@ export default function RegisterPage() {
               <button
                 onClick={handleResend}
                 disabled={resendState !== "idle" || isPending}
-                className="inline-flex items-center gap-2 text-sm font-semibold text-[#1B2847] hover:text-[#C41230] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-[#0C447C] hover:text-[#185FA5] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {resendState === "sending" ? (
-                  <><span className="w-4 h-4 border-2 border-[#1B2847]/30 border-t-[#1B2847] rounded-full animate-spin" /> Sending...</>
+                  <><span className="w-4 h-4 border-2 border-[#0C447C]/30 border-t-[#0C447C] rounded-full animate-spin" /> Sending...</>
                 ) : resendState === "sent" ? (
                   <><CheckCircle className="w-4 h-4 text-[#1B7849]" /> Email sent!</>
                 ) : (
@@ -99,7 +99,7 @@ export default function RegisterPage() {
 
               <p className="text-center text-sm text-[#7A746D] mt-8">
                 Already verified?{" "}
-                <Link href="/auth/login" className="font-semibold text-[#C41230] hover:underline">
+                <Link href="/auth/login" className="font-semibold text-[#185FA5] hover:underline">
                   Sign in
                 </Link>
               </p>
@@ -112,19 +112,19 @@ export default function RegisterPage() {
 
   // ── Registration form ────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#F8F7F5] via-white to-[#F1EFE9] px-4 pt-24 pb-16">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#F8F9FF] via-white to-[#F1F5F9] px-4 pt-24 pb-16">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-150 h-150 rounded-full bg-[#C41230]/5" />
-        <div className="absolute -bottom-40 -left-40 w-125 h-125 rounded-full bg-[#1B2847]/5" />
+        <div className="absolute -top-40 -right-40 w-150 h-150 rounded-full bg-[#185FA5]/5" />
+        <div className="absolute -bottom-40 -left-40 w-125 h-125 rounded-full bg-[#0C447C]/5" />
       </div>
 
       <div className="w-full max-w-lg relative z-10">
         <div className="bg-white rounded-2xl shadow-[0_20px_60px_-12px_rgba(0,0,0,0.12),0_0_0_1px_rgba(228,224,217,0.8)] overflow-hidden">
-          <div className="h-1.5 bg-linear-to-r from-[#C41230] via-[#C8A84B] to-[#1B2847]" />
+          <div className="h-1.5 bg-linear-to-r from-[#185FA5] via-[#EF9F27] to-[#0C447C]" />
 
           <div className="p-8">
             <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#1B2847] mb-4 shadow-lg">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#0C447C] mb-4 shadow-lg">
                 <MapPin className="w-7 h-7 text-white" />
               </div>
               <h1 className="text-2xl font-bold text-[#111111]" style={{ fontFamily: "var(--font-playfair)" }}>
@@ -136,48 +136,48 @@ export default function RegisterPage() {
             </div>
 
             {error && (
-              <div className="mb-6 p-4 bg-[#FEE2E2] text-[#C41230] text-sm rounded-lg border border-[#FCA5A5]/50">
+              <div className="mb-6 p-4 bg-[#FEE2E2] text-[#185FA5] text-sm rounded-lg border border-[#FCA5A5]/50">
                 {error}
               </div>
             )}
 
             <form action={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-[#111] mb-1.5">Full Name <span className="text-[#C41230]">*</span></label>
+                <label className="block text-sm font-semibold text-[#111] mb-1.5">Full Name <span className="text-[#185FA5]">*</span></label>
                 <input
                   type="text"
                   name="name"
                   required
                   placeholder="John Doe"
-                  className="w-full h-12 px-4 rounded-lg border border-[#E4E0D9] text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#1B2847]/20 focus:border-[#1B2847] transition-all"
+                  className="w-full h-12 px-4 rounded-lg border border-[#E7E8EE] text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#0C447C]/20 focus:border-[#0C447C] transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-[#111] mb-1.5">Email Address <span className="text-[#C41230]">*</span></label>
+                <label className="block text-sm font-semibold text-[#111] mb-1.5">Email Address <span className="text-[#185FA5]">*</span></label>
                 <input
                   type="email"
                   name="email"
                   required
                   placeholder="john@example.com"
-                  className="w-full h-12 px-4 rounded-lg border border-[#E4E0D9] text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#1B2847]/20 focus:border-[#1B2847] transition-all"
+                  className="w-full h-12 px-4 rounded-lg border border-[#E7E8EE] text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#0C447C]/20 focus:border-[#0C447C] transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-[#111] mb-1.5">Password <span className="text-[#C41230]">*</span></label>
+                <label className="block text-sm font-semibold text-[#111] mb-1.5">Password <span className="text-[#185FA5]">*</span></label>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
                     required
                     placeholder="Create a strong password"
-                    className="w-full h-12 px-4 pr-12 rounded-lg border border-[#E4E0D9] text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#1B2847]/20 focus:border-[#1B2847] transition-all"
+                    className="w-full h-12 px-4 pr-12 rounded-lg border border-[#E7E8EE] text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#0C447C]/20 focus:border-[#0C447C] transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(p => !p)}
-                    className="absolute inset-y-0 right-0 flex items-center px-3 text-[#A8A29E] hover:text-[#1B2847] transition-colors"
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-[#A8A29E] hover:text-[#0C447C] transition-colors"
                     tabIndex={-1}
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
@@ -193,7 +193,7 @@ export default function RegisterPage() {
                     type="text"
                     name="country"
                     placeholder="e.g. USA"
-                    className="w-full h-12 px-4 rounded-lg border border-[#E4E0D9] text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#1B2847]/20 focus:border-[#1B2847] transition-all"
+                    className="w-full h-12 px-4 rounded-lg border border-[#E7E8EE] text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#0C447C]/20 focus:border-[#0C447C] transition-all"
                   />
                 </div>
                 <div>
@@ -202,7 +202,7 @@ export default function RegisterPage() {
                     type="text"
                     name="state"
                     placeholder="e.g. California"
-                    className="w-full h-12 px-4 rounded-lg border border-[#E4E0D9] text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#1B2847]/20 focus:border-[#1B2847] transition-all"
+                    className="w-full h-12 px-4 rounded-lg border border-[#E7E8EE] text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#0C447C]/20 focus:border-[#0C447C] transition-all"
                   />
                 </div>
               </div>
@@ -213,7 +213,7 @@ export default function RegisterPage() {
                   type="tel"
                   name="phone"
                   placeholder="+1 234 567 8900"
-                  className="w-full h-12 px-4 rounded-lg border border-[#E4E0D9] text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#1B2847]/20 focus:border-[#1B2847] transition-all"
+                  className="w-full h-12 px-4 rounded-lg border border-[#E7E8EE] text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#0C447C]/20 focus:border-[#0C447C] transition-all"
                 />
               </div>
 
@@ -224,7 +224,7 @@ export default function RegisterPage() {
                   id="dealSubscription"
                   name="dealSubscription"
                   value="true"
-                  className="mt-0.5 w-4 h-4 rounded border-[#E4E0D9] text-[#C41230] focus:ring-[#C41230]"
+                  className="mt-0.5 w-4 h-4 rounded border-[#E7E8EE] text-[#185FA5] focus:ring-[#185FA5]"
                 />
                 <label htmlFor="dealSubscription" className="text-sm text-[#7A746D] cursor-pointer">
                   Send me exclusive deals and discounts on tours
@@ -235,7 +235,7 @@ export default function RegisterPage() {
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="w-full h-12 bg-[#1B2847] hover:bg-[#2A3B66] text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="w-full h-12 bg-[#0C447C] hover:bg-[#08315E] text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {isPending ? (
                     <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Creating Account...</>
@@ -248,7 +248,7 @@ export default function RegisterPage() {
 
             <p className="text-center text-sm text-[#7A746D] mt-8">
               Already have an account?{" "}
-              <Link href="/auth/login" className="font-semibold text-[#C41230] hover:underline">
+              <Link href="/auth/login" className="font-semibold text-[#185FA5] hover:underline">
                 Sign in
               </Link>
             </p>

@@ -89,13 +89,13 @@ export function TourCard({
           {/* Featured / Likely to sell out badges (moved down/left to avoid conflict with wishlist) */}
           <div className="absolute top-14 left-3 flex flex-col gap-2 items-start opacity-90 group-hover:opacity-100 transition-opacity">
             {featured && (
-              <Badge variant="primary" className="text-[10px] sm:text-xs shadow-sm bg-[#1B2847] border-[#1B2847] py-0.5">
+              <Badge variant="primary" className="text-[10px] sm:text-xs shadow-sm bg-[#0C447C] border-[#0C447C] py-0.5">
                 <Star className="size-3 fill-current mr-1" />
                 Featured
               </Badge>
             )}
             {likelyToSellOut && (
-              <Badge variant="error" className="text-[10px] sm:text-xs shadow-sm bg-[#C41230] border-[#C41230] text-white flex items-center gap-1 py-0.5">
+              <Badge variant="error" className="text-[10px] sm:text-xs shadow-sm bg-[#185FA5] border-[#185FA5] text-white flex items-center gap-1 py-0.5">
                 <Clock className="size-3" />
                 Likely to Sell Out
               </Badge>

@@ -19,7 +19,7 @@ const DURATION_OPTS = [
 ];
 
 const selectCls =
-  "h-10 px-3 rounded-xl border border-[#E4E0D9] text-sm text-[#111] bg-white focus:outline-none focus:ring-2 focus:ring-[#C41230]/20 focus:border-[#C41230] transition";
+  "h-10 px-3 rounded-xl border border-[#E7E8EE] text-sm text-[#111] bg-white focus:outline-none focus:ring-2 focus:ring-[#185FA5]/20 focus:border-[#185FA5] transition";
 
 export function ToursFilterBar({ count }: { count: number }) {
   const router       = useRouter();
@@ -49,7 +49,7 @@ export function ToursFilterBar({ count }: { count: number }) {
     q || category !== "ALL" || difficulty !== "ALL" || minPrice || maxPrice || duration !== "ALL";
 
   return (
-    <div className="bg-white rounded-2xl border border-[#E4E0D9] shadow-(--shadow-card) p-5 mb-8">
+    <div className="bg-white rounded-2xl border border-[#E7E8EE] shadow-(--shadow-card) p-5 mb-8">
       {/* Row 1 — text search + dropdowns */}
       <div className="flex gap-3 flex-wrap items-end">
         <div className="relative flex-1 min-w-48">
@@ -57,7 +57,7 @@ export function ToursFilterBar({ count }: { count: number }) {
           <input
             defaultValue={q}
             placeholder="Search tours…"
-            className="w-full pl-9 pr-4 h-10 rounded-xl border border-[#E4E0D9] text-sm text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#C41230]/20 focus:border-[#C41230] bg-[#F8F7F5] transition"
+            className="w-full pl-9 pr-4 h-10 rounded-xl border border-[#E7E8EE] text-sm text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#185FA5]/20 focus:border-[#185FA5] bg-[#F8F9FF] transition"
             onKeyDown={(e) => {
               if (e.key === "Enter") update({ q: (e.target as HTMLInputElement).value });
             }}
@@ -86,7 +86,7 @@ export function ToursFilterBar({ count }: { count: number }) {
           <input
             type="number" min="0" placeholder="Min $"
             defaultValue={minPrice}
-            className="w-24 h-9 px-3 rounded-xl border border-[#E4E0D9] text-sm text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#C41230]/20 focus:border-[#C41230] bg-[#F8F7F5]"
+            className="w-24 h-9 px-3 rounded-xl border border-[#E7E8EE] text-sm text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#185FA5]/20 focus:border-[#185FA5] bg-[#F8F9FF]"
             onBlur={(e) => update({ minPrice: e.target.value })}
             onKeyDown={(e) => { if (e.key === "Enter") update({ minPrice: (e.target as HTMLInputElement).value }); }}
           />
@@ -94,7 +94,7 @@ export function ToursFilterBar({ count }: { count: number }) {
           <input
             type="number" min="0" placeholder="Max $"
             defaultValue={maxPrice}
-            className="w-24 h-9 px-3 rounded-xl border border-[#E4E0D9] text-sm text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#C41230]/20 focus:border-[#C41230] bg-[#F8F7F5]"
+            className="w-24 h-9 px-3 rounded-xl border border-[#E7E8EE] text-sm text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#185FA5]/20 focus:border-[#185FA5] bg-[#F8F9FF]"
             onBlur={(e) => update({ maxPrice: e.target.value })}
             onKeyDown={(e) => { if (e.key === "Enter") update({ maxPrice: (e.target as HTMLInputElement).value }); }}
           />
@@ -103,7 +103,7 @@ export function ToursFilterBar({ count }: { count: number }) {
         {hasFilters && (
           <button
             onClick={() => router.push(pathname)}
-            className="flex items-center gap-1.5 text-sm text-[#C41230] font-semibold hover:underline"
+            className="flex items-center gap-1.5 text-sm text-[#185FA5] font-semibold hover:underline"
           >
             <X className="size-3.5" /> Clear filters
           </button>

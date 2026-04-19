@@ -33,16 +33,16 @@ export function TourGallery({ coverImage, allImages, title, likelyToSellOut }: T
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 h-[300px] sm:h-[400px] md:h-[500px] relative group/gallery">
         {/* Main Cover */}
         <div
-          className={`md:col-span-3 rounded-2xl overflow-hidden relative cursor-pointer group ${!coverImage ? "bg-[#1B2847]" : ""}`}
+          className={`md:col-span-3 rounded-2xl overflow-hidden relative cursor-pointer group ${!coverImage ? "bg-[#0C447C]" : ""}`}
           onClick={() => openLightbox(0)}
         >
           {coverImage ? (
             <img src={coverImage} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-tr from-[#1B2847] to-[#C41230] opacity-80" />
+            <div className="absolute inset-0 bg-gradient-to-tr from-[#0C447C] to-[#185FA5] opacity-80" />
           )}
           {likelyToSellOut && (
-            <div className="absolute top-6 left-6 bg-[#C41230] text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-lg flex items-center gap-2">
+            <div className="absolute top-6 left-6 bg-[#185FA5] text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-lg flex items-center gap-2">
               <Clock className="size-4" /> Likely to Sell Out
             </div>
           )}
@@ -55,7 +55,7 @@ export function TourGallery({ coverImage, allImages, title, likelyToSellOut }: T
             return (
               <div
                 key={idx}
-                className={`flex-1 rounded-2xl overflow-hidden relative cursor-pointer group ${!img ? "bg-[#E4E0D9]" : ""}`}
+                className={`flex-1 rounded-2xl overflow-hidden relative cursor-pointer group ${!img ? "bg-[#E7E8EE]" : ""}`}
                 onClick={() => img && openLightbox(allImages.findIndex((i) => i.url === img.url))}
               >
                 {img ? (
@@ -150,7 +150,7 @@ export function GalleryCarousel({ images }: { images: TourImage[] }) {
                   key={i}
                   onClick={() => setCurrent(i)}
                   className={`w-2.5 h-2.5 rounded-full transition-all ${
-                    i === current ? "bg-[#C41230] w-6" : "bg-[#E4E0D9] hover:bg-[#A8A29E]"
+                    i === current ? "bg-[#185FA5] w-6" : "bg-[#E7E8EE] hover:bg-[#A8A29E]"
                   }`}
                 />
               ))}

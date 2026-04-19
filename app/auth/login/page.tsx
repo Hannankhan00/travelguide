@@ -52,22 +52,22 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#F8F7F5] via-white to-[#F1EFE9] px-4 pt-24 pb-16">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#F8F9FF] via-white to-[#F1F5F9] px-4 pt-24 pb-16">
       {/* Decorative background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-150 h-150 rounded-full bg-[#C41230]/5" />
-        <div className="absolute -bottom-40 -left-40 w-125 h-125 rounded-full bg-[#1B2847]/5" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-200 h-200 rounded-full border border-[#E4E0D9]/60" />
+        <div className="absolute -top-40 -right-40 w-150 h-150 rounded-full bg-[#185FA5]/5" />
+        <div className="absolute -bottom-40 -left-40 w-125 h-125 rounded-full bg-[#0C447C]/5" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-200 h-200 rounded-full border border-[#E7E8EE]/60" />
       </div>
 
       <div className="w-full max-w-md relative z-10">
         <div className="bg-white rounded-2xl shadow-[0_20px_60px_-12px_rgba(0,0,0,0.12),0_0_0_1px_rgba(228,224,217,0.8)] overflow-hidden">
           {/* Header stripe */}
-          <div className="h-1.5 bg-linear-to-r from-[#C41230] via-[#C8A84B] to-[#1B2847]" />
+          <div className="h-1.5 bg-linear-to-r from-[#185FA5] via-[#EF9F27] to-[#0C447C]" />
 
           <div className="p-8">
             <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#C41230] mb-4 shadow-lg">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#185FA5] mb-4 shadow-lg">
                 <MapPin className="w-7 h-7 text-white" />
               </div>
               <h1 className="text-2xl font-bold text-[#111111]" style={{ fontFamily: "var(--font-playfair)" }}>
@@ -95,7 +95,7 @@ function LoginForm() {
             )}
 
             {error && !unverifiedEmail && (
-              <div className="mb-6 p-4 bg-[#FEE2E2] text-[#C41230] text-sm rounded-lg border border-[#FCA5A5]/50">
+              <div className="mb-6 p-4 bg-[#FEE2E2] text-[#185FA5] text-sm rounded-lg border border-[#FCA5A5]/50">
                 {error}
               </div>
             )}
@@ -103,9 +103,9 @@ function LoginForm() {
             {unverifiedEmail && (
               <div className="mb-6 p-4 bg-[#EEF4FF] rounded-xl border border-[#BFDBFE]">
                 <div className="flex items-start gap-3 mb-3">
-                  <Mail className="w-5 h-5 text-[#1B2847] mt-0.5 shrink-0" />
+                  <Mail className="w-5 h-5 text-[#0C447C] mt-0.5 shrink-0" />
                   <div>
-                    <p className="text-sm font-semibold text-[#1B2847]">Email not verified</p>
+                    <p className="text-sm font-semibold text-[#0C447C]">Email not verified</p>
                     <p className="text-xs text-[#7A746D] mt-0.5">
                       Verify <strong>{unverifiedEmail}</strong> to sign in.
                     </p>
@@ -115,10 +115,10 @@ function LoginForm() {
                   type="button"
                   onClick={handleResend}
                   disabled={resendState !== "idle" || isPending}
-                  className="inline-flex items-center gap-2 text-xs font-semibold text-[#1B2847] hover:text-[#C41230] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-2 text-xs font-semibold text-[#0C447C] hover:text-[#185FA5] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {resendState === "sending" ? (
-                    <><span className="w-3.5 h-3.5 border-2 border-[#1B2847]/30 border-t-[#1B2847] rounded-full animate-spin" /> Sending...</>
+                    <><span className="w-3.5 h-3.5 border-2 border-[#0C447C]/30 border-t-[#0C447C] rounded-full animate-spin" /> Sending...</>
                   ) : resendState === "sent" ? (
                     <><CheckCircle className="w-3.5 h-3.5 text-[#1B7849]" /> Verification email sent!</>
                   ) : (
@@ -129,7 +129,7 @@ function LoginForm() {
             )}
 
             {callbackUrl.startsWith("/booking/") && (
-              <div className="mb-6 p-4 bg-[#FFF0F2] border border-[#C41230]/20 rounded-xl text-sm text-[#C41230] font-medium">
+              <div className="mb-6 p-4 bg-[#FFF0F2] border border-[#185FA5]/20 rounded-xl text-sm text-[#185FA5] font-medium">
                 You need to be signed in to book a tour. Log in below and you'll be taken straight to checkout.
               </div>
             )}
@@ -144,21 +144,21 @@ function LoginForm() {
                   name="email"
                   required
                   placeholder="john@example.com"
-                  className="w-full h-12 px-4 rounded-lg border border-[#E4E0D9] text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#C41230]/20 focus:border-[#C41230] transition-all"
+                  className="w-full h-12 px-4 rounded-lg border border-[#E7E8EE] text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#185FA5]/20 focus:border-[#185FA5] transition-all"
                 />
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-sm font-semibold text-[#111]">Password</label>
-                  <Link href="/auth/forgot-password" className="text-xs text-[#C41230] hover:underline">Forgot password?</Link>
+                  <Link href="/auth/forgot-password" className="text-xs text-[#185FA5] hover:underline">Forgot password?</Link>
                 </div>
                 <input
                   type="password"
                   name="password"
                   required
                   placeholder="••••••••"
-                  className="w-full h-12 px-4 rounded-lg border border-[#E4E0D9] text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#C41230]/20 focus:border-[#C41230] transition-all"
+                  className="w-full h-12 px-4 rounded-lg border border-[#E7E8EE] text-[#111] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-[#185FA5]/20 focus:border-[#185FA5] transition-all"
                 />
               </div>
 
@@ -166,7 +166,7 @@ function LoginForm() {
                 <button
                   type="submit"
                   disabled={isPending || loadingGoogle}
-                  className="w-full h-12 bg-[#C41230] hover:bg-[#A00F27] text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="w-full h-12 bg-[#185FA5] hover:bg-[#12487F] text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {isPending ? (
                      <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Signing In...</>
@@ -178,9 +178,9 @@ function LoginForm() {
             </form>
 
             <div className="flex items-center gap-3 mb-6">
-              <div className="flex-1 h-px bg-[#E4E0D9]" />
+              <div className="flex-1 h-px bg-[#E7E8EE]" />
               <span className="text-xs text-[#A8A29E] font-medium uppercase tracking-wider">Or</span>
-              <div className="flex-1 h-px bg-[#E4E0D9]" />
+              <div className="flex-1 h-px bg-[#E7E8EE]" />
             </div>
 
             {/* Google Sign In */}
@@ -196,7 +196,7 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={loadingGoogle || isPending}
-                className="w-full h-12 rounded-lg border border-[#E4E0D9] bg-white text-sm font-medium text-[#111111] hover:bg-[#F8F7F5] active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-3 shadow-sm"
+                className="w-full h-12 rounded-lg border border-[#E7E8EE] bg-white text-sm font-medium text-[#111111] hover:bg-[#F8F9FF] active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-3 shadow-sm"
               >
                 {loadingGoogle ? (
                   <>
@@ -221,7 +221,7 @@ function LoginForm() {
               Don&apos;t have an account?{" "}
               <Link
                 href={`/auth/register${callbackUrl !== "/" ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`}
-                className="font-semibold text-[#1B2847] hover:underline"
+                className="font-semibold text-[#0C447C] hover:underline"
               >
                 Sign up
               </Link>

@@ -70,7 +70,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const primaryImage = tour.images.find(img => img.isPrimary)?.url || tour.images[0]?.url;
 
   return (
-    <div className="bg-[#F8F7F5] min-h-screen pt-28 pb-12">
+    <div className="bg-[#F8F9FF] min-h-screen pt-28 pb-12">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="mb-8">
@@ -93,7 +93,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
           {/* Right Column: Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl border border-[#E4E0D9] shadow-sm overflow-hidden sticky top-24">
+            <div className="bg-white rounded-2xl border border-[#E7E8EE] shadow-sm overflow-hidden sticky top-24">
               {primaryImage && (
                 <div className="relative h-48 w-full">
                   <Image src={primaryImage} alt={tour.title} fill className="object-cover" />
@@ -108,7 +108,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
                 <div className="space-y-4 mb-6 text-sm text-[#111]">
                   <div className="flex items-center gap-3">
-                    <Calendar className="size-5 text-[#C8A84B]" />
+                    <Calendar className="size-5 text-[#EF9F27]" />
                     <div>
                       <span className="block font-semibold">Date</span>
                       <span className="text-[#545454]">{new Date(dateParam).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
@@ -116,7 +116,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                   </div>
                   
                   <div className="flex items-center gap-3">
-                    <Clock className="size-5 text-[#C8A84B]" />
+                    <Clock className="size-5 text-[#EF9F27]" />
                     <div>
                       <span className="block font-semibold">Duration</span>
                       <span className="text-[#545454]">{tour.duration} {tour.durationType}</span>
@@ -124,7 +124,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <Users className="size-5 text-[#C8A84B]" />
+                    <Users className="size-5 text-[#EF9F27]" />
                     <div>
                       <span className="block font-semibold">Participants</span>
                       <span className="text-[#545454]">{adults} Adult(s){children > 0 ? `, ${children} Child(ren)` : ''}</span>
@@ -132,7 +132,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                   </div>
                 </div>
 
-                <div className="border-t border-[#E4E0D9] pt-4 space-y-2 mb-4">
+                <div className="border-t border-[#E7E8EE] pt-4 space-y-2 mb-4">
                   {isGroup ? (
                     <div className="flex justify-between text-sm">
                       <span className="text-[#545454]">{groupUnits} × ${basePrice} (per {baseGroupSize} guests)</span>
@@ -154,12 +154,12 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                   )}
                 </div>
 
-                <div className="border-t border-[#E4E0D9] pt-4 flex justify-between items-end">
+                <div className="border-t border-[#E7E8EE] pt-4 flex justify-between items-end">
                   <div>
                     <span className="font-bold text-[#111] block">Total</span>
                     <span className="text-xs text-[#7A746D]">Taxes and fees included</span>
                   </div>
-                  <span className="text-2xl font-bold font-display text-[#C41230]">${totalPrice.toFixed(2)}</span>
+                  <span className="text-2xl font-bold font-display text-[#185FA5]">${totalPrice.toFixed(2)}</span>
                 </div>
               </div>
             </div>
