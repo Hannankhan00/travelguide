@@ -36,6 +36,11 @@ export function Navbar({ isLoggedIn = false, destinations = [] }: NavbarProps) {
   }, []);
 
   useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [menuOpen]);
+
+  useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setProfileMenuOpen(false);
@@ -276,80 +281,191 @@ export function Navbar({ isLoggedIn = false, destinations = [] }: NavbarProps) {
         </>
       )}
 
-      {/* Mobile menu */}
+      {/* Mobile drawer backdrop */}
       {menuOpen && (
-        <div className="md:hidden bg-white border-t border-[#E7E8EE] animate-fade-in">
-          <div className="px-4 py-3 flex flex-col gap-1">
+        <div
+          className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+          style={{ top: 0 }}
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile slide-in drawer */}
+      <div
+        className={cn(
+          "md:hidden fixed top-0 right-0 bottom-0 z-50 w-[82vw] max-w-[320px] bg-white flex flex-col shadow-2xl transition-transform duration-300 ease-in-out",
+          menuOpen ? "translate-x-0" : "translate-x-full"
+        )}
+      >
+        {/* Drawer header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E7E8EE]">
+          <Image
+            src="/asstes/logoo.PNG"
+            alt="GoTripJapan"
+            width={140}
+            height={36}
+            className="h-9 w-auto object-contain"
+          />
+          <button
+            onClick={() => setMenuOpen(false)}
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-[#F2F3FA] hover:bg-[#E7E8EE] transition-colors"
+          >
+            <X className="size-4 text-[#191C20]" />
+          </button>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto">
+
+          {/* Account section */}
+          <div className="px-4 py-4 border-b border-[#E7E8EE]">
+            {!isLoggedIn ? (
+              <Link
+                href="?auth=login"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-3 w-full bg-[#C41230] hover:bg-[#A00F27] text-white font-semibold text-sm px-4 py-3 rounded-xl transition-colors"
+              >
+                <LogIn className="size-4 shrink-0" />
+                Log in or sign up
+              </Link>
+            ) : (
+              <div className="flex items-center gap-3 px-3 py-2">
+                <div className="w-10 h-10 rounded-full bg-[#1B2847] flex items-center justify-center shrink-0">
+                  <User className="size-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[#191C20]">My Account</p>
+                  <p className="text-xs text-[#7A746D]">Manage your trips</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* My trips group */}
+          {isLoggedIn && (
+            <div className="px-4 py-3 border-b border-[#E7E8EE]">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#7A746D] px-2 mb-2">My Trips</p>
+              <Link
+                href="/bookings"
+                onClick={() => setMenuOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-colors",
+                  pathname === "/bookings" ? "bg-[#E6F1FB] text-[#185FA5]" : "text-[#191C20] hover:bg-[#F2F3FA]"
+                )}
+              >
+                <div className="w-8 h-8 rounded-lg bg-[#E6F1FB] flex items-center justify-center shrink-0">
+                  <Ticket className="size-4 text-[#185FA5]" />
+                </div>
+                Bookings
+                <ChevronRight className="size-4 text-[#A8A29E] ml-auto" />
+              </Link>
+              <Link
+                href="/wishlist"
+                onClick={() => setMenuOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-colors",
+                  pathname === "/wishlist" ? "bg-[#FFF1F3] text-[#C41230]" : "text-[#191C20] hover:bg-[#F2F3FA]"
+                )}
+              >
+                <div className="w-8 h-8 rounded-lg bg-[#FFF1F3] flex items-center justify-center shrink-0">
+                  <Heart className="size-4 text-[#C41230]" />
+                </div>
+                Wishlist
+                <ChevronRight className="size-4 text-[#A8A29E] ml-auto" />
+              </Link>
+            </div>
+          )}
+
+          {/* Wishlist for guests */}
+          {!isLoggedIn && (
+            <div className="px-4 py-3 border-b border-[#E7E8EE]">
+              <Link
+                href="/wishlist"
+                onClick={() => setMenuOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-colors",
+                  pathname === "/wishlist" ? "bg-[#FFF1F3] text-[#C41230]" : "text-[#191C20] hover:bg-[#F2F3FA]"
+                )}
+              >
+                <div className="w-8 h-8 rounded-lg bg-[#FFF1F3] flex items-center justify-center shrink-0">
+                  <Heart className="size-4 text-[#C41230]" />
+                </div>
+                Wishlist
+                <ChevronRight className="size-4 text-[#A8A29E] ml-auto" />
+              </Link>
+            </div>
+          )}
+
+          {/* Explore group */}
+          <div className="px-4 py-3 border-b border-[#E7E8EE]">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#7A746D] px-2 mb-2">Explore</p>
             <Link
               href="/tours"
-              className="px-4 py-2.5 text-sm font-medium text-[#191C20] rounded-lg hover:bg-[#F2F3FA]"
               onClick={() => setMenuOpen(false)}
+              className={cn(
+                "flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-colors",
+                isToursActive ? "bg-[#E6F1FB] text-[#185FA5]" : "text-[#191C20] hover:bg-[#F2F3FA]"
+              )}
             >
-              Tours
+              <div className="w-8 h-8 rounded-lg bg-[#E6F1FB] flex items-center justify-center shrink-0">
+                <MapPin className="size-4 text-[#185FA5]" />
+              </div>
+              All Tours
+              <ChevronRight className="size-4 text-[#A8A29E] ml-auto" />
             </Link>
+          </div>
 
-            {destinations.length > 0 && (
-              <div className="pt-1">
-                <p className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[#185FA5]">Destinations</p>
-                {destinations.map((dest) => (
-                  <div key={dest.id}>
-                    <p className="px-4 pt-2 pb-0.5 text-[10px] font-bold uppercase tracking-widest text-[#7A746D]">{dest.name}</p>
-                    {dest.places.map((place) => (
+          {/* Destinations group */}
+          {destinations.length > 0 && (
+            <div className="px-4 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#7A746D] px-2 mb-2">Destinations</p>
+              {destinations.map((dest) => (
+                <div key={dest.id} className="mb-3">
+                  <p className="px-3 pb-1 text-[11px] font-bold text-[#1B2847] uppercase tracking-wider">{dest.name}</p>
+                  <div className="grid grid-cols-2 gap-1">
+                    {dest.places.slice(0, 6).map((place) => (
                       <Link
                         key={place.id}
                         href={"/tours?q=" + encodeURIComponent(place.linkQuery ?? place.name)}
                         onClick={() => setMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-[#191C20] hover:bg-[#F2F3FA] rounded-lg"
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-[#191C20] hover:bg-[#F2F3FA] rounded-lg transition-colors"
                       >
-                        <MapPin className="size-4 text-[#185FA5] shrink-0" />
-                        {place.name}
+                        <div className="w-6 h-6 rounded overflow-hidden shrink-0 bg-[#E7E8EE]">
+                          {place.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={place.imageUrl} alt={place.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <MapPin className="size-3 text-[#A8A29E] m-auto" />
+                          )}
+                        </div>
+                        <span className="text-xs font-medium truncate">{place.name}</span>
                       </Link>
                     ))}
                   </div>
-                ))}
-              </div>
-            )}
-
-            <div className="pt-2 mt-1 border-t border-[#E7E8EE] flex flex-col gap-2">
-              {isLoggedIn && (
-                <Link
-                  href="/bookings"
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#191C20] hover:bg-[#F2F3FA] rounded-lg transition-colors"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <Ticket className="size-5 text-[#7A746D]" /> Bookings
-                </Link>
-              )}
-              <Link
-                href="/wishlist"
-                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#191C20] hover:bg-[#F2F3FA] rounded-lg transition-colors"
-                onClick={() => setMenuOpen(false)}
-              >
-                <Heart className="size-5 text-[#7A746D]" /> Wishlist
-              </Link>
-              {!isLoggedIn ? (
-                <Link
-                  href="?auth=login"
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#191C20] hover:bg-[#F2F3FA] rounded-lg transition-colors"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <LogIn className="size-5 text-[#7A746D]" /> Log in or sign up
-                </Link>
-              ) : (
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    signOut({ callbackUrl: "/" });
-                  }}
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#DC2626] hover:bg-[#FEE2E2]/50 rounded-lg transition-colors w-full text-left"
-                >
-                  <LogOut className="size-5 text-[#DC2626]" /> Log out
-                </button>
-              )}
+                </div>
+              ))}
             </div>
-          </div>
+          )}
         </div>
-      )}
+
+        {/* Drawer footer */}
+        <div className="border-t border-[#E7E8EE] px-4 py-4">
+          {isLoggedIn ? (
+            <button
+              onClick={() => { setMenuOpen(false); signOut({ callbackUrl: "/" }); }}
+              className="flex items-center gap-3 w-full px-3 py-3 rounded-xl text-sm font-semibold text-[#DC2626] hover:bg-[#FEE2E2] transition-colors"
+            >
+              <LogOut className="size-4 shrink-0" />
+              Log out
+            </button>
+          ) : (
+            <p className="text-xs text-center text-[#7A746D]">
+              <Link href="/tours" onClick={() => setMenuOpen(false)} className="text-[#185FA5] font-semibold hover:underline">Browse tours</Link>
+              {" "}to start planning your Japan trip.
+            </p>
+          )}
+        </div>
+      </div>
     </header>
   );
 }
