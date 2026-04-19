@@ -69,13 +69,15 @@ export function Footer() {
             {/* Social links */}
             <div className="flex items-center gap-3">
               {[
-                { Icon: Share2, label: "Instagram" },
-                { Icon: Tv,     label: "Facebook"  },
-                { Icon: Play,   label: "YouTube"   },
-              ].map(({ Icon, label }) => (
+                { Icon: Share2, label: "Instagram", href: "#" },
+                { Icon: Tv,     label: "Facebook", href: "https://www.facebook.com/GoTripJapan" },
+                { Icon: Play,   label: "YouTube", href: "#"   },
+              ].map(({ Icon, label, href }) => (
                 <a
                   key={label}
-                  href="#"
+                  href={href}
+                  target={href !== "#" ? "_blank" : undefined}
+                  rel={href !== "#" ? "noopener noreferrer" : undefined}
                   aria-label={label}
                   className="w-10 h-10 rounded-xl bg-white/8 hover:bg-[#185FA5] transition-colors flex items-center justify-center border border-white/10"
                 >
