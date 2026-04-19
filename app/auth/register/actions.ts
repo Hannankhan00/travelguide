@@ -19,12 +19,17 @@ export async function registerUserAction(formData: FormData) {
     return { error: "Name, email, and password are required." };
   }
 
-  try {
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
-      return { error: "An account with this email already exists." };
+  // Check duplicate before creating anything
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+  if (existingUser) {
+    // If they exist but are unverified, let them proceed to re-send verification
+    if (!existingUser.emailVerified) {
+      return { needsVerification: true, email };
     }
+    return { error: "An account with this email already exists." };
+  }
 
+  try {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await prisma.user.create({
@@ -39,19 +44,23 @@ export async function registerUserAction(formData: FormData) {
         dealSubscription,
       },
     });
+  } catch (error) {
+    console.error("User create error:", error);
+    return { error: "Failed to create account. Please try again." };
+  }
 
-    // Generate a secure verification token
+  // Account created — now send verification email independently
+  try {
     const rawToken    = crypto.randomBytes(32).toString("hex");
     const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
     const expires     = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 h
 
-    // Upsert so re-registrations don't leave stale tokens
     await prisma.verificationToken.deleteMany({ where: { identifier: email } });
     await prisma.verificationToken.create({
       data: { identifier: email, token: hashedToken, expires },
     });
 
-    const baseUrl  = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+    const baseUrl   = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
     const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${rawToken}&email=${encodeURIComponent(email)}`;
 
     await sendEmail({
@@ -60,7 +69,6 @@ export async function registerUserAction(formData: FormData) {
       html:    emailVerificationHtml({ name, verifyUrl }),
     });
 
-    // Log the email
     await prisma.emailLog.create({
       data: {
         to:      email,
@@ -69,13 +77,13 @@ export async function registerUserAction(formData: FormData) {
         status:  "SENT",
         sentAt:  new Date(),
       },
-    });
-
-    return { needsVerification: true, email };
+    }).catch(() => {}); // log failure is non-critical
   } catch (error) {
-    console.error("Registration error:", error);
-    return { error: "Failed to create account. Please try again." };
+    console.error("Verification email error:", error);
+    // Account exists — show verification screen so user can use "Resend" button
   }
+
+  return { needsVerification: true, email };
 }
 
 export async function resendVerificationAction(email: string) {

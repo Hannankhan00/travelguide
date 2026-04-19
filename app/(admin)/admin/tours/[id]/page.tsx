@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 import { TourForm } from "../new/TourForm";
+import { TourImageManager } from "@/components/admin/TourImageManager";
 
 async function getTour(id: string) {
   const tour = await prisma.tour.findUnique({
@@ -100,6 +101,20 @@ export default async function EditTourPage(
           <CalendarDays className="size-4" /> Manage Availability
         </Link>
       </div>
+      {/* ── Existing photos — manage inline, changes save instantly ── */}
+      <div className="bg-white rounded-2xl border border-[#E4E0D9] p-6 shadow-sm">
+        <TourImageManager
+          tourId={tour.id}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          initialImages={(tour.images as any[]).map(i => ({
+            id: i.id,
+            url: i.url,
+            isPrimary: i.isPrimary,
+            altText: i.altText ?? null,
+          }))}
+        />
+      </div>
+
       <TourForm initialData={initialData} />
     </div>
   );

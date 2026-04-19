@@ -69,7 +69,7 @@ export function Navbar({ transparent = false, isLoggedIn = false, destinations =
               alt="GoTripJapan"
               width={200}
               height={50}
-              className="h-9.5 w-auto object-contain"
+              className="h-12 w-auto object-contain"
               priority
             />
           </Link>

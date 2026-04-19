@@ -8,6 +8,8 @@ import { ReviewSection } from "@/components/public/ReviewSection";
 import { BookingWidget } from "@/components/public/BookingWidget";
 import { WishlistButton } from "@/components/public/WishlistButton";
 import { MobileBookingCTA } from "@/components/public/MobileBookingCTA";
+import { ExpandableDescription } from "@/components/public/ExpandableDescription";
+import { ItineraryTimeline } from "@/components/public/ItineraryTimeline";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -103,12 +105,35 @@ export default async function TourDetailPage({ params }: PageProps) {
 
   const descParagraphs = tour.description.split("\n").filter(p => p.trim().length > 0);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const relatedRaw = await (prisma.tour.findMany as any)({
+    where: { category: tour.category, status: "PUBLISHED", NOT: { id: tour.id } },
+    take: 4,
+    orderBy: { rating: "desc" },
+    include: { images: { orderBy: { order: "asc" }, take: 1 } },
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const relatedTours = relatedRaw.map((t: any) => ({
+    id: t.id,
+    slug: t.slug,
+    title: t.title,
+    shortDescription: t.shortDescription,
+    basePrice: Number(t.basePrice),
+    rating: Number(t.rating ?? 0),
+    reviewCount: t.reviewCount,
+    duration: t.duration,
+    durationType: t.durationType,
+    coverImage: t.images[0]?.url ?? null,
+  }));
+
   return (
     <div className="bg-[#F8F7F5] min-h-screen pt-24 md:pt-28 pb-28 md:pb-20">
 
-      {/* Breadcrumbs & Wishlist */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 pb-6">
-        <div className="flex items-center justify-between gap-4">
+      {/* ── Full-width header block ─────────────── */}
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 pb-8">
+
+        {/* Breadcrumbs & Wishlist */}
+        <div className="flex items-center justify-between gap-4 mb-6">
           <div className="flex items-center text-sm text-[#7A746D] overflow-hidden">
             <Link href="/" className="hover:text-[#1B2847] hover:underline transition-colors shrink-0">Home</Link>
             <ChevronRight className="size-4 mx-2 shrink-0" />
@@ -118,89 +143,72 @@ export default async function TourDetailPage({ params }: PageProps) {
           </div>
           <WishlistButton tourId={tour.id} isWishlistedInitial={isWishlisted} showText={true} className="shrink-0" />
         </div>
+
+        {/* Tags */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <span className="bg-[#1B2847] text-white text-xs font-bold px-3 py-1 rounded-md tracking-widest uppercase">
+            {tour.category.replace(/_/g, " ")}
+          </span>
+          {tourData.difficulty && (
+            <span className={`text-xs font-bold px-3 py-1 rounded-md ${DIFFICULTY_COLOR[tourData.difficulty] ?? "bg-[#F3F4F6] text-[#6B7280]"}`}>
+              <Zap className="size-3 inline mr-1" />
+              {DIFFICULTY_LABEL[tourData.difficulty] ?? tourData.difficulty}
+            </span>
+          )}
+        </div>
+
+        {/* Title */}
+        <h1 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold text-[#111] leading-tight mb-3">{tour.title}</h1>
+
+        {/* Rating + short description row */}
+        <div className="flex flex-wrap items-center gap-4 mb-2">
+          {avgRating > 0 && (
+            <div className="flex items-center gap-2">
+              <div className="flex">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className={`size-4.5 ${i < Math.floor(avgRating) ? "text-[#D4AF37] fill-[#D4AF37]" : "text-[#E4E0D9] fill-[#E4E0D9]"}`} />
+                ))}
+              </div>
+              <span className="font-bold text-[#111]">{avgRating.toFixed(1)}</span>
+              {tourData.reviewCount > 0 && (
+                <a href="#reviews" className="text-sm text-[#7A746D] hover:underline">
+                  ({tourData.reviewCount} {tourData.reviewCount === 1 ? "review" : "reviews"})
+                </a>
+              )}
+            </div>
+          )}
+          <span className="hidden sm:block text-[#E4E0D9]">·</span>
+          <div className="flex flex-wrap items-center gap-4 text-sm text-[#545454]">
+            <span className="flex items-center gap-1.5"><Clock className="size-4 text-[#C41230]" />{tour.duration} {tour.durationType}</span>
+            <span className="flex items-center gap-1.5"><MapPin className="size-4 text-[#C41230]" />{tour.location}</span>
+            <span className="flex items-center gap-1.5"><Users className="size-4 text-[#C41230]" />Up to {tour.maxGroupSize} people</span>
+            {languages.length > 0 && <span className="flex items-center gap-1.5"><Globe className="size-4 text-[#C41230]" />{languages.join(", ")}</span>}
+          </div>
+        </div>
       </div>
 
-      {/* Hero Gallery */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 mb-10">
-        <TourGallery
-          coverImage={coverImage}
-          allImages={allImages}
-          title={tour.title}
-          likelyToSellOut={tour.likelyToSellOut}
-        />
-      </div>
-
-      {/* Content Layout */}
+      {/* ── Two-column content grid ─────────────── */}
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-14">
 
           {/* ── Left Column ─────────────────────── */}
-          <div className="lg:col-span-2 space-y-12">
+          <div className="lg:col-span-2 space-y-10">
 
-            {/* Header */}
-            <div>
-              <div className="flex flex-wrap items-center gap-2 mb-4">
-                <span className="bg-[#1B2847] text-white text-xs font-bold px-3 py-1 rounded-md tracking-widest uppercase">
-                  {tour.category.replace(/_/g, " ")}
-                </span>
-                {tourData.difficulty && (
-                  <span className={`text-xs font-bold px-3 py-1 rounded-md ${DIFFICULTY_COLOR[tourData.difficulty] ?? "bg-[#F3F4F6] text-[#6B7280]"}`}>
-                    <Zap className="size-3 inline mr-1" />
-                    {DIFFICULTY_LABEL[tourData.difficulty] ?? tourData.difficulty}
-                  </span>
-                )}
-              </div>
+            {/* Hero Gallery */}
+            <TourGallery
+              coverImage={coverImage}
+              allImages={allImages}
+              title={tour.title}
+              likelyToSellOut={tour.likelyToSellOut}
+            />
 
-              <h1 className="text-4xl md:text-5xl font-display font-bold text-[#111] leading-tight mb-4">{tour.title}</h1>
-
-              {/* Rating row */}
-              {avgRating > 0 && (
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="flex">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className={`size-5 ${i < Math.floor(avgRating) ? "text-[#D4AF37] fill-[#D4AF37]" : "text-[#E4E0D9] fill-[#E4E0D9]"}`} />
-                    ))}
-                  </div>
-                  <span className="font-bold text-[#111]">{avgRating.toFixed(1)}</span>
-                  {tourData.reviewCount > 0 && (
-                    <a href="#reviews" className="text-sm text-[#7A746D] hover:underline">
-                      ({tourData.reviewCount} {tourData.reviewCount === 1 ? "review" : "reviews"})
-                    </a>
-                  )}
-                </div>
-              )}
-
-              <p className="text-xl text-[#545454] leading-relaxed mb-6">{tour.shortDescription}</p>
-
-              {/* Quick Info Bar */}
-              <div className="flex flex-wrap items-center gap-6 py-4 border-y border-[#E4E0D9]">
-                <div className="flex items-center gap-2 text-[#111]">
-                  <Clock className="size-5 text-[#C41230]" />
-                  <span className="font-medium">{tour.duration} {tour.durationType}</span>
-                </div>
-                <div className="flex items-center gap-2 text-[#111]">
-                  <Users className="size-5 text-[#C41230]" />
-                  <span className="font-medium">Up to {tour.maxGroupSize} people</span>
-                </div>
-                <div className="flex items-center gap-2 text-[#111]">
-                  <MapPin className="size-5 text-[#C41230]" />
-                  <span className="font-medium">{tour.location}</span>
-                </div>
-                {languages.length > 0 && (
-                  <div className="flex items-center gap-2 text-[#111]">
-                    <Globe className="size-5 text-[#C41230]" />
-                    <span className="font-medium">{languages.join(", ")}</span>
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* Short description */}
+            <p className="text-lg text-[#545454] leading-relaxed">{tour.shortDescription}</p>
 
             {/* About */}
             <section>
-              <h2 className="text-2xl font-bold font-display text-[#111] mb-6">About this activity</h2>
-              <div className="space-y-4 text-lg text-[#545454] leading-relaxed">
-                {descParagraphs.map((para, i) => <p key={i}>{para}</p>)}
-              </div>
+              <h2 className="text-2xl font-bold font-display text-[#111] mb-5">About this activity</h2>
+              <ExpandableDescription paragraphs={descParagraphs} />
             </section>
 
             {/* Highlights */}
@@ -268,106 +276,16 @@ export default async function TourDetailPage({ params }: PageProps) {
               </section>
             )}
 
-            {/* Itinerary — GYG-style vertical timeline */}
+            {/* Itinerary */}
             {itinerary.length > 0 && (
               <section>
                 <h2 className="text-2xl font-bold font-display text-[#111] mb-2">Itinerary</h2>
                 <p className="text-sm text-[#7A746D] mb-8">For reference only. Itineraries are subject to change.</p>
-
-                <div className="relative">
-                  {/* ── Vertical spine line ── */}
-                  <div className="absolute left-5 top-5 bottom-5 w-0.5 bg-[#C41230]" />
-
-                  {/* ── Start node: Meeting Point ── */}
-                  <div className="relative flex items-start gap-5 pb-8">
-                    <div className="relative z-10 w-10 h-10 rounded-full bg-[#C41230] flex items-center justify-center shrink-0 shadow-md">
-                      <MapPin className="size-5 text-white" />
-                    </div>
-                    <div className="pt-1.5">
-                      <p className="text-xs font-bold text-[#C41230] uppercase tracking-widest mb-0.5">Start point</p>
-                      <p className="font-bold text-[#111] text-base">{tourData.meetingPoint}</p>
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(tourData.meetingPoint)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-[#C41230] hover:underline mt-1"
-                      >
-                        <MapPin className="size-3" />
-                        Open in Google Maps
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* ── Itinerary stops ── */}
-                  {itinerary.map((stop, i) => (
-                    <div
-                      key={i}
-                      className={`relative flex items-start gap-5 pb-8 ${stop.isOptional ? "opacity-55" : ""}`}
-                    >
-                      {/* Icon circle */}
-                      <div className={`relative z-10 shrink-0 flex items-center justify-center rounded-full shadow
-                        ${stop.isOptional
-                          ? "w-8 h-8 mt-1 bg-white border-2 border-dashed border-[#A8A29E]"
-                          : "w-10 h-10 bg-[#1B2847]"
-                        }`}>
-                        <MapPin className={`${stop.isOptional ? "size-4 text-[#A8A29E]" : "size-5 text-white"}`} />
-                      </div>
-
-                      {/* Content */}
-                      <div className={`flex-1 pt-1.5 ${stop.isOptional ? "ml-1" : ""}`}>
-                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                          <h3 className={`font-bold text-base leading-snug ${stop.isOptional ? "text-[#6B7280]" : "text-[#111]"}`}>
-                            {stop.title}
-                          </h3>
-                          {stop.isOptional && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-[#9CA3AF] border border-dashed border-[#D1D5DB] px-2 py-0.5 rounded-full italic">
-                              Optional
-                            </span>
-                          )}
-                        </div>
-                        {stop.description && (
-                          <p className="text-sm text-[#545454] mb-1.5 leading-relaxed">{stop.description}</p>
-                        )}
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-[#7A746D]">
-                          <Clock className="size-3.5" />
-                          {stop.stayMinutes} minutes
-                        </span>
-                      </div>
-
-                      {/* Connector dots between stops */}
-                      {i < itinerary.length - 1 && !stop.isOptional && (
-                        <div className="absolute left-5 bottom-2 flex flex-col items-center gap-1 -translate-x-1/2">
-                          <span className="w-1 h-1 rounded-full bg-[#C41230] opacity-60" />
-                          <span className="w-1 h-1 rounded-full bg-[#C41230] opacity-40" />
-                          <span className="w-1 h-1 rounded-full bg-[#C41230] opacity-20" />
-                        </div>
-                      )}
-                    </div>
-                  ))}
-
-                  {/* ── End node: End Point or same as start ── */}
-                  <div className="relative flex items-start gap-5">
-                    <div className="relative z-10 w-10 h-10 rounded-full bg-[#C41230] flex items-center justify-center shrink-0 shadow-md">
-                      <MapPin className="size-5 text-white" />
-                    </div>
-                    <div className="pt-1.5">
-                      <p className="text-xs font-bold text-[#C41230] uppercase tracking-widest mb-0.5">Finish point</p>
-                      <p className="font-bold text-[#111] text-base">{tourData.endPoint || tourData.meetingPoint}</p>
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(tourData.endPoint || tourData.meetingPoint)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-[#C41230] hover:underline mt-1"
-                      >
-                        <MapPin className="size-3" />
-                        Open in Google Maps
-                      </a>
-                      {!tourData.endPoint && (
-                        <p className="text-xs text-[#7A746D] mt-0.5">Returns to start point</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <ItineraryTimeline
+                  itinerary={itinerary}
+                  meetingPoint={tourData.meetingPoint}
+                  endPoint={tourData.endPoint}
+                />
               </section>
             )}
 
@@ -401,6 +319,65 @@ export default async function TourDetailPage({ params }: PageProps) {
 
         </div>
       </div>
+
+      {/* ── You might also like ─────────────── */}
+      {relatedTours.length > 0 && (
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 mt-20">
+          <div className="border-t border-[#E4E0D9] pt-14">
+            <h2 className="text-2xl md:text-3xl font-display font-bold text-[#111] mb-8">You might also like</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {relatedTours.map((t: {
+                id: string; slug: string; title: string; shortDescription: string;
+                basePrice: number; rating: number; reviewCount: number;
+                duration: number; durationType: string; coverImage: string | null;
+              }) => (
+                <Link
+                  key={t.id}
+                  href={`/tours/${t.slug}`}
+                  className="group bg-white rounded-2xl border border-[#E4E0D9] overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200"
+                >
+                  {/* Image */}
+                  <div className="aspect-4/3 overflow-hidden bg-[#E7E8EE]">
+                    {t.coverImage ? (
+                      <img
+                        src={t.coverImage}
+                        alt={t.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-linear-to-br from-[#0C447C] to-[#185FA5]" />
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="p-4">
+                    <h3 className="font-semibold text-[#111] text-base leading-snug mb-1 line-clamp-2 group-hover:text-[#185FA5] transition-colors">
+                      {t.title}
+                    </h3>
+                    {t.rating > 0 && (
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <Star className="size-3.5 text-[#D4AF37] fill-[#D4AF37]" />
+                        <span className="text-sm font-semibold text-[#111]">{t.rating.toFixed(1)}</span>
+                        {t.reviewCount > 0 && (
+                          <span className="text-xs text-[#7A746D]">({t.reviewCount})</span>
+                        )}
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="text-xs text-[#7A746D] flex items-center gap-1">
+                        <Clock className="size-3.5" />{t.duration} {t.durationType}
+                      </span>
+                      <span className="text-sm font-bold text-[#111]">
+                        From <span className="text-[#185FA5]">${t.basePrice}</span>
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mobile sticky CTA */}
       <MobileBookingCTA

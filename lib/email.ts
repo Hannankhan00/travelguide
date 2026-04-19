@@ -1,15 +1,17 @@
 import nodemailer from "nodemailer";
 import { COMPANY_NAME, COMPANY_EMAIL } from "./constants";
 
-const transporter = nodemailer.createTransport({
-  host:   process.env.SMTP_HOST,
-  port:   Number(process.env.SMTP_PORT ?? 587),
-  secure: process.env.SMTP_SECURE === "true",
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+function createTransporter() {
+  return nodemailer.createTransport({
+    host:   process.env.SMTP_HOST,
+    port:   Number(process.env.SMTP_PORT ?? 587),
+    secure: process.env.SMTP_SECURE === "true",
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+}
 
 interface SendEmailOptions {
   to:      string;
@@ -19,92 +21,113 @@ interface SendEmailOptions {
 }
 
 export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
-  const from = process.env.SMTP_FROM ?? COMPANY_EMAIL;
+  const from        = process.env.SMTP_FROM ?? COMPANY_EMAIL;
+  const transporter = createTransporter();
   return transporter.sendMail({
     from:       `"${COMPANY_NAME}" <${from}>`,
     replyTo:    from,
     to,
     subject,
     html,
-    // Always include plain-text fallback — spam filters penalise HTML-only emails
     text: text ?? html.replace(/<[^>]+>/g, " ").replace(/\s{2,}/g, " ").trim(),
     headers: {
-      "X-Mailer":        "GoTripJapan Mailer",
-      "X-Priority":      "3",
-      "Precedence":      "bulk",
+      "X-Mailer":         "GoTripJapan Mailer",
+      "X-Priority":       "3",
+      "Precedence":       "bulk",
       "List-Unsubscribe": `<mailto:${from}?subject=unsubscribe>`,
     },
   });
 }
 
-// ─── Shared base ─────────────────────────────────────────────────────────────
+// ─── Shared base ──────────────────────────────────────────────────────────────
 
 function baseTemplate({
   previewText,
   headerLabel,
+  headerIcon,
+  accentColor = "#C41230",
   body,
 }: {
-  previewText: string;
-  headerLabel: string;
-  body: string;
+  previewText:   string;
+  headerLabel:   string;
+  headerIcon:    string;
+  accentColor?:  string;
+  body:          string;
 }): string {
   const year = new Date().getFullYear();
   return `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <title>${previewText}</title>
   <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
 </head>
-<body style="margin:0;padding:0;background-color:#F0EDE8;font-family:Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased;">
-  <!-- Preview text (hidden) -->
-  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${previewText}&nbsp;&#8199;&#65279;&#847;&zwnj;&nbsp;&#8199;&#65279;&#847;&zwnj;</div>
+<body style="margin:0;padding:0;background-color:#F2F0ED;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;-webkit-font-smoothing:antialiased;">
 
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F0EDE8;padding:32px 16px;">
+  <!-- Preview text -->
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;color:#F2F0ED;">${previewText}&nbsp;&#8199;&#65279;&#847;&zwnj;&nbsp;&#8199;&#65279;&#847;&zwnj;&nbsp;&#8199;&#65279;&#847;&zwnj;&nbsp;&#8199;&#65279;&#847;&zwnj;</div>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background-color:#F2F0ED;">
     <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+      <td align="center" style="padding:32px 16px 48px;">
 
-          <!-- Top accent bar -->
-          <tr>
-            <td style="height:4px;background:linear-gradient(to right,#C41230,#C8A84B,#1B2847);font-size:0;line-height:0;">&nbsp;</td>
-          </tr>
+        <!-- Outer card -->
+        <table width="600" cellpadding="0" cellspacing="0" border="0" role="presentation" style="max-width:600px;width:100%;">
 
-          <!-- Header -->
+          <!-- ── HEADER ── -->
           <tr>
-            <td style="background-color:#1B2847;padding:36px 40px 28px;text-align:center;">
-              <!-- Wordmark -->
-              <div style="display:inline-block;border:2px solid rgba(200,168,75,0.6);border-radius:8px;padding:8px 20px;margin-bottom:16px;">
-                <span style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#C8A84B;letter-spacing:3px;text-transform:uppercase;">${COMPANY_NAME}</span>
-              </div>
-              <!-- Label pill -->
-              <div style="display:inline-block;background-color:#C41230;color:#ffffff;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:5px 16px;border-radius:20px;">${headerLabel}</div>
+            <td style="background-color:#0C1C35;border-radius:16px 16px 0 0;padding:0;overflow:hidden;">
+
+              <!-- Top rainbow bar -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                <tr>
+                  <td style="height:4px;background:linear-gradient(90deg,#C41230 0%,#E8742A 33%,#C8A84B 66%,#1B5FA5 100%);font-size:0;line-height:0;">&nbsp;</td>
+                </tr>
+              </table>
+
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                <tr>
+                  <td style="padding:36px 40px 32px;text-align:center;">
+                    <!-- Logo wordmark -->
+                    <div style="margin-bottom:20px;">
+                      <span style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;color:#C8A84B;letter-spacing:4px;text-transform:uppercase;">${COMPANY_NAME}</span>
+                    </div>
+                    <!-- Thin gold rule -->
+                    <table width="60" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin:0 auto 20px;">
+                      <tr><td style="height:1px;background:#C8A84B;font-size:0;">&nbsp;</td></tr>
+                    </table>
+                    <!-- Icon + label pill -->
+                    <div style="display:inline-block;background-color:${accentColor};border-radius:24px;padding:8px 20px;">
+                      <span style="font-size:16px;vertical-align:middle;">${headerIcon}&nbsp;</span>
+                      <span style="font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#ffffff;vertical-align:middle;">${headerLabel}</span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
-          <!-- Gold divider -->
+          <!-- ── BODY ── -->
           <tr>
-            <td style="padding:0 40px;">
-              <div style="height:2px;background:linear-gradient(to right,transparent,#C8A84B,transparent);"></div>
-            </td>
-          </tr>
-
-          <!-- Body -->
-          <tr>
-            <td style="padding:36px 40px 28px;">
+            <td style="background:#ffffff;padding:44px 40px 36px;">
               ${body}
             </td>
           </tr>
 
-          <!-- Footer -->
+          <!-- ── FOOTER ── -->
           <tr>
-            <td style="background-color:#F8F7F5;padding:24px 40px;border-top:1px solid #E4E0D9;text-align:center;">
-              <p style="margin:0 0 6px;font-size:13px;color:#7A746D;">Questions? Reply to this email or contact us at</p>
+            <td style="background-color:#F8F7F5;border-radius:0 0 16px 16px;border-top:1px solid #E8E4DD;padding:28px 40px;text-align:center;">
+              <!-- Divider -->
+              <table width="40" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin:0 auto 20px;">
+                <tr><td style="height:2px;background:linear-gradient(90deg,transparent,#C8A84B,transparent);font-size:0;">&nbsp;</td></tr>
+              </table>
+              <p style="margin:0 0 4px;font-size:13px;color:#7A746D;">Questions? We&rsquo;re always here.</p>
               <a href="mailto:${COMPANY_EMAIL}" style="color:#C41230;font-size:13px;font-weight:600;text-decoration:none;">${COMPANY_EMAIL}</a>
-              <p style="margin:16px 0 0;font-size:11px;color:#A8A29E;">&copy; ${year} ${COMPANY_NAME}. All rights reserved.</p>
+              <p style="margin:20px 0 0;font-size:11px;color:#B0A99F;">&copy; ${year} ${COMPANY_NAME}. All rights reserved.<br/>Tokyo, Japan</p>
             </td>
           </tr>
 
@@ -112,32 +135,38 @@ function baseTemplate({
       </td>
     </tr>
   </table>
+
 </body>
-</html>
-  `.trim();
+</html>`.trim();
 }
 
-// ─── Row helper ───────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function detailRow(label: string, value: string): string {
   return `
   <tr>
-    <td style="padding:11px 0;border-bottom:1px solid #F0EDE8;font-size:13px;color:#7A746D;width:45%;">${label}</td>
-    <td style="padding:11px 0;border-bottom:1px solid #F0EDE8;font-size:14px;font-weight:600;color:#1B2847;text-align:right;">${value}</td>
+    <td style="padding:13px 0;border-bottom:1px solid #F0EDE8;font-size:13px;color:#7A746D;width:45%;">${label}</td>
+    <td style="padding:13px 0;border-bottom:1px solid #F0EDE8;font-size:14px;font-weight:600;color:#0C1C35;text-align:right;">${value}</td>
   </tr>`;
 }
 
-// ─── CTA button helper ────────────────────────────────────────────────────────
-
-function ctaButton(label: string, url: string): string {
+function ctaButton(label: string, url: string, color = "#C41230"): string {
   return `
-  <table cellpadding="0" cellspacing="0" border="0" style="margin:28px auto 0;">
+  <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin:32px auto 0;">
     <tr>
-      <td style="background-color:#C41230;border-radius:8px;">
-        <a href="${url}" style="display:inline-block;padding:14px 32px;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.5px;">${label}</a>
+      <td style="background-color:${color};border-radius:10px;box-shadow:0 4px 14px rgba(196,18,48,0.3);">
+        <a href="${url}" style="display:inline-block;padding:15px 36px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.3px;">${label} &rarr;</a>
       </td>
     </tr>
   </table>`;
+}
+
+function fallbackLink(url: string): string {
+  return `
+  <p style="margin:24px 0 0;font-size:12px;color:#A8A29E;line-height:1.7;word-break:break-all;">
+    Button not working? Paste this link into your browser:<br/>
+    <a href="${url}" style="color:#C41230;text-decoration:underline;">${url}</a>
+  </p>`;
 }
 
 // ─── 1. Email verification ────────────────────────────────────────────────────
@@ -147,32 +176,71 @@ export function emailVerificationHtml(data: {
   verifyUrl: string;
 }): string {
   const body = `
-    <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1B2847;font-family:Georgia,'Times New Roman',serif;">Welcome, ${data.name}!</p>
-    <p style="margin:0 0 24px;font-size:15px;color:#4A4540;line-height:1.7;">
-      Thank you for creating an account with ${COMPANY_NAME}. To activate your account and start exploring our tours, please verify your email address.
+    <!-- Greeting -->
+    <p style="margin:0 0 6px;font-size:26px;font-weight:700;color:#0C1C35;line-height:1.2;">Welcome, ${data.name}! &#x1F1EF;&#x1F1F5;</p>
+    <p style="margin:0 0 28px;font-size:15px;color:#5A5550;line-height:1.75;">
+      Your ${COMPANY_NAME} account is almost ready. Just one step left — verify your email address to unlock your account and start discovering Japan.
     </p>
 
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F8F7F5;border-radius:10px;border:1px solid #E4E0D9;padding:0;">
+    <!-- Expiry notice card -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background:linear-gradient(135deg,#0C1C35,#1B3060);border-radius:12px;margin-bottom:28px;">
       <tr>
-        <td style="padding:24px 28px;text-align:center;">
-          <p style="margin:0 0 6px;font-size:13px;color:#7A746D;letter-spacing:0.5px;text-transform:uppercase;">Your verification link expires in</p>
-          <p style="margin:0;font-size:28px;font-weight:700;color:#C41230;">24 hours</p>
+        <td style="padding:24px 28px;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+            <tr>
+              <td>
+                <p style="margin:0 0 2px;font-size:11px;color:rgba(200,168,75,0.85);letter-spacing:2px;text-transform:uppercase;">Link expires in</p>
+                <p style="margin:0;font-size:32px;font-weight:700;color:#C8A84B;">24 hours</p>
+              </td>
+              <td style="text-align:right;vertical-align:middle;">
+                <span style="font-size:40px;">&#x23F0;</span>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Steps -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background:#F8F9FF;border-radius:12px;border:1px solid #E8EAFF;margin-bottom:8px;">
+      <tr>
+        <td style="padding:20px 24px;">
+          <p style="margin:0 0 14px;font-size:12px;font-weight:700;color:#0C1C35;text-transform:uppercase;letter-spacing:1px;">What happens next</p>
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+            <tr>
+              <td style="padding:5px 0;">
+                <span style="display:inline-block;width:22px;height:22px;background:#C41230;border-radius:50%;font-size:11px;font-weight:700;color:#fff;text-align:center;line-height:22px;vertical-align:middle;">1</span>
+                <span style="font-size:14px;color:#4A4540;margin-left:10px;vertical-align:middle;">Click the button below</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:5px 0;">
+                <span style="display:inline-block;width:22px;height:22px;background:#C41230;border-radius:50%;font-size:11px;font-weight:700;color:#fff;text-align:center;line-height:22px;vertical-align:middle;">2</span>
+                <span style="font-size:14px;color:#4A4540;margin-left:10px;vertical-align:middle;">Your email is verified instantly</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:5px 0;">
+                <span style="display:inline-block;width:22px;height:22px;background:#C41230;border-radius:50%;font-size:11px;font-weight:700;color:#fff;text-align:center;line-height:22px;vertical-align:middle;">3</span>
+                <span style="font-size:14px;color:#4A4540;margin-left:10px;vertical-align:middle;">Sign in and start exploring Japan &#x1F5FE;</span>
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
     </table>
 
     ${ctaButton("Verify My Email Address", data.verifyUrl)}
+    ${fallbackLink(data.verifyUrl)}
 
-    <p style="margin:28px 0 0;font-size:13px;color:#7A746D;line-height:1.6;">
-      If the button above doesn't work, copy and paste this link into your browser:<br />
-      <a href="${data.verifyUrl}" style="color:#C41230;word-break:break-all;">${data.verifyUrl}</a>
-    </p>
-    <p style="margin:20px 0 0;font-size:13px;color:#A8A29E;">If you didn't create an account, you can safely ignore this email.</p>
+    <p style="margin:20px 0 0;font-size:12px;color:#B0A99F;">Didn&rsquo;t create an account? You can safely ignore this email.</p>
   `;
 
   return baseTemplate({
-    previewText: `${data.name}, please verify your email to activate your ${COMPANY_NAME} account`,
-    headerLabel: "Verify Your Email",
+    previewText:  `${data.name}, one click to activate your ${COMPANY_NAME} account`,
+    headerLabel:  "Verify Your Email",
+    headerIcon:   "&#x2709;&#xFE0F;",
+    accentColor:  "#C41230",
     body,
   });
 }
@@ -189,48 +257,67 @@ export function bookingConfirmationHtml(data: {
   paymentMethod: string;
 }): string {
   const body = `
-    <p style="margin:0 0 6px;font-size:22px;font-weight:700;color:#1B2847;font-family:Georgia,'Times New Roman',serif;">Your adventure awaits!</p>
-    <p style="margin:0 0 24px;font-size:15px;color:#4A4540;line-height:1.7;">
-      Dear ${data.customerName}, your booking is <strong style="color:#1B7849;">confirmed</strong>. We look forward to welcoming you on this journey through Japan.
+    <p style="margin:0 0 6px;font-size:26px;font-weight:700;color:#0C1C35;line-height:1.2;">Your adventure is confirmed! &#x1F38C;</p>
+    <p style="margin:0 0 28px;font-size:15px;color:#5A5550;line-height:1.75;">
+      Hi ${data.customerName}, we&rsquo;re excited to welcome you on this journey through Japan. Your booking is locked in and ready to go.
     </p>
 
-    <!-- Status badge -->
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:linear-gradient(135deg,#1B2847,#2A3B66);border-radius:10px;margin-bottom:24px;">
+    <!-- Booking ref hero card -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background:linear-gradient(135deg,#0C1C35,#1B3060);border-radius:14px;margin-bottom:24px;">
       <tr>
-        <td style="padding:20px 28px;">
-          <p style="margin:0 0 2px;font-size:11px;color:rgba(200,168,75,0.9);letter-spacing:2px;text-transform:uppercase;">Booking Reference</p>
-          <p style="margin:0;font-size:24px;font-weight:700;color:#C8A84B;letter-spacing:2px;">${data.bookingRef}</p>
+        <td style="padding:28px 32px;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+            <tr>
+              <td>
+                <p style="margin:0 0 4px;font-size:11px;color:rgba(200,168,75,0.85);letter-spacing:2px;text-transform:uppercase;">Booking Reference</p>
+                <p style="margin:0;font-size:28px;font-weight:700;color:#C8A84B;letter-spacing:3px;">${data.bookingRef}</p>
+              </td>
+              <td style="text-align:right;vertical-align:middle;">
+                <div style="display:inline-block;background-color:#16A34A;border-radius:20px;padding:7px 16px;">
+                  <span style="font-size:12px;font-weight:700;color:#ffffff;letter-spacing:0.5px;">&#10003; Confirmed</span>
+                </div>
+              </td>
+            </tr>
+          </table>
         </td>
-        <td style="padding:20px 28px;text-align:right;">
-          <div style="display:inline-block;background-color:#1B7849;color:#ffffff;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:6px 14px;border-radius:20px;">&#10003; Confirmed</div>
+      </tr>
+    </table>
+
+    <!-- Tour name banner -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background:#FFF8E7;border-left:4px solid #C8A84B;border-radius:0 10px 10px 0;margin-bottom:24px;">
+      <tr>
+        <td style="padding:16px 20px;">
+          <p style="margin:0 0 2px;font-size:11px;color:#B45309;text-transform:uppercase;letter-spacing:1px;">Tour</p>
+          <p style="margin:0;font-size:18px;font-weight:700;color:#0C1C35;">${data.tourTitle}</p>
         </td>
       </tr>
     </table>
 
     <!-- Detail rows -->
-    <table width="100%" cellpadding="0" cellspacing="0" border="0">
-      ${detailRow("Tour", data.tourTitle)}
-      ${detailRow("Date", data.tourDate)}
-      ${detailRow("Guests", String(data.numGuests))}
-      ${detailRow("Payment Method", data.paymentMethod)}
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin-bottom:4px;">
+      ${detailRow("&#128197; Date", data.tourDate)}
+      ${detailRow("&#128101; Guests", `${data.numGuests} ${data.numGuests === 1 ? "person" : "people"}`)}
+      ${detailRow("&#128179; Payment", data.paymentMethod)}
     </table>
 
-    <!-- Total -->
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F8F7F5;border-radius:8px;margin-top:20px;">
+    <!-- Total paid -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background:#F8F7F5;border-radius:10px;margin-top:16px;border:1px solid #E8E4DD;">
       <tr>
-        <td style="padding:16px 20px;font-size:14px;font-weight:700;color:#1B2847;">Total Paid</td>
-        <td style="padding:16px 20px;text-align:right;font-size:22px;font-weight:700;color:#C41230;">${data.totalAmount}</td>
+        <td style="padding:18px 20px;font-size:14px;font-weight:600;color:#7A746D;">Total Paid</td>
+        <td style="padding:18px 20px;text-align:right;font-size:26px;font-weight:700;color:#C41230;">${data.totalAmount}</td>
       </tr>
     </table>
 
-    <p style="margin:28px 0 0;font-size:14px;color:#4A4540;line-height:1.7;">
-      Need to make changes or have questions about your tour? Simply reply to this email and our team will assist you.
+    <p style="margin:28px 0 0;font-size:14px;color:#5A5550;line-height:1.75;padding:20px;background:#F8F9FF;border-radius:10px;border:1px solid #E8EAFF;">
+      &#x1F4AC; Need to make changes? Simply reply to this email — our team typically responds within 2 hours.
     </p>
   `;
 
   return baseTemplate({
-    previewText: `Your ${data.tourTitle} booking is confirmed — ${data.bookingRef}`,
-    headerLabel: "Booking Confirmed",
+    previewText:  `Booking confirmed: ${data.tourTitle} — Ref ${data.bookingRef}`,
+    headerLabel:  "Booking Confirmed",
+    headerIcon:   "&#x2705;",
+    accentColor:  "#16A34A",
     body,
   });
 }
@@ -246,42 +333,44 @@ export function guideMessageHtml(data: {
   viewUrl:        string;
 }): string {
   const body = `
-    <p style="margin:0 0 6px;font-size:22px;font-weight:700;color:#1B2847;font-family:Georgia,'Times New Roman',serif;">You have a new message</p>
-    <p style="margin:0 0 24px;font-size:15px;color:#4A4540;line-height:1.7;">
-      Dear ${data.customerName}, your guide <strong>${data.guideName}</strong> has sent you a message regarding your booking.
+    <p style="margin:0 0 6px;font-size:26px;font-weight:700;color:#0C1C35;line-height:1.2;">New message from your guide &#x1F4AC;</p>
+    <p style="margin:0 0 28px;font-size:15px;color:#5A5550;line-height:1.75;">
+      Hi ${data.customerName}, <strong>${data.guideName}</strong> has sent you a message about your upcoming tour.
     </p>
 
-    <!-- Booking badge -->
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F8F7F5;border-radius:8px;border:1px solid #E4E0D9;margin-bottom:24px;">
+    <!-- Tour badge -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background:#F8F7F5;border-radius:10px;border:1px solid #E8E4DD;margin-bottom:20px;">
       <tr>
         <td style="padding:16px 20px;">
-          <p style="margin:0 0 2px;font-size:11px;color:#7A746D;text-transform:uppercase;letter-spacing:1px;">Booking</p>
-          <p style="margin:0;font-size:14px;font-weight:700;color:#1B2847;">${data.tourTitle}</p>
-          <p style="margin:4px 0 0;font-size:12px;color:#7A746D;">${data.bookingRef}</p>
+          <p style="margin:0 0 2px;font-size:11px;color:#7A746D;text-transform:uppercase;letter-spacing:1px;">Your tour</p>
+          <p style="margin:0 0 2px;font-size:15px;font-weight:700;color:#0C1C35;">${data.tourTitle}</p>
+          <p style="margin:0;font-size:12px;color:#A8A29E;">Ref: ${data.bookingRef}</p>
         </td>
       </tr>
     </table>
 
-    <!-- Message preview bubble -->
-    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <!-- Message bubble -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin-bottom:8px;">
       <tr>
-        <td style="padding:20px 24px;background:#EEF2FA;border-left:4px solid #1B2847;border-radius:0 8px 8px 0;">
-          <p style="margin:0 0 8px;font-size:11px;font-weight:700;color:#1B2847;text-transform:uppercase;letter-spacing:1px;">${data.guideName} wrote:</p>
-          <p style="margin:0;font-size:14px;color:#4A4540;line-height:1.7;font-style:italic;">&ldquo;${data.messagePreview}${data.messagePreview.length >= 200 ? "&hellip;" : ""}&rdquo;</p>
+        <td style="background:#EEF4FF;border-radius:12px;padding:24px;border:1px solid #D4E4FF;">
+          <p style="margin:0 0 10px;font-size:12px;font-weight:700;color:#1B5FA5;text-transform:uppercase;letter-spacing:1px;">&#x1F5E8; ${data.guideName} wrote:</p>
+          <p style="margin:0;font-size:15px;color:#2A2520;line-height:1.75;font-style:italic;">&ldquo;${data.messagePreview}${data.messagePreview.length >= 200 ? "&hellip;" : ""}&rdquo;</p>
         </td>
       </tr>
     </table>
 
-    ${ctaButton("View Full Message", data.viewUrl)}
+    ${ctaButton("Read Full Message", data.viewUrl, "#1B5FA5")}
 
-    <p style="margin:24px 0 0;font-size:13px;color:#7A746D;line-height:1.6;">
-      You can also reply to your guide directly from your bookings dashboard.
+    <p style="margin:24px 0 0;font-size:13px;color:#7A746D;text-align:center;">
+      You can also reply directly from your bookings dashboard.
     </p>
   `;
 
   return baseTemplate({
-    previewText: `${data.guideName} sent you a message about your ${data.tourTitle} tour`,
-    headerLabel: "New Message from Your Guide",
+    previewText:  `${data.guideName}: new message about your ${data.tourTitle} tour`,
+    headerLabel:  "Message from Your Guide",
+    headerIcon:   "&#x1F5E8;&#xFE0F;",
+    accentColor:  "#1B5FA5",
     body,
   });
 }
@@ -289,75 +378,70 @@ export function guideMessageHtml(data: {
 // ─── 4. Wishlist discount alert ───────────────────────────────────────────────
 
 export function wishlistDiscountHtml(data: {
-  customerName:   string;
-  tourTitle:      string;
-  tourSlug:       string;
-  discountCode:   string;
-  discountLabel:  string; // e.g. "15% off" or "$30 off"
-  originalPrice:  string;
+  customerName:    string;
+  tourTitle:       string;
+  tourSlug:        string;
+  discountCode:    string;
+  discountLabel:   string;
+  originalPrice:   string;
   discountedPrice?: string;
-  validUntil?:    string;
-  tourImageUrl?:  string;
+  validUntil?:     string;
+  tourImageUrl?:   string;
 }): string {
   const tourUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/tours/${data.tourSlug}`;
 
   const body = `
-    <p style="margin:0 0 6px;font-size:22px;font-weight:700;color:#1B2847;font-family:Georgia,'Times New Roman',serif;">Great news — a wishlist tour just got cheaper!</p>
-    <p style="margin:0 0 24px;font-size:15px;color:#4A4540;line-height:1.7;">
-      Dear ${data.customerName}, one of the tours on your wishlist now has an exclusive discount. Don't miss out!
+    <p style="margin:0 0 6px;font-size:26px;font-weight:700;color:#0C1C35;line-height:1.2;">Price drop on your wishlist! &#x1F4C9;</p>
+    <p style="margin:0 0 28px;font-size:15px;color:#5A5550;line-height:1.75;">
+      Hi ${data.customerName}, great news — a tour you saved just got a price drop. Book now before it sells out!
     </p>
 
-    <!-- Tour card -->
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:linear-gradient(135deg,#1B2847,#2A3B66);border-radius:10px;margin-bottom:24px;overflow:hidden;">
+    <!-- Tour hero -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background:linear-gradient(135deg,#0C1C35,#1B3060);border-radius:14px;margin-bottom:20px;">
       <tr>
-        <td style="padding:24px 28px;">
-          <p style="margin:0 0 4px;font-size:11px;color:rgba(200,168,75,0.9);letter-spacing:2px;text-transform:uppercase;">Wishlisted Tour</p>
-          <p style="margin:0 0 16px;font-size:20px;font-weight:700;color:#ffffff;">${data.tourTitle}</p>
-          <!-- Discount badge -->
-          <table cellpadding="0" cellspacing="0" border="0">
-            <tr>
-              <td style="background-color:#C41230;color:#ffffff;font-size:18px;font-weight:700;padding:8px 20px;border-radius:6px;">${data.discountLabel}</td>
-            </tr>
-          </table>
+        <td style="padding:28px 32px;">
+          <p style="margin:0 0 4px;font-size:11px;color:rgba(200,168,75,0.85);letter-spacing:2px;text-transform:uppercase;">&#x2764;&#xFE0F; Your Wishlisted Tour</p>
+          <p style="margin:0 0 16px;font-size:20px;font-weight:700;color:#ffffff;line-height:1.3;">${data.tourTitle}</p>
+          <div style="display:inline-block;background:#C41230;color:#ffffff;font-size:20px;font-weight:700;padding:8px 20px;border-radius:8px;">${data.discountLabel}</div>
         </td>
       </tr>
     </table>
 
     <!-- Price comparison -->
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F8F7F5;border-radius:8px;border:1px solid #E4E0D9;margin-bottom:24px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background:#F8F7F5;border-radius:12px;border:1px solid #E8E4DD;margin-bottom:20px;">
       <tr>
-        <td style="padding:16px 20px;border-right:1px solid #E4E0D9;text-align:center;width:50%;">
-          <p style="margin:0 0 4px;font-size:11px;color:#7A746D;text-transform:uppercase;letter-spacing:1px;">Original Price</p>
-          <p style="margin:0;font-size:20px;font-weight:700;color:#A8A29E;text-decoration:line-through;">${data.originalPrice}</p>
+        <td width="50%" style="padding:20px;text-align:center;border-right:1px solid #E8E4DD;">
+          <p style="margin:0 0 4px;font-size:11px;color:#7A746D;text-transform:uppercase;letter-spacing:1px;">Was</p>
+          <p style="margin:0;font-size:22px;font-weight:700;color:#C0B8B0;text-decoration:line-through;">${data.originalPrice}</p>
         </td>
-        <td style="padding:16px 20px;text-align:center;width:50%;">
-          <p style="margin:0 0 4px;font-size:11px;color:#7A746D;text-transform:uppercase;letter-spacing:1px;">After Discount</p>
-          <p style="margin:0;font-size:24px;font-weight:700;color:#C41230;">${data.discountedPrice ?? "See tour page"}</p>
+        <td width="50%" style="padding:20px;text-align:center;">
+          <p style="margin:0 0 4px;font-size:11px;color:#7A746D;text-transform:uppercase;letter-spacing:1px;">Now</p>
+          <p style="margin:0;font-size:26px;font-weight:700;color:#C41230;">${data.discountedPrice ?? "See page"}</p>
         </td>
       </tr>
     </table>
 
-    <!-- Discount code box -->
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FFF8E7;border:2px dashed #C8A84B;border-radius:8px;margin-bottom:24px;">
+    <!-- Promo code -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background:#FFFBF0;border:2px dashed #C8A84B;border-radius:12px;margin-bottom:8px;">
       <tr>
-        <td style="padding:18px 24px;text-align:center;">
-          <p style="margin:0 0 6px;font-size:12px;color:#7A746D;text-transform:uppercase;letter-spacing:1px;">Your Discount Code</p>
-          <p style="margin:0;font-size:24px;font-weight:700;color:#1B2847;letter-spacing:4px;">${data.discountCode}</p>
-          ${data.validUntil ? `<p style="margin:8px 0 0;font-size:12px;color:#C41230;">Expires: ${data.validUntil}</p>` : ""}
+        <td style="padding:22px;text-align:center;">
+          <p style="margin:0 0 6px;font-size:11px;color:#92400E;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">Your Discount Code</p>
+          <p style="margin:0;font-size:28px;font-weight:700;color:#0C1C35;letter-spacing:6px;font-family:monospace;">${data.discountCode}</p>
+          ${data.validUntil ? `<p style="margin:8px 0 0;font-size:12px;color:#C41230;font-weight:600;">&#x23F3; Expires ${data.validUntil}</p>` : ""}
         </td>
       </tr>
     </table>
 
     ${ctaButton("Book Now & Save", tourUrl)}
 
-    <p style="margin:24px 0 0;font-size:13px;color:#7A746D;line-height:1.6;">
-      Apply the discount code at checkout. This offer is available for a limited time.
-    </p>
+    <p style="margin:20px 0 0;font-size:12px;color:#A8A29E;text-align:center;">Apply the code at checkout. Limited-time offer.</p>
   `;
 
   return baseTemplate({
-    previewText: `${data.discountLabel} on your wishlisted tour: ${data.tourTitle}`,
-    headerLabel: "Wishlist Price Drop",
+    previewText:  `${data.discountLabel} off your wishlisted tour: ${data.tourTitle}`,
+    headerLabel:  "Price Drop Alert",
+    headerIcon:   "&#x1F4C9;",
+    accentColor:  "#C41230",
     body,
   });
 }
@@ -369,32 +453,41 @@ export function passwordResetHtml(data: {
   resetUrl: string;
 }): string {
   const body = `
-    <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1B2847;font-family:Georgia,'Times New Roman',serif;">Reset your password</p>
-    <p style="margin:0 0 24px;font-size:15px;color:#4A4540;line-height:1.7;">
-      Hi ${data.name}, we received a request to reset the password for your ${COMPANY_NAME} account. Click the button below to choose a new password.
+    <p style="margin:0 0 6px;font-size:26px;font-weight:700;color:#0C1C35;line-height:1.2;">Reset your password &#x1F510;</p>
+    <p style="margin:0 0 28px;font-size:15px;color:#5A5550;line-height:1.75;">
+      Hi ${data.name}, we received a request to reset the password for your ${COMPANY_NAME} account. Use the button below to set a new one.
     </p>
 
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F8F7F5;border-radius:10px;border:1px solid #E4E0D9;padding:0;">
+    <!-- Expiry card -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background:linear-gradient(135deg,#0C1C35,#1B3060);border-radius:12px;margin-bottom:28px;">
       <tr>
-        <td style="padding:24px 28px;text-align:center;">
-          <p style="margin:0 0 6px;font-size:13px;color:#7A746D;letter-spacing:0.5px;text-transform:uppercase;">This link expires in</p>
-          <p style="margin:0;font-size:28px;font-weight:700;color:#C41230;">1 hour</p>
+        <td style="padding:24px 32px;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+            <tr>
+              <td>
+                <p style="margin:0 0 2px;font-size:11px;color:rgba(200,168,75,0.85);letter-spacing:2px;text-transform:uppercase;">This link expires in</p>
+                <p style="margin:0;font-size:32px;font-weight:700;color:#C8A84B;">1 hour</p>
+              </td>
+              <td style="text-align:right;vertical-align:middle;font-size:40px;">&#x23F1;</td>
+            </tr>
+          </table>
         </td>
       </tr>
     </table>
 
-    ${ctaButton("Reset My Password", data.resetUrl)}
+    ${ctaButton("Set New Password", data.resetUrl)}
+    ${fallbackLink(data.resetUrl)}
 
-    <p style="margin:28px 0 0;font-size:13px;color:#7A746D;line-height:1.6;">
-      If the button above doesn't work, copy and paste this link into your browser:<br />
-      <a href="${data.resetUrl}" style="color:#C41230;word-break:break-all;">${data.resetUrl}</a>
+    <p style="margin:24px 0 0;font-size:13px;color:#A8A29E;padding:16px;background:#FFF8F8;border-radius:8px;border:1px solid #FECDD3;text-align:center;">
+      &#x26A0;&#xFE0F; If you didn&rsquo;t request this, ignore this email. Your password will <strong>not</strong> change.
     </p>
-    <p style="margin:20px 0 0;font-size:13px;color:#A8A29E;">If you didn't request a password reset, you can safely ignore this email. Your password will not change.</p>
   `;
 
   return baseTemplate({
-    previewText: `Reset your ${COMPANY_NAME} account password`,
-    headerLabel: "Password Reset",
+    previewText:  `Password reset request for your ${COMPANY_NAME} account`,
+    headerLabel:  "Password Reset",
+    headerIcon:   "&#x1F510;",
+    accentColor:  "#B45309",
     body,
   });
 }
@@ -402,63 +495,65 @@ export function passwordResetHtml(data: {
 // ─── 6. Deal alert (newsletter subscribers) ───────────────────────────────────
 
 export function dealAlertHtml(data: {
-  customerName:  string;
-  tourTitle:     string;
-  tourSlug:      string;
-  discountCode:  string;
-  discountLabel: string;
-  originalPrice: string;
-  validUntil?:   string;
+  customerName:      string;
+  tourTitle:         string;
+  tourSlug:          string;
+  discountCode:      string;
+  discountLabel:     string;
+  originalPrice:     string;
+  validUntil?:       string;
   shortDescription?: string;
-  unsubscribeUrl: string;
+  unsubscribeUrl:    string;
 }): string {
   const tourUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/tours/${data.tourSlug}`;
 
   const body = `
-    <p style="margin:0 0 6px;font-size:22px;font-weight:700;color:#1B2847;font-family:Georgia,'Times New Roman',serif;">Exclusive deal for you!</p>
-    <p style="margin:0 0 24px;font-size:15px;color:#4A4540;line-height:1.7;">
-      Dear ${data.customerName}, as a ${COMPANY_NAME} subscriber you get exclusive early access to our latest offer.
+    <p style="margin:0 0 6px;font-size:26px;font-weight:700;color:#0C1C35;line-height:1.2;">Exclusive deal, just for you &#x1F381;</p>
+    <p style="margin:0 0 28px;font-size:15px;color:#5A5550;line-height:1.75;">
+      Hi ${data.customerName}, as a ${COMPANY_NAME} subscriber you get first access to our freshest offers — before anyone else.
     </p>
 
-    <!-- Tour highlight card -->
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:linear-gradient(135deg,#C41230,#8B0D20);border-radius:10px;margin-bottom:24px;">
+    <!-- Tour hero -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background:linear-gradient(135deg,#C41230,#8B0D20);border-radius:14px;margin-bottom:20px;">
       <tr>
-        <td style="padding:28px;">
-          <p style="margin:0 0 4px;font-size:11px;color:rgba(255,255,255,0.7);letter-spacing:2px;text-transform:uppercase;">Featured Tour</p>
-          <p style="margin:0 0 10px;font-size:22px;font-weight:700;color:#ffffff;line-height:1.3;">${data.tourTitle}</p>
-          ${data.shortDescription ? `<p style="margin:0 0 16px;font-size:14px;color:rgba(255,255,255,0.85);line-height:1.6;">${data.shortDescription}</p>` : ""}
-          <table cellpadding="0" cellspacing="0" border="0">
+        <td style="padding:32px;">
+          <p style="margin:0 0 4px;font-size:11px;color:rgba(255,255,255,0.65);letter-spacing:2px;text-transform:uppercase;">Featured Tour</p>
+          <p style="margin:0 0 12px;font-size:22px;font-weight:700;color:#ffffff;line-height:1.3;">${data.tourTitle}</p>
+          ${data.shortDescription ? `<p style="margin:0 0 20px;font-size:14px;color:rgba(255,255,255,0.8);line-height:1.6;">${data.shortDescription}</p>` : ""}
+          <table cellpadding="0" cellspacing="0" border="0" role="presentation">
             <tr>
-              <td style="background-color:#C8A84B;color:#1B2847;font-size:20px;font-weight:700;padding:10px 24px;border-radius:6px;">${data.discountLabel}</td>
-              <td style="padding-left:16px;font-size:16px;color:rgba(255,255,255,0.7);text-decoration:line-through;">was ${data.originalPrice}</td>
+              <td style="background:#C8A84B;color:#0C1C35;font-size:22px;font-weight:700;padding:10px 24px;border-radius:8px;">${data.discountLabel}</td>
+              <td style="padding-left:14px;font-size:15px;color:rgba(255,255,255,0.6);text-decoration:line-through;vertical-align:middle;">was ${data.originalPrice}</td>
             </tr>
           </table>
         </td>
       </tr>
     </table>
 
-    <!-- Discount code -->
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FFF8E7;border:2px dashed #C8A84B;border-radius:8px;margin-bottom:24px;">
+    <!-- Promo code -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background:#FFFBF0;border:2px dashed #C8A84B;border-radius:12px;margin-bottom:8px;">
       <tr>
-        <td style="padding:20px 24px;text-align:center;">
-          <p style="margin:0 0 6px;font-size:12px;color:#7A746D;text-transform:uppercase;letter-spacing:1px;">Subscriber Exclusive Code</p>
-          <p style="margin:0;font-size:26px;font-weight:700;color:#1B2847;letter-spacing:4px;">${data.discountCode}</p>
-          ${data.validUntil ? `<p style="margin:8px 0 0;font-size:12px;color:#C41230;font-weight:600;">Valid until: ${data.validUntil}</p>` : ""}
+        <td style="padding:22px;text-align:center;">
+          <p style="margin:0 0 6px;font-size:11px;color:#92400E;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">Subscriber Exclusive Code</p>
+          <p style="margin:0;font-size:28px;font-weight:700;color:#0C1C35;letter-spacing:6px;font-family:monospace;">${data.discountCode}</p>
+          ${data.validUntil ? `<p style="margin:8px 0 0;font-size:12px;color:#C41230;font-weight:600;">&#x23F3; Valid until ${data.validUntil}</p>` : ""}
         </td>
       </tr>
     </table>
 
     ${ctaButton("Claim This Deal", tourUrl)}
 
-    <p style="margin:28px 0 0;font-size:12px;color:#A8A29E;line-height:1.6;text-align:center;">
-      You're receiving this because you subscribed to ${COMPANY_NAME} deals.<br />
-      <a href="${data.unsubscribeUrl}" style="color:#C41230;text-decoration:none;">Unsubscribe</a>
+    <p style="margin:28px 0 0;font-size:12px;color:#A8A29E;text-align:center;line-height:1.6;">
+      You&rsquo;re receiving this because you subscribed to ${COMPANY_NAME} deals.<br/>
+      <a href="${data.unsubscribeUrl}" style="color:#7A746D;text-decoration:underline;">Unsubscribe</a>
     </p>
   `;
 
   return baseTemplate({
-    previewText: `Exclusive deal: ${data.discountLabel} on ${data.tourTitle}`,
-    headerLabel: "Members-Only Deal",
+    previewText:  `Members-only: ${data.discountLabel} on ${data.tourTitle}`,
+    headerLabel:  "Members-Only Deal",
+    headerIcon:   "&#x1F381;",
+    accentColor:  "#C41230",
     body,
   });
 }

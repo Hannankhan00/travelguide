@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle, Clock } from "lucide-react";
-import { calcGroupPrice, formatPrice } from "@/lib/utils";
+import { Users, CalendarDays, ChevronDown, CheckCircle2 } from "lucide-react";
+import { calcGroupPrice } from "@/lib/utils";
 import { AvailabilityCalendar, type AvailRecord } from "@/components/public/AvailabilityCalendar";
 
 interface BookingWidgetProps {
@@ -27,168 +27,209 @@ export function BookingWidget({
 }: BookingWidgetProps) {
   const router = useRouter();
 
-  const [date, setDate]    = useState("");
-  const [dateRec, setDateRec] = useState<AvailRecord | null>(null);
-  const [adults, setAdults]  = useState(tourType === "SOLO" ? 1 : 2);
+  const [date, setDate]         = useState("");
+  const [dateRec, setDateRec]   = useState<AvailRecord | null>(null);
+  const [adults, setAdults]     = useState(tourType === "SOLO" ? 1 : 2);
   const [children, setChildren] = useState(0);
+  const [guestsOpen, setGuestsOpen] = useState(false);
+  const [dateOpen, setDateOpen]     = useState(false);
 
   const isSolo      = tourType === "SOLO";
   const totalGuests = isSolo ? 1 : adults + children;
   const max         = isSolo ? 1 : (maxGroupSize ?? 20);
 
   const priceOverride = dateRec?.priceOverride ? Number(dateRec.priceOverride) : null;
-
   const totalPrice = priceOverride !== null
     ? (isSolo ? priceOverride : totalGuests * priceOverride)
     : isSolo
       ? (adults * basePrice + children * (childPrice ?? basePrice))
       : calcGroupPrice(totalGuests, baseGroupSize, basePrice);
 
-  const groupUnits = isSolo ? 1 : Math.ceil(totalGuests / baseGroupSize);
+  const guestLabel = isSolo
+    ? "1 Adult"
+    : `Adult × ${adults}${children > 0 ? `, Child × ${children}` : ""}`;
+
+  const dateLabel = date
+    ? new Date(date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : "Select date";
 
   const handleDateSelect = (d: string, rec: AvailRecord | null) => {
     setDate(d);
     setDateRec(rec);
+    setDateOpen(false);
   };
 
   const handleBooking = () => {
-    if (!date) return;
-    const sp = new URLSearchParams({
-      date,
-      adults:   adults.toString(),
-      children: isSolo ? "0" : children.toString(),
-    });
+    if (!date) { setDateOpen(true); return; }
+    const sp = new URLSearchParams({ date, adults: adults.toString(), children: isSolo ? "0" : children.toString() });
     router.push(`/booking/${tourId}?${sp.toString()}`);
   };
 
   return (
-    <div className="sticky top-24 bg-white rounded-2xl border border-[#E4E0D9] p-6 shadow-xl shadow-black/5">
+    <div className="sticky top-24 bg-white rounded-2xl border border-[#E4E0D9] shadow-[0_4px_24px_rgba(0,0,0,0.08)] overflow-hidden">
 
-      {/* ── Price Header ── */}
-      <div className="mb-6 border-b border-[#E4E0D9] pb-6">
-        <span className="text-[#7A746D] text-sm block mb-1">
-          {isSolo ? "Price" : "Price from"}
-        </span>
-        <div className="flex items-end gap-2 text-[#111]">
-          <span className="text-4xl font-display font-bold">${basePrice}</span>
-          <span className="text-[#7A746D] mb-1">
-            {isSolo ? "/ person" : `/ ${baseGroupSize} guests`}
+      {/* ── Top: badge + price ── */}
+      <div className="px-5 pt-5 pb-4">
+        {likelyToSellOut && (
+          <span className="inline-block bg-[#C41230] text-white text-[11px] font-bold px-3 py-1 rounded-full mb-3 tracking-wide">
+            Likely to sell out
+          </span>
+        )}
+        <p className="text-[#7A746D] text-sm mb-0.5">From</p>
+        <div className="flex items-baseline gap-2">
+          <span className="text-[2rem] font-bold text-[#111] leading-none">${basePrice}</span>
+          <span className="text-[#7A746D] text-sm">
+            {isSolo ? "per person" : `/ ${baseGroupSize} guests`}
           </span>
         </div>
         {!isSolo && (
-          <p className="text-xs text-[#7A746D] mt-1.5">
-            +${basePrice} for every additional {baseGroupSize} guests
-          </p>
-        )}
-        {likelyToSellOut && (
-          <p className="text-[#C41230] text-sm font-medium flex items-center gap-1.5 mt-3">
-            <Clock className="size-4" /> High demand. Book soon!
-          </p>
+          <p className="text-xs text-[#7A746D] mt-1">+${basePrice} for every additional {baseGroupSize} guests</p>
         )}
       </div>
 
-      {/* ── Availability Calendar ── */}
-      <div className="mb-6 border-b border-[#E4E0D9] pb-6">
-        <label className="text-sm font-semibold text-[#111] block mb-3">Select Date</label>
-        <AvailabilityCalendar
-          tourId={tourId}
-          selected={date}
-          onSelect={handleDateSelect}
-        />
-      </div>
+      {/* ── Selectors ── */}
+      <div className="px-5 space-y-2.5 pb-4">
 
-      {/* ── Guest Counters ── */}
-      <div className="space-y-4 mb-6">
-        {isSolo ? (
-          <p className="text-sm text-[#7A746D] bg-[#F8F7F5] rounded-lg px-3 py-2">
-            This is a solo / private tour, priced per person.
-          </p>
-        ) : (
-          <div className="grid grid-cols-2 gap-4">
-            {/* Adults */}
-            <div>
-              <label className="text-sm font-semibold text-[#111] block mb-2">Adults</label>
-              <div className="flex items-center justify-between border border-[#E4E0D9] rounded-lg bg-[#F8F7F5] p-1">
-                <button
-                  onClick={() => setAdults(Math.max(1, adults - 1))}
-                  disabled={adults <= 1}
-                  className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white text-[#111] shadow-sm disabled:opacity-50"
-                >−</button>
-                <span className="font-semibold w-6 text-center text-[#111]">{adults}</span>
-                <button
-                  onClick={() => setAdults(Math.min(max - children, adults + 1))}
-                  disabled={adults + children >= max}
-                  className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white text-[#111] shadow-sm disabled:opacity-50"
-                >+</button>
-              </div>
-            </div>
-            {/* Children */}
-            <div>
-              <label className="text-sm font-semibold text-[#111] block mb-2">Children</label>
-              <div className="flex items-center justify-between border border-[#E4E0D9] rounded-lg bg-[#F8F7F5] p-1">
-                <button
-                  onClick={() => setChildren(Math.max(0, children - 1))}
-                  disabled={children <= 0}
-                  className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white text-[#111] shadow-sm disabled:opacity-50"
-                >−</button>
-                <span className="font-semibold w-6 text-center text-[#111]">{children}</span>
-                <button
-                  onClick={() => setChildren(Math.min(max - adults, children + 1))}
-                  disabled={adults + children >= max}
-                  className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white text-[#111] shadow-sm disabled:opacity-50"
-                >+</button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Guests selector */}
+        {!isSolo && (
+          <div>
+            <button
+              onClick={() => { setGuestsOpen(o => !o); setDateOpen(false); }}
+              className="w-full flex items-center gap-3 bg-[#F4F4F4] hover:bg-[#EBEBEB] transition-colors rounded-xl px-4 py-3 text-left"
+            >
+              <Users className="size-4.5 text-[#555] shrink-0" />
+              <span className="flex-1 text-sm font-medium text-[#111]">{guestLabel}</span>
+              <ChevronDown className={`size-4 text-[#555] transition-transform ${guestsOpen ? "rotate-180" : ""}`} />
+            </button>
 
-      </div>
-
-      {/* ── Price Breakdown ── */}
-      <div className="border-t border-[#E4E0D9] pt-4 mb-6 space-y-2 text-sm">
-        {priceOverride !== null ? (
-          <div className="flex justify-between">
-            <span className="text-[#545454]">{isSolo ? "1" : totalGuests} × ${priceOverride}/person <span className="text-[#C41230] text-xs font-semibold">(special)</span></span>
-            <span className="font-semibold text-[#111]">${totalPrice.toFixed(2)}</span>
-          </div>
-        ) : isSolo ? (
-          <>
-            <div className="flex justify-between">
-              <span className="text-[#545454]">Adults × {adults}</span>
-              <span className="font-semibold text-[#111]">${(adults * basePrice).toFixed(2)}</span>
-            </div>
-            {children > 0 && (
-              <div className="flex justify-between">
-                <span className="text-[#545454]">Children × {children}</span>
-                <span className="font-semibold text-[#111]">${(children * (childPrice ?? basePrice)).toFixed(2)}</span>
+            {guestsOpen && (
+              <div className="mt-2 bg-[#F4F4F4] rounded-xl px-4 py-3 space-y-3">
+                {/* Adults */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-[#111]">Adults</p>
+                    <p className="text-xs text-[#7A746D]">Age 18+</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setAdults(Math.max(1, adults - 1))}
+                      disabled={adults <= 1}
+                      className="w-8 h-8 rounded-full border border-[#D4D4D4] bg-white flex items-center justify-center text-lg font-medium disabled:opacity-40 hover:border-[#111] transition-colors"
+                    >−</button>
+                    <span className="w-4 text-center font-semibold text-[#111]">{adults}</span>
+                    <button
+                      onClick={() => setAdults(Math.min(max - children, adults + 1))}
+                      disabled={adults + children >= max}
+                      className="w-8 h-8 rounded-full border border-[#D4D4D4] bg-white flex items-center justify-center text-lg font-medium disabled:opacity-40 hover:border-[#111] transition-colors"
+                    >+</button>
+                  </div>
+                </div>
+                {/* Children */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-[#111]">Children</p>
+                    <p className="text-xs text-[#7A746D]">Age 0–17</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setChildren(Math.max(0, children - 1))}
+                      disabled={children <= 0}
+                      className="w-8 h-8 rounded-full border border-[#D4D4D4] bg-white flex items-center justify-center text-lg font-medium disabled:opacity-40 hover:border-[#111] transition-colors"
+                    >−</button>
+                    <span className="w-4 text-center font-semibold text-[#111]">{children}</span>
+                    <button
+                      onClick={() => setChildren(Math.min(max - adults, children + 1))}
+                      disabled={adults + children >= max}
+                      className="w-8 h-8 rounded-full border border-[#D4D4D4] bg-white flex items-center justify-center text-lg font-medium disabled:opacity-40 hover:border-[#111] transition-colors"
+                    >+</button>
+                  </div>
+                </div>
               </div>
             )}
-          </>
-        ) : (
-          <div className="flex justify-between">
-            <span className="text-[#545454]">{groupUnits} × ${basePrice} (per {baseGroupSize} guests)</span>
-            <span className="font-semibold text-[#111]">${totalPrice.toFixed(2)}</span>
           </div>
         )}
-        <div className="flex justify-between items-center pt-2 border-t border-[#E4E0D9]">
-          <span className="font-semibold text-[#111]">Total Price</span>
-          <span className="text-2xl font-bold text-[#111]">${totalPrice.toFixed(2)}</span>
+
+        {/* Date selector */}
+        <div>
+          <button
+            onClick={() => { setDateOpen(o => !o); setGuestsOpen(false); }}
+            className="w-full flex items-center gap-3 bg-[#F4F4F4] hover:bg-[#EBEBEB] transition-colors rounded-xl px-4 py-3 text-left"
+          >
+            <CalendarDays className="size-4.5 text-[#555] shrink-0" />
+            <span className={`flex-1 text-sm font-medium ${date ? "text-[#111]" : "text-[#7A746D]"}`}>{dateLabel}</span>
+            <ChevronDown className={`size-4 text-[#555] transition-transform ${dateOpen ? "rotate-180" : ""}`} />
+          </button>
+
+          {dateOpen && (
+            <div className="mt-2 bg-[#F4F4F4] rounded-xl p-3">
+              <AvailabilityCalendar
+                tourId={tourId}
+                selected={date}
+                onSelect={handleDateSelect}
+              />
+            </div>
+          )}
         </div>
-        <span className="text-xs text-[#7A746D] block">No hidden fees. Taxes included.</span>
       </div>
 
-      <button
-        onClick={handleBooking}
-        disabled={!date}
-        className="w-full bg-[#C41230] hover:bg-[#A00F27] text-white font-bold text-lg py-4 rounded-xl transition-colors shadow-md disabled:bg-[#A8A29E] disabled:cursor-not-allowed mb-4"
-      >
-        {date ? "Book Now" : "Select a Date to Continue"}
-      </button>
+      {/* ── Price summary ── */}
+      {date && (
+        <div className="mx-5 mb-4 bg-[#F4F4F4] rounded-xl px-4 py-3 space-y-1.5 text-sm">
+          {isSolo ? (
+            <>
+              <div className="flex justify-between text-[#545454]">
+                <span>Adults × {adults}</span>
+                <span>${(adults * (priceOverride ?? basePrice)).toFixed(2)}</span>
+              </div>
+              {children > 0 && (
+                <div className="flex justify-between text-[#545454]">
+                  <span>Children × {children}</span>
+                  <span>${(children * (priceOverride ?? childPrice ?? basePrice)).toFixed(2)}</span>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex justify-between text-[#545454]">
+              <span>{Math.ceil(totalGuests / baseGroupSize)} × ${priceOverride ?? basePrice} (per {baseGroupSize} guests)</span>
+              <span>${totalPrice.toFixed(2)}</span>
+            </div>
+          )}
+          <div className="flex justify-between font-bold text-[#111] pt-1.5 border-t border-[#E4E0D9]">
+            <span>Total</span>
+            <span>${totalPrice.toFixed(2)}</span>
+          </div>
+          <p className="text-[11px] text-[#7A746D]">No hidden fees. Taxes included.</p>
+        </div>
+      )}
 
-      <div className="text-center text-sm text-[#7A746D] flex flex-col gap-2">
-        <span className="flex items-center justify-center gap-1.5"><CheckCircle className="size-4 text-[#15803D]" /> Free cancellation up to 24h</span>
-        <span className="flex items-center justify-center gap-1.5"><CheckCircle className="size-4 text-[#15803D]" /> Reserve now, pay later</span>
+      {/* ── CTA ── */}
+      <div className="px-5 pb-5">
+        <button
+          onClick={handleBooking}
+          className="w-full bg-[#1A6BFF] hover:bg-[#1558D6] active:bg-[#1044B0] text-white font-bold text-[15px] py-3.5 rounded-xl transition-colors shadow-sm"
+        >
+          {date ? "Book Now" : "Check availability"}
+        </button>
       </div>
+
+      {/* ── Trust badges ── */}
+      <div className="border-t border-[#E4E0D9] px-5 py-4 space-y-3">
+        <div className="flex items-start gap-3">
+          <CheckCircle2 className="size-5 text-[#22A96E] shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-[#111]">Free cancellation</p>
+            <p className="text-xs text-[#7A746D] leading-snug mt-0.5">Cancel up to 24 hours in advance for a full refund</p>
+          </div>
+        </div>
+        <div className="flex items-start gap-3">
+          <CheckCircle2 className="size-5 text-[#22A96E] shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-[#111]">Reserve now &amp; pay later</p>
+            <p className="text-xs text-[#7A746D] leading-snug mt-0.5">Keep your travel plans flexible — book your spot and pay nothing today.</p>
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }
