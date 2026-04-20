@@ -77,7 +77,7 @@ export function BookingWidget({
         )}
         <p className="text-[#7A746D] text-sm mb-0.5">From</p>
         <div className="flex items-baseline gap-2">
-          <span className="text-[2rem] font-bold text-[#111] leading-none">${basePrice}</span>
+          <span className="text-[2rem] font-bold text-[#C41230] leading-none">${basePrice}</span>
           <span className="text-[#7A746D] text-sm">
             {isSolo ? "per person" : `/ ${baseGroupSize} guests`}
           </span>

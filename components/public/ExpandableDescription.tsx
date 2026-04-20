@@ -16,7 +16,7 @@ export function ExpandableDescription({ paragraphs }: Props) {
   return (
     <div>
       <div
-        className={`text-[17px] text-[#3D3D3D] leading-relaxed space-y-4 overflow-hidden transition-all duration-300 ${
+        className={`text-sm text-[#545454] leading-relaxed space-y-3 overflow-hidden transition-all duration-300 ${
           !expanded && needsTruncation ? "max-h-[6.5rem]" : "max-h-none"
         }`}
         style={!expanded && needsTruncation ? { WebkitMaskImage: "linear-gradient(to bottom, black 55%, transparent 100%)" } : undefined}
@@ -29,7 +29,7 @@ export function ExpandableDescription({ paragraphs }: Props) {
       {needsTruncation && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="mt-3 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#185FA5] hover:text-[#0C447C] transition-colors"
+          className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-[#185FA5] underline hover:text-[#0C447C] transition-colors"
         >
           {expanded ? (
             <><ChevronUp className="size-4" /> Show less</>

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { Clock, MapPin, Users, CheckCircle, XCircle, ChevronRight, Star, Globe, Zap } from "lucide-react";
+import { Clock, MapPin, Users, CheckCircle, XCircle, ChevronRight, Star, Globe, Zap, CalendarCheck, BadgeCheck } from "lucide-react";
 import Link from "next/link";
 import { TourGallery, GalleryCarousel } from "@/components/public/TourGallery";
 import { ReviewSection } from "@/components/public/ReviewSection";
@@ -192,7 +192,7 @@ export default async function TourDetailPage({ params }: PageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-14">
 
           {/* ── Left Column ─────────────────────── */}
-          <div className="lg:col-span-2 space-y-10">
+          <div className="lg:col-span-2">
 
             {/* Hero Gallery */}
             <TourGallery
@@ -203,97 +203,150 @@ export default async function TourDetailPage({ params }: PageProps) {
             />
 
             {/* Short description */}
-            <p className="text-lg text-[#545454] leading-relaxed">{tour.shortDescription}</p>
+            <p className="text-base text-[#545454] leading-relaxed mt-5 mb-1">{tour.shortDescription}</p>
 
-            {/* About */}
-            <section>
-              <h2 className="text-2xl font-bold font-display text-[#111] mb-5">About this activity</h2>
-              <ExpandableDescription paragraphs={descParagraphs} />
-            </section>
-
-            {/* Highlights */}
-            {highlights.length > 0 && (
-              <section className="bg-white p-8 rounded-2xl border border-[#E4E0D9] shadow-sm">
-                <h2 className="text-2xl font-bold font-display text-[#111] mb-6">Experience Highlights</h2>
-                <ul className="space-y-4">
-                  {highlights.map((hl, i) => (
-                    <li key={i} className="flex gap-4 text-lg text-[#545454]">
-                      <CheckCircle className="size-6 text-[#15803D] shrink-0 mt-0.5" />
-                      <span>{hl}</span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            {/* Includes / Excludes */}
-            {(includes.length > 0 || excludes.length > 0) && (
-              <section className="bg-white p-8 rounded-2xl border border-[#E4E0D9] shadow-sm">
-                <h2 className="text-2xl font-bold font-display text-[#111] mb-6">What&apos;s included</h2>
-                <div className="grid md:grid-cols-2 gap-8">
-                  {includes.length > 0 && (
-                    <div>
-                      <h3 className="font-semibold text-[#15803D] uppercase text-xs tracking-widest mb-4">Included</h3>
-                      <ul className="space-y-3">
-                        {includes.map((item, i) => (
-                          <li key={i} className="flex gap-3 text-[#545454]">
-                            <CheckCircle className="size-5 text-[#15803D] shrink-0 mt-0.5" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {excludes.length > 0 && (
-                    <div>
-                      <h3 className="font-semibold text-[#C41230] uppercase text-xs tracking-widest mb-4">Not included</h3>
-                      <ul className="space-y-3">
-                        {excludes.map((item, i) => (
-                          <li key={i} className="flex gap-3 text-[#545454]">
-                            <XCircle className="size-5 text-[#C41230] shrink-0 mt-0.5" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+            {/* ── About this activity ── */}
+            <div className="mt-6 mb-2">
+              <h2 className="font-bold text-[#111] text-base mb-3">About this activity</h2>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <Clock className="size-5 text-[#545454] shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-[#111]">Duration {tour.duration} {tour.durationType}</p>
+                    <p className="text-xs text-[#7A746D]">Check availability to see starting times</p>
+                  </div>
                 </div>
-              </section>
-            )}
+                <div className="flex items-start gap-3">
+                  <Users className="size-5 text-[#545454] shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-[#111]">Small group</p>
+                    <p className="text-xs text-[#7A746D]">Limited to {tour.maxGroupSize} participants</p>
+                  </div>
+                </div>
+                {languages.length > 0 && (
+                  <div className="flex items-start gap-3">
+                    <Globe className="size-5 text-[#545454] shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-[#111]">Live tour guide</p>
+                      <p className="text-xs text-[#7A746D]">{languages.join(", ")}</p>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-start gap-3">
+                  <BadgeCheck className="size-5 text-[#545454] shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-[#111]">Free cancellation</p>
+                    <p className="text-xs text-[#7A746D]">Cancel up to 24 hours in advance for a full refund</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CalendarCheck className="size-5 text-[#545454] shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-[#111]">Reserve now &amp; pay later</p>
+                    <p className="text-xs text-[#7A746D]">Keep your travel plans flexible — book your spot and pay nothing today</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <MapPin className="size-5 text-[#545454] shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-[#111]">{tour.location}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-            {/* Important Info */}
-            {importantInfo.length > 0 && (
-              <section className="bg-[#FFF4E5] p-8 rounded-2xl border border-[#FFE8C2] shadow-sm">
-                <h2 className="text-2xl font-bold font-display text-[#B45309] mb-4">Know Before You Go</h2>
-                <ul className="space-y-3 text-[#92400E]">
-                  {importantInfo.map((info, i) => (
-                    <li key={i} className="flex gap-3">
-                      <span className="text-[#B45309] font-bold mt-0.5">•</span>
-                      <span>{info}</span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
+            {/* ── Definition-list sections ── */}
+            <div className="divide-y divide-[#E4E0D9] border-t border-[#E4E0D9] mt-4">
 
-            {/* Itinerary */}
-            {itinerary.length > 0 && (
-              <section>
-                <h2 className="text-2xl font-bold font-display text-[#111] mb-2">Itinerary</h2>
-                <p className="text-sm text-[#7A746D] mb-8">For reference only. Itineraries are subject to change.</p>
-                <ItineraryTimeline
-                  itinerary={itinerary}
-                  meetingPoint={tourData.meetingPoint}
-                  endPoint={tourData.endPoint}
-                />
-              </section>
-            )}
+              {/* Full description */}
+              <div className="grid grid-cols-1 sm:grid-cols-[190px_1fr] gap-x-8 gap-y-2 py-5">
+                <h2 className="font-bold text-[#111] text-sm leading-snug">Full description</h2>
+                <ExpandableDescription paragraphs={descParagraphs} />
+              </div>
+
+              {/* Highlights */}
+              {highlights.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-[190px_1fr] gap-x-8 gap-y-2 py-5">
+                  <h2 className="font-bold text-[#111] text-sm leading-snug">Highlights</h2>
+                  <ul className="space-y-2">
+                    {highlights.map((hl, i) => (
+                      <li key={i} className="flex gap-3 text-sm text-[#545454]">
+                        <CheckCircle className="size-4 text-[#15803D] shrink-0 mt-0.5" />
+                        <span>{hl}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Includes / Excludes */}
+              {(includes.length > 0 || excludes.length > 0) && (
+                <div className="grid grid-cols-1 sm:grid-cols-[190px_1fr] gap-x-8 gap-y-2 py-5">
+                  <h2 className="font-bold text-[#111] text-sm leading-snug">Includes</h2>
+                  <ul className="space-y-2">
+                    {includes.map((item, i) => (
+                      <li key={i} className="flex gap-3 text-sm text-[#545454]">
+                        <CheckCircle className="size-4 text-[#15803D] shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                    {excludes.map((item, i) => (
+                      <li key={i} className="flex gap-3 text-sm text-[#545454]">
+                        <XCircle className="size-4 text-[#C41230] shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Meeting point */}
+              {tourData.meetingPoint && (
+                <div className="grid grid-cols-1 sm:grid-cols-[190px_1fr] gap-x-8 gap-y-2 py-5">
+                  <h2 className="font-bold text-[#111] text-sm leading-snug">Meeting point</h2>
+                  <div>
+                    <p className="text-sm text-[#545454] leading-relaxed">{tourData.meetingPoint}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Important Info */}
+              {importantInfo.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-[190px_1fr] gap-x-8 gap-y-2 py-5">
+                  <h2 className="font-bold text-[#111] text-sm leading-snug">Important information</h2>
+                  <ul className="space-y-2">
+                    {importantInfo.map((info, i) => (
+                      <li key={i} className="flex gap-3 text-sm text-[#545454]">
+                        <span className="text-[#545454] shrink-0 mt-1">•</span>
+                        <span>{info}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Itinerary */}
+              {itinerary.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-[190px_1fr] gap-x-8 gap-y-2 py-5">
+                  <div>
+                    <h2 className="font-bold text-[#111] text-sm leading-snug">Itinerary</h2>
+                    <p className="text-xs text-[#7A746D] mt-1">Subject to change</p>
+                  </div>
+                  <ItineraryTimeline
+                    itinerary={itinerary}
+                    meetingPoint={tourData.meetingPoint}
+                    endPoint={tourData.endPoint}
+                  />
+                </div>
+              )}
+
+            </div>
 
             {/* Photo Gallery Carousel */}
-            {allImages.length > 1 && <GalleryCarousel images={allImages} />}
+            {allImages.length > 1 && <div className="mt-8"><GalleryCarousel images={allImages} /></div>}
 
             {/* Reviews */}
-            <div id="reviews">
+            <div id="reviews" className="mt-8">
               <ReviewSection
                 tourId={tourData.id}
                 reviews={reviews}
