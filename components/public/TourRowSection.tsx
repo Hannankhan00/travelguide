@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Star } from "lucide-react";
 import { WishlistButton } from "./WishlistButton";
+import { cldUrl, CLD_CARD } from "@/lib/cloudinary";
 
 function useVisible() {
   const [visible, setVisible] = useState(4);
@@ -148,7 +149,7 @@ function TourCard({ tour, formatPrice }: { tour: RowTour; formatPrice: (p: numbe
       <div className="relative h-48 overflow-hidden">
         {tour.coverImage ? (
           <Image
-            src={tour.coverImage}
+            src={cldUrl(tour.coverImage, CLD_CARD)}
             alt={tour.title}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"

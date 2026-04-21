@@ -1,54 +1,6 @@
 @import "tailwindcss";
 
-/* ─────────────────────────────────────────────
-   GT EESTI — self-hosted font
-   Drop files into /public/fonts/
-────────────────────────────────────────────── */
-
-@font-face {
-  font-family: "GT Eesti";
-  src: url("/fonts/GTEesti-Light.woff2") format("woff2"),
-       url("/fonts/GTEesti-Light.woff") format("woff");
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "GT Eesti";
-  src: url("/fonts/GTEesti-Regular.woff2") format("woff2"),
-       url("/fonts/GTEesti-Regular.woff") format("woff");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "GT Eesti";
-  src: url("/fonts/GTEesti-Medium.woff2") format("woff2"),
-       url("/fonts/GTEesti-Medium.woff") format("woff");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "GT Eesti";
-  src: url("/fonts/GTEesti-SemiBold.woff2") format("woff2"),
-       url("/fonts/GTEesti-SemiBold.woff") format("woff");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "GT Eesti";
-  src: url("/fonts/GTEesti-Bold.woff2") format("woff2"),
-       url("/fonts/GTEesti-Bold.woff") format("woff");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
+/* GT Eesti font — uncomment when font files are placed in /public/fonts/ */
 
 /* ─────────────────────────────────────────────
    DESIGN TOKENS — Japan Tour Booking Platform
@@ -87,8 +39,8 @@
   --color-info-light:    #DBEAFE;
 
   /* Typography */
-  --font-sans:    "GT Eesti", system-ui, sans-serif;
-  --font-display: "GT Eesti", system-ui, sans-serif;
+  --font-sans:    system-ui, -apple-system, sans-serif;
+  --font-display: system-ui, -apple-system, sans-serif;
 
   /* Spacing / radius */
   --radius-sm:   0.25rem;
@@ -112,8 +64,8 @@
 
 @theme inline {
   /* Fonts */
-  --font-sans:    "GT Eesti", system-ui, sans-serif;
-  --font-display: "GT Eesti", system-ui, sans-serif;
+  --font-sans:    system-ui, -apple-system, sans-serif;
+  --font-display: system-ui, -apple-system, sans-serif;
   --font-mono:    ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
 
   /* Brand colors */

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { cldUrl, CLD_LIGHTBOX, CLD_LIGHTBOX_THUMB } from "@/lib/cloudinary";
 
 interface GalleryLightboxProps {
   images: { url: string; altText?: string | null }[];
@@ -56,7 +57,7 @@ export function GalleryLightbox({ images, initialIndex = 0, onClose }: GalleryLi
 
         {/* Image */}
         <img
-          src={images[current].url}
+          src={cldUrl(images[current].url, CLD_LIGHTBOX)}
           alt={images[current].altText || `Image ${current + 1}`}
           className="max-w-full max-h-full object-contain rounded-lg shadow-2xl select-none"
         />
@@ -87,7 +88,7 @@ export function GalleryLightbox({ images, initialIndex = 0, onClose }: GalleryLi
                   i === current ? "border-white scale-110" : "border-transparent opacity-60 hover:opacity-100"
                 }`}
               >
-                <img src={img.url} alt="" loading="lazy" className="w-full h-full object-cover" />
+                <img src={cldUrl(img.url, CLD_LIGHTBOX_THUMB)} alt="" loading="lazy" className="w-full h-full object-cover" />
               </button>
             ))}
           </div>

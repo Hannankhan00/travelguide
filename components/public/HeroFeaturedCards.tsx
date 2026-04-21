@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Star } from "lucide-react";
+import { cldUrl, CLD_THUMB } from "@/lib/cloudinary";
 
 function useVisible() {
   const [visible, setVisible] = useState(3);
@@ -101,7 +102,7 @@ export function HeroFeaturedCards({ tours }: Props) {
                 <div className="relative w-28 h-28 rounded-lg overflow-hidden shrink-0">
                   {tour.coverImage ? (
                     <Image
-                      src={tour.coverImage}
+                      src={cldUrl(tour.coverImage, CLD_THUMB)}
                       alt={tour.title}
                       fill
                       sizes="112px"

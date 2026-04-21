@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
+import { cldUrl, CLD_THUMB } from "@/lib/cloudinary";
 
 export async function DestinationsSection() {
   const places = await prisma.place.findMany({
@@ -27,7 +28,7 @@ export async function DestinationsSection() {
               <div className="relative rounded-[10px] overflow-hidden h-27.5 mb-2 bg-[#E7E8EE] group-hover:opacity-85 transition-opacity">
                 {place.imageUrl ? (
                   <Image
-                    src={place.imageUrl}
+                    src={cldUrl(place.imageUrl, CLD_THUMB)}
                     alt={place.name}
                     fill
                     sizes="(max-width: 640px) 33vw, 16vw"

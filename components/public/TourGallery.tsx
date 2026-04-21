@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Map, Clock, Images, ChevronLeft, ChevronRight } from "lucide-react";
 import { GalleryLightbox } from "./GalleryLightbox";
+import { cldUrl, CLD_GALLERY_MAIN, CLD_GALLERY_SIDE, CLD_GALLERY_MAIN as CLD_CAROUSEL } from "@/lib/cloudinary";
 
 interface TourImage {
   url: string;
@@ -37,7 +39,7 @@ export function TourGallery({ coverImage, allImages, title, likelyToSellOut }: T
           onClick={() => openLightbox(0)}
         >
           {coverImage ? (
-            <img src={coverImage} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+            <Image src={cldUrl(coverImage, CLD_GALLERY_MAIN)} alt={title} fill sizes="(max-width: 768px) 100vw, 75vw" className="object-cover group-hover:scale-105 transition-transform duration-700" />
           ) : (
             <div className="absolute inset-0 bg-linear-to-tr from-[#0C447C] to-[#185FA5] opacity-80" />
           )}
@@ -59,7 +61,7 @@ export function TourGallery({ coverImage, allImages, title, likelyToSellOut }: T
                 onClick={() => img && openLightbox(allImages.findIndex((i) => i.url === img.url))}
               >
                 {img ? (
-                  <img src={img.url} alt="Gallery" loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <Image src={cldUrl(img.url, CLD_GALLERY_SIDE)} alt="Gallery" fill sizes="25vw" className="object-cover group-hover:scale-105 transition-transform duration-700" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[#A8A29E]">
                     <Map className="size-8 opacity-20" />
@@ -118,7 +120,7 @@ export function GalleryCarousel({ images }: { images: TourImage[] }) {
                   className="shrink-0 w-full aspect-video relative cursor-pointer"
                   onClick={() => { setLightboxOpen(true); }}
                 >
-                  <img src={img.url} alt={img.altText || `Gallery photo ${i + 1}`} loading="lazy" className="w-full h-full object-cover" />
+                  <Image src={cldUrl(img.url, CLD_CAROUSEL)} alt={img.altText || `Gallery photo ${i + 1}`} fill sizes="100vw" className="object-cover" />
                 </div>
               ))}
             </div>

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { SearchBar } from "./SearchBar";
-import { HeroFeaturedCards } from "./HeroFeaturedCards";
+import { HeroCarouselClient } from "./HeroCarouselClient";
 
 interface MiniTour {
   id: string;
@@ -29,6 +29,7 @@ export function HeroSection({ featuredTours = [] }: Props) {
           alt="Mount Fuji at dawn"
           fill
           priority
+          fetchPriority="high"
           quality={75}
           sizes="100vw"
           className="object-cover"
@@ -67,7 +68,7 @@ export function HeroSection({ featuredTours = [] }: Props) {
 
         {/* Featured tours carousel — like GetYourGuide */}
         {featuredTours.length > 0 && (
-          <HeroFeaturedCards tours={featuredTours} />
+          <HeroCarouselClient tours={featuredTours} />
         )}
       </div>
 

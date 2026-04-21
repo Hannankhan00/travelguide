@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { emitNewMessage } from "@/lib/pusher";
+import { emitNewMessage } from "@/lib/pusher-server";
 
 // Get or create a BOOKING_SUPPORT conversation for a booking
 export async function getOrCreateConversation(bookingId: string) {

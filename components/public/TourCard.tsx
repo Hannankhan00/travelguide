@@ -1,8 +1,10 @@
 import Link from "next/link";
+import Image from "next/image";
 import { MapPin, Clock, Star, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/utils";
 import { WishlistButton } from "./WishlistButton";
+import { cldUrl, CLD_CARD } from "@/lib/cloudinary";
 
 interface TourCardProps {
   id:             string;
@@ -64,10 +66,12 @@ export function TourCard({
         {/* Image area */}
         <div className="relative h-56 overflow-hidden bg-muted">
           {coverImage ? (
-            <img
-              src={coverImage}
+            <Image
+              src={cldUrl(coverImage, CLD_CARD)}
               alt={title}
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
             <div
