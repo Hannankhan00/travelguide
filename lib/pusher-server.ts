@@ -1,12 +1,24 @@
 import PusherServer from "pusher";
 
-export const pusherServer = new PusherServer({
-  appId:   process.env.PUSHER_APP_ID!,
-  key:     process.env.NEXT_PUBLIC_PUSHER_KEY!,
-  secret:  process.env.PUSHER_SECRET!,
-  cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
-  useTLS:  true,
-});
+let _instance: PusherServer | null = null;
+
+function getPusherServer(): PusherServer {
+  if (_instance) return _instance;
+
+  const appId   = process.env.PUSHER_APP_ID;
+  const key     = process.env.NEXT_PUBLIC_PUSHER_KEY;
+  const secret  = process.env.PUSHER_SECRET;
+  const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER;
+
+  if (!appId || !key || !secret || !cluster) {
+    throw new Error(
+      "Pusher server env vars are not configured. Set PUSHER_APP_ID, NEXT_PUBLIC_PUSHER_KEY, PUSHER_SECRET, NEXT_PUBLIC_PUSHER_CLUSTER."
+    );
+  }
+
+  _instance = new PusherServer({ appId, key, secret, cluster, useTLS: true });
+  return _instance;
+}
 
 export function emitNewMessage(
   conversationId: string,
@@ -19,7 +31,7 @@ export function emitNewMessage(
     isRead:     boolean;
   }
 ) {
-  return pusherServer.trigger(`conversation-${conversationId}`, "new_message", {
+  return getPusherServer().trigger(`conversation-${conversationId}`, "new_message", {
     ...message,
     createdAt: message.createdAt instanceof Date
       ? message.createdAt.toISOString()
