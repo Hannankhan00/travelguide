@@ -21,6 +21,16 @@ const nextConfig: NextConfig = {
   // Allow Turbopack (default in Next 16) to handle these packages
   serverExternalPackages: ["bcryptjs", "nodemailer"],
 
+  async redirects() {
+    return [
+      {
+        source: "/favicon.ico",
+        destination: "/icon.png",
+        permanent: false,
+      },
+    ];
+  },
+
   // Disable streaming buffering for proxied environments (Hostinger / nginx)
   async headers() {
     return [

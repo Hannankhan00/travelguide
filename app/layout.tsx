@@ -3,6 +3,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? "https://gotripjapan.com"),
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
   title: {
     default: "GoTripJapan — Your Japan Journey Starts Here",
     template: "%s | GoTripJapan",
