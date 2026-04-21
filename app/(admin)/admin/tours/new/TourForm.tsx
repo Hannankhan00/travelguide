@@ -60,8 +60,10 @@ type TourData = {
   minGroupSize:     string;
   dailyCapacity:    string;
   languages:        string[];
-  serviceProvider:  string;
-  startTimes:       string[];
+  serviceProvider:     string;
+  startTimes:          string[];
+  cancellationHours:   string;
+  rescheduleHours:     string;
   basePrice:        string;
   childPrice:       string;
   priceTiers:       PriceTier[];
@@ -97,7 +99,7 @@ const DEFAULT_DATA: TourData = {
   itinerary: [{ order: 1, title: "", description: "", stayMinutes: "30", isOptional: false }],
   meetingPoint: "", endPoint: "", duration: "1", durationType: "days", maxGroupSize: "10",
   minGroupSize: "1", dailyCapacity: "10", languages: ["English"], serviceProvider: "",
-  startTimes: [],
+  startTimes: [], cancellationHours: "24", rescheduleHours: "48",
   basePrice: "", childPrice: "", priceTiers: [], variations: [], includes: [""], excludes: [""], importantInfo: [""],
   coverImage: "", galleryImages: ["", "", "", ""],
   metaTitle: "", metaDescription: "", featured: false, likelyToSellOut: false, status: "DRAFT",
@@ -312,6 +314,8 @@ export function TourForm({ initialData }: TourFormProps) {
     formData.set("priceTiers", JSON.stringify(data.priceTiers.filter(t => t.minGuests && t.pricePerPerson)));
     formData.set("variations", JSON.stringify((data.variations || []).filter(v => v.name && v.extraCost)));
     formData.set("startTimes", JSON.stringify((data.startTimes || []).filter(Boolean)));
+    formData.set("cancellationHours", data.cancellationHours || "24");
+    formData.set("rescheduleHours", data.rescheduleHours || "48");
     formData.set("includes", JSON.stringify(data.includes.filter(Boolean)));
     formData.set("excludes", JSON.stringify(data.excludes.filter(Boolean)));
     formData.set("importantInfo", JSON.stringify(data.importantInfo.filter(Boolean)));
@@ -779,6 +783,56 @@ export function TourForm({ initialData }: TourFormProps) {
               {(data.startTimes || []).length === 0 && (
                 <p className="text-xs text-[#A8A29E] mt-1 italic">No starting times added — customers won&apos;t see a time selector</p>
               )}
+            </div>
+
+            {/* ── Cancellation & Rescheduling Policy ── */}
+            <div className="md:col-span-2 pt-4 border-t border-[#E4E0D9]">
+              <label className={labelCls + " mb-0"}>Cancellation &amp; Rescheduling Policy</label>
+              <p className={hintCls + " mb-3"}>Set the cutoff windows shown to customers during booking</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#545454] mb-1.5">Free cancellation up to</label>
+                  <select
+                    className={inputCls}
+                    value={data.cancellationHours}
+                    onChange={(e) => update("cancellationHours", e.target.value)}
+                  >
+                    <option value="0">Not allowed</option>
+                    <option value="6">6 hours before</option>
+                    <option value="12">12 hours before</option>
+                    <option value="24">24 hours before (recommended)</option>
+                    <option value="48">48 hours before</option>
+                    <option value="72">72 hours (3 days) before</option>
+                    <option value="168">1 week before</option>
+                  </select>
+                  <p className={hintCls}>
+                    {data.cancellationHours === "0"
+                      ? "No cancellations accepted"
+                      : `Customers can cancel and get a full refund up to ${data.cancellationHours} hours before the tour`}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#545454] mb-1.5">Rescheduling allowed up to</label>
+                  <select
+                    className={inputCls}
+                    value={data.rescheduleHours}
+                    onChange={(e) => update("rescheduleHours", e.target.value)}
+                  >
+                    <option value="0">Not allowed</option>
+                    <option value="6">6 hours before</option>
+                    <option value="12">12 hours before</option>
+                    <option value="24">24 hours before</option>
+                    <option value="48">48 hours before (recommended)</option>
+                    <option value="72">72 hours (3 days) before</option>
+                    <option value="168">1 week before</option>
+                  </select>
+                  <p className={hintCls}>
+                    {data.rescheduleHours === "0"
+                      ? "No rescheduling accepted"
+                      : `Customers can request to reschedule up to ${data.rescheduleHours} hours before the tour`}
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="md:col-span-2">

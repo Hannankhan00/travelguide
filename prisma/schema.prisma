@@ -100,8 +100,10 @@ model Tour {
   childPrice       Decimal?           @db.Decimal(10, 2)
   priceTiers       String?            @db.LongText
   variations       String?            @db.LongText
-  startTimes       String?            @db.LongText
-  status           TourStatus         @default(DRAFT)
+  startTimes           String?            @db.LongText
+  cancellationHours    Int                @default(24)
+  rescheduleHours      Int                @default(48)
+  status               TourStatus         @default(DRAFT)
   featured         Boolean            @default(false)
   likelyToSellOut  Boolean            @default(false)
   rating           Decimal?           @db.Decimal(3, 2)

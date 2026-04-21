@@ -3,6 +3,23 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { v2 as cloudinary } from "cloudinary";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+function extractCloudinaryPublicId(url: string): string | null {
+  try {
+    // e.g. https://res.cloudinary.com/CLOUD/image/upload/v1234567890/gotripjapan/abc123.jpg
+    const match = url.match(/\/upload\/(?:v\d+\/)?(.+)\.[a-z]+$/i);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
 
 function clearToursCache() {
   revalidateTag("tours", "default");
@@ -85,7 +102,9 @@ export async function saveTourAction(formData: FormData): Promise<ActionResult> 
   const childPrice       = childPriceRaw ? parseFloat(childPriceRaw) : null;
   const priceTiers       = safeJsonParse(formData.get("priceTiers") as string);
   const variations       = safeJsonParse(formData.get("variations") as string);
-  const startTimes       = safeJsonParse(formData.get("startTimes") as string);
+  const startTimes         = safeJsonParse(formData.get("startTimes") as string);
+  const cancellationHours  = parseInt(formData.get("cancellationHours") as string) ?? 24;
+  const rescheduleHours    = parseInt(formData.get("rescheduleHours")   as string) ?? 48;
   const includes         = safeJsonParse(formData.get("includes") as string);
   const excludes         = safeJsonParse(formData.get("excludes") as string);
   const importantInfo    = safeJsonParse(formData.get("importantInfo") as string);
@@ -142,7 +161,9 @@ export async function saveTourAction(formData: FormData): Promise<ActionResult> 
     childPrice,
     priceTiers:       JSON.stringify(priceTiers),
     variations:       JSON.stringify(variations),
-    startTimes:       JSON.stringify(startTimes),
+    startTimes:           JSON.stringify(startTimes),
+    cancellationHours,
+    rescheduleHours,
     includes:         JSON.stringify(includes),
     excludes:         JSON.stringify(excludes),
     importantInfo:    JSON.stringify(importantInfo),
@@ -273,7 +294,22 @@ export async function addTourImageAction(
 export async function deleteTourImageAction(imageId: string, tourId: string): Promise<ActionResult> {
   await assertAdmin();
   try {
+    const image = await prisma.tourImage.findUnique({ where: { id: imageId }, select: { url: true } });
+
     await prisma.tourImage.delete({ where: { id: imageId } });
+
+    // Delete from Cloudinary (best-effort — don't fail the whole operation if this errors)
+    if (image?.url) {
+      const publicId = extractCloudinaryPublicId(image.url);
+      if (publicId) {
+        try {
+          await cloudinary.uploader.destroy(publicId);
+        } catch (e) {
+          console.error("Cloudinary delete failed (continuing):", e);
+        }
+      }
+    }
+
     revalidatePath(`/admin/tours/${tourId}`);
     return { success: "Image deleted." };
   } catch {

@@ -22,7 +22,9 @@ interface BookingWidgetProps {
   languages?:      string[];
   duration?:       number;
   durationType?:   string;
-  startTimes?:     string[];
+  startTimes?:          string[];
+  cancellationHours?:   number;
+  rescheduleHours?:     number;
 }
 
 export function BookingWidget({
@@ -31,6 +33,8 @@ export function BookingWidget({
   variations = [], tourTitle = "", meetingPoint = "",
   languages = [], duration = 0, durationType = "hours",
   startTimes = [],
+  cancellationHours = 24,
+  rescheduleHours = 48,
 }: BookingWidgetProps) {
   const router = useRouter();
 
@@ -185,15 +189,42 @@ export function BookingWidget({
         </button>
       </div>
 
-      {/* ── Trust badges ── */}
+      {/* ── Trust badges / policy ── */}
       <div className="border-t border-[#E4E0D9] px-5 py-4 space-y-3">
-        <div className="flex items-start gap-3">
-          <CheckCircle2 className="size-5 text-[#22A96E] shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-[#111]">Free cancellation</p>
-            <p className="text-xs text-[#7A746D] leading-snug mt-0.5">Cancel up to 24 hours in advance for a full refund</p>
+        {cancellationHours > 0 ? (
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="size-5 text-[#22A96E] shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-[#111]">Free cancellation</p>
+              <p className="text-xs text-[#7A746D] leading-snug mt-0.5">
+                Cancel up to {cancellationHours >= 24
+                  ? `${cancellationHours / 24 === 1 ? "1 day" : `${cancellationHours / 24} days`}`
+                  : `${cancellationHours} hours`} before for a full refund
+              </p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-start gap-3">
+            <Clock className="size-5 text-[#F59E0B] shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-[#111]">Non-refundable</p>
+              <p className="text-xs text-[#7A746D] leading-snug mt-0.5">This booking cannot be cancelled once confirmed</p>
+            </div>
+          </div>
+        )}
+        {rescheduleHours > 0 && (
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="size-5 text-[#22A96E] shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-[#111]">Rescheduling available</p>
+              <p className="text-xs text-[#7A746D] leading-snug mt-0.5">
+                Request a date change up to {rescheduleHours >= 24
+                  ? `${rescheduleHours / 24 === 1 ? "1 day" : `${rescheduleHours / 24} days`}`
+                  : `${rescheduleHours} hours`} before departure
+              </p>
+            </div>
+          </div>
+        )}
         <div className="flex items-start gap-3">
           <CheckCircle2 className="size-5 text-[#22A96E] shrink-0 mt-0.5" />
           <div>
@@ -292,10 +323,27 @@ export function BookingWidget({
 
                 {/* Policies */}
                 <div className="border-t border-[#E4E0D9] pt-3 space-y-2">
-                  <div className="flex items-start gap-2 text-sm text-[#545454]">
-                    <BadgeCheck className="size-4 text-[#22A96E] shrink-0 mt-0.5" />
-                    <span>Free cancellation — cancel up to 24 hours in advance for a full refund</span>
-                  </div>
+                  {cancellationHours > 0 ? (
+                    <div className="flex items-start gap-2 text-sm text-[#545454]">
+                      <BadgeCheck className="size-4 text-[#22A96E] shrink-0 mt-0.5" />
+                      <span>Free cancellation up to {cancellationHours >= 24
+                        ? (cancellationHours / 24 === 1 ? "1 day" : `${cancellationHours / 24} days`)
+                        : `${cancellationHours} hours`} before — full refund</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2 text-sm text-[#545454]">
+                      <BadgeCheck className="size-4 text-[#F59E0B] shrink-0 mt-0.5" />
+                      <span>Non-refundable — cancellations are not accepted</span>
+                    </div>
+                  )}
+                  {rescheduleHours > 0 && (
+                    <div className="flex items-start gap-2 text-sm text-[#545454]">
+                      <CalendarCheck className="size-4 text-[#22A96E] shrink-0 mt-0.5" />
+                      <span>Rescheduling available up to {rescheduleHours >= 24
+                        ? (rescheduleHours / 24 === 1 ? "1 day" : `${rescheduleHours / 24} days`)
+                        : `${rescheduleHours} hours`} before departure</span>
+                    </div>
+                  )}
                   <div className="flex items-start gap-2 text-sm text-[#545454]">
                     <CalendarCheck className="size-4 text-[#22A96E] shrink-0 mt-0.5" />
                     <span>You can reserve now &amp; pay later</span>

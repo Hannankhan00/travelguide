@@ -22,6 +22,8 @@ interface Props {
   duration?: number;
   durationType?: string;
   startTimes?: string[];
+  cancellationHours?: number;
+  rescheduleHours?: number;
 }
 
 export function MobileBookingCTA({
@@ -30,6 +32,8 @@ export function MobileBookingCTA({
   variations = [], tourTitle = "", meetingPoint = "",
   languages = [], duration = 0, durationType = "hours",
   startTimes = [],
+  cancellationHours = 24,
+  rescheduleHours = 48,
 }: Props) {
   const [open, setOpen] = useState(false);
 
@@ -103,6 +107,8 @@ export function MobileBookingCTA({
             duration={duration}
             durationType={durationType}
             startTimes={startTimes}
+            cancellationHours={cancellationHours}
+            rescheduleHours={rescheduleHours}
           />
         </div>
       </div>
