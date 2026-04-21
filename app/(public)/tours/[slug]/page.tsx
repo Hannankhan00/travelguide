@@ -162,7 +162,12 @@ export default async function TourDetailPage({ params }: PageProps) {
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold text-[#111] leading-tight mb-3">{tour.title}</h1>
+        <h1 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold text-[#111] leading-tight mb-2">{tour.title}</h1>
+        {tourData.serviceProvider && (
+          <p className="text-sm text-[#7A746D] mb-3">
+            by <span className="font-medium text-[#1B2847]">{tourData.serviceProvider}</span>
+          </p>
+        )}
 
         {/* Rating + short description row */}
         <div className="flex flex-wrap items-center gap-4 mb-2">

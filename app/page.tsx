@@ -1,4 +1,6 @@
-import dynamic from "next/dynamic";
+export const dynamic = "force-dynamic";
+
+import nextDynamic from "next/dynamic";
 import { Navbar } from "@/components/public/Navbar";
 import { Footer } from "@/components/public/Footer";
 import { HeroSection } from "@/components/public/HeroSection";
@@ -11,8 +13,8 @@ import { auth } from "@/lib/auth";
 import Link from "next/link";
 
 // Client components below the fold — dynamically imported to split their JS bundle
-const TourRowSection = dynamic(() => import("@/components/public/TourRowSection").then(m => ({ default: m.TourRowSection })));
-const AuthModal      = dynamic(() => import("@/components/public/AuthModal").then(m => ({ default: m.AuthModal })));
+const TourRowSection = nextDynamic(() => import("@/components/public/TourRowSection").then(m => ({ default: m.TourRowSection })));
+const AuthModal      = nextDynamic(() => import("@/components/public/AuthModal").then(m => ({ default: m.AuthModal })));
 
 const TOP_ACTIVITY_CATS = [
   "Guided tours", "Food tours", "Day trips", "Cultural experiences",
