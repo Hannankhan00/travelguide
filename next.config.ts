@@ -21,6 +21,14 @@ const nextConfig: NextConfig = {
   // Allow Turbopack (default in Next 16) to handle these packages
   serverExternalPackages: ["bcryptjs", "nodemailer"],
 
+  // Replace Next.js polyfill-module with a no-op — our browserslist (Chrome 111+,
+  // Safari 16.4+) natively supports every API it patches, so the bytes are wasted.
+  turbopack: {
+    resolveAlias: {
+      "next/dist/build/polyfills/polyfill-module": "./lib/noop.js",
+    },
+  },
+
   async redirects() {
     return [
       {

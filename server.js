@@ -5,42 +5,46 @@ const port     = parseInt(process.env.PORT || "3000", 10);
 const dev      = process.env.NODE_ENV !== "production";
 const hostname = process.env.HOSTNAME || "0.0.0.0";
 
-// Prevent unhandled promise rejections / exceptions from killing the process
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("Unhandled Rejection at:", promise, "reason:", reason);
+console.log(`[server] Starting — NODE_ENV=${process.env.NODE_ENV} port=${port}`);
+
+// Prevent unhandled errors from killing the process silently
+process.on("unhandledRejection", (reason) => {
+  console.error("[server] Unhandled Rejection:", reason);
 });
 
 process.on("uncaughtException", (err) => {
-  console.error("Uncaught Exception:", err);
-  // Keep running unless it's a fatal startup error
+  console.error("[server] Uncaught Exception:", err.message, err.stack);
 });
 
 const app    = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
-app.prepare().then(() => {
-  const httpServer = createServer((req, res) => {
-    handle(req, res).catch((err) => {
-      console.error("Request handler error:", err);
-      if (!res.headersSent) {
-        res.statusCode = 500;
-        res.end("Internal Server Error");
-      }
+console.log("[server] Calling app.prepare()...");
+
+app.prepare()
+  .then(() => {
+    console.log("[server] app.prepare() succeeded — starting HTTP server");
+
+    const httpServer = createServer((req, res) => {
+      handle(req, res).catch((err) => {
+        console.error("[server] Request handler error:", err);
+        if (!res.headersSent) {
+          res.statusCode = 500;
+          res.end("Internal Server Error");
+        }
+      });
     });
-  });
 
-  httpServer.on("error", (err) => {
-    console.error("HTTP server error:", err);
-  });
+    httpServer.on("error", (err) => {
+      console.error("[server] HTTP server error:", err);
+    });
 
-  httpServer.listen(port, hostname, () => {
-    console.log(
-      `> Server ready at http://${hostname}:${port} [${dev ? "development" : "production"}]`
-    );
+    httpServer.listen(port, hostname, () => {
+      console.log(`[server] Ready at http://${hostname}:${port} [${dev ? "development" : "production"}]`);
+    });
+  })
+  .catch((err) => {
+    console.error("[server] FATAL — app.prepare() failed:");
+    console.error(err);
+    process.exit(1);
   });
-}).catch((err) => {
-  console.error("Failed to prepare Next.js app:", err);
-  // Give the process manager a chance to restart
-  process.exitCode = 1;
-  setTimeout(() => process.exit(1), 500);
-});

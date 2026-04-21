@@ -66,9 +66,11 @@ export function HeroSection({ featuredTours = [] }: Props) {
         {/* Search bar */}
         <SearchBar />
 
-        {/* Featured tours carousel — like GetYourGuide */}
+        {/* Featured tours carousel — reserve 208px so carousel appearance causes no CLS */}
         {featuredTours.length > 0 && (
-          <HeroCarouselClient tours={featuredTours} />
+          <div className="min-h-52">
+            <HeroCarouselClient tours={featuredTours} />
+          </div>
         )}
       </div>
 

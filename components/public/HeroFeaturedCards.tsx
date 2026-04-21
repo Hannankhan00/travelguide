@@ -6,16 +6,20 @@ import Image from "next/image";
 import { Star } from "lucide-react";
 import { cldUrl, CLD_THUMB } from "@/lib/cloudinary";
 
+function getVisible() {
+  if (typeof window === "undefined") return 3;
+  const w = window.innerWidth;
+  if (w >= 1024) return 3;
+  if (w >= 640) return 2;
+  return 1;
+}
+
 function useVisible() {
-  const [visible, setVisible] = useState(3);
+  const [visible, setVisible] = useState(getVisible);
   useEffect(() => {
     function update() {
-      const w = window.innerWidth;
-      if (w >= 1024) setVisible(3);
-      else if (w >= 640) setVisible(2);
-      else setVisible(1);
+      setVisible(getVisible());
     }
-    update();
     let timer: ReturnType<typeof setTimeout>;
     function onResize() {
       clearTimeout(timer);
