@@ -17,8 +17,16 @@ function useVisible() {
       else setVisible(1);
     }
     update();
-    window.addEventListener("resize", update, { passive: true });
-    return () => window.removeEventListener("resize", update);
+    let timer: ReturnType<typeof setTimeout>;
+    function onResize() {
+      clearTimeout(timer);
+      timer = setTimeout(update, 150);
+    }
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => {
+      window.removeEventListener("resize", onResize);
+      clearTimeout(timer);
+    };
   }, []);
   return visible;
 }

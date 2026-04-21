@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 
 export async function DestinationsSection() {
@@ -23,13 +24,14 @@ export async function DestinationsSection() {
               href={`/tours?q=${encodeURIComponent(place.linkQuery ?? place.name)}`}
               className="group text-center cursor-pointer"
             >
-              <div className="rounded-[10px] overflow-hidden h-27.5 mb-2 bg-[#E7E8EE] group-hover:opacity-85 transition-opacity">
+              <div className="relative rounded-[10px] overflow-hidden h-27.5 mb-2 bg-[#E7E8EE] group-hover:opacity-85 transition-opacity">
                 {place.imageUrl ? (
-                  <img
+                  <Image
                     src={place.imageUrl}
                     alt={place.name}
-                    loading="lazy"
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="(max-width: 640px) 33vw, 16vw"
+                    className="object-cover"
                   />
                 ) : (
                   <div className="w-full h-full bg-linear-to-br from-[#0C447C] to-[#185FA5]" />

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Star } from "lucide-react";
 
 function useVisible() {
@@ -14,8 +15,16 @@ function useVisible() {
       else setVisible(1);
     }
     update();
-    window.addEventListener("resize", update, { passive: true });
-    return () => window.removeEventListener("resize", update);
+    let timer: ReturnType<typeof setTimeout>;
+    function onResize() {
+      clearTimeout(timer);
+      timer = setTimeout(update, 150);
+    }
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => {
+      window.removeEventListener("resize", onResize);
+      clearTimeout(timer);
+    };
   }, []);
   return visible;
 }
@@ -89,13 +98,14 @@ export function HeroFeaturedCards({ tours }: Props) {
                 style={{ width: `calc((100% - ${(visible - 1) * GAP}px) / ${visible})` }}
               >
                 {/* Thumbnail */}
-                <div className="w-28 h-28 rounded-lg overflow-hidden shrink-0">
+                <div className="relative w-28 h-28 rounded-lg overflow-hidden shrink-0">
                   {tour.coverImage ? (
-                    <img
+                    <Image
                       src={tour.coverImage}
                       alt={tour.title}
-                      loading="lazy"
-                      className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500"
+                      fill
+                      sizes="112px"
+                      className="object-cover object-center group-hover:scale-110 transition-transform duration-500"
                     />
                   ) : (
                     <div
