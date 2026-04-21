@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const CANONICAL_DOMAIN = "gotripjapan.com";
+
 const nextConfig: NextConfig = {
   images: {
     formats: ["image/webp"],
@@ -31,24 +33,44 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
+      // Single canonical domain — strip www. Hostinger panel must NOT also do this redirect.
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: `www.${CANONICAL_DOMAIN}` }],
+        destination: `https://${CANONICAL_DOMAIN}/:path*`,
+        permanent: true,
+      },
       {
         source: "/favicon.ico",
         destination: "/icon.png",
-        permanent: false,
+        permanent: true,
       },
     ];
   },
 
-  // Disable streaming buffering for proxied environments (Hostinger / nginx)
   async headers() {
     return [
       {
         source: "/:path*",
         headers: [
-          {
-            key: "X-Accel-Buffering",
-            value: "no",
-          },
+          // Disable nginx proxy buffering (required for streaming on Hostinger)
+          { key: "X-Accel-Buffering", value: "no" },
+
+          // Prevent the site from being embedded in any iframe
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+
+          // Belt-and-suspenders: CSP frame-ancestors overrides X-Frame-Options in modern browsers
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+
+          // Prevent MIME sniffing
+          { key: "X-Content-Type-Options", value: "nosniff" },
+
+          // Strict referrer — avoids leaking the path in cross-origin navigations
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+
+          // Force HTTPS for 1 year — only effective once the first HTTPS response is received.
+          // DO NOT enable this if Hostinger panel "Force HTTPS" is off — pick one layer, not both.
+          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
         ],
       },
     ];
