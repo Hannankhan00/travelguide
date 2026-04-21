@@ -16,7 +16,7 @@ const customIcon = new L.Icon({
 });
 
 interface MapPickerProps {
-  onLocationSelect: (address: string) => void;
+  onLocationSelect: (address: string, lat: number, lng: number) => void;
   onClose: () => void;
 }
 
@@ -41,15 +41,20 @@ export default function MapPickerComponent({ onLocationSelect, onClose }: MapPic
   const reverseGeocode = async (lat: number, lng: number) => {
     setLoading(true);
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
-        headers: { "Accept-Language": "en" }
-      });
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+        { headers: { "Accept-Language": "en" } }
+      );
       const data = await res.json();
       if (data && data.display_name) {
-        onLocationSelect(data.display_name);
+        onLocationSelect(data.display_name, lat, lng);
+      } else {
+        // Fall back to raw coordinates if reverse geocode fails
+        onLocationSelect(`${lat.toFixed(6)}, ${lng.toFixed(6)}`, lat, lng);
       }
     } catch (error) {
       console.error("Geocoding error:", error);
+      onLocationSelect(`${lat.toFixed(6)}, ${lng.toFixed(6)}`, lat, lng);
     } finally {
       setLoading(false);
     }
@@ -69,7 +74,8 @@ export default function MapPickerComponent({ onLocationSelect, onClose }: MapPic
           console.error(err);
           setLoading(false);
           alert("Failed to get current location. Please check your permissions.");
-        }
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
       );
     } else {
       setLoading(false);

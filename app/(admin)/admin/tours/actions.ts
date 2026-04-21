@@ -84,6 +84,8 @@ export async function saveTourAction(formData: FormData): Promise<ActionResult> 
   const childPriceRaw    = formData.get("childPrice") as string;
   const childPrice       = childPriceRaw ? parseFloat(childPriceRaw) : null;
   const priceTiers       = safeJsonParse(formData.get("priceTiers") as string);
+  const variations       = safeJsonParse(formData.get("variations") as string);
+  const startTimes       = safeJsonParse(formData.get("startTimes") as string);
   const includes         = safeJsonParse(formData.get("includes") as string);
   const excludes         = safeJsonParse(formData.get("excludes") as string);
   const importantInfo    = safeJsonParse(formData.get("importantInfo") as string);
@@ -139,6 +141,8 @@ export async function saveTourAction(formData: FormData): Promise<ActionResult> 
     basePrice,
     childPrice,
     priceTiers:       JSON.stringify(priceTiers),
+    variations:       JSON.stringify(variations),
+    startTimes:       JSON.stringify(startTimes),
     includes:         JSON.stringify(includes),
     excludes:         JSON.stringify(excludes),
     importantInfo:    JSON.stringify(importantInfo),

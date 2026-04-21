@@ -99,6 +99,8 @@ model Tour {
   basePrice        Decimal            @db.Decimal(10, 2)
   childPrice       Decimal?           @db.Decimal(10, 2)
   priceTiers       String?            @db.LongText
+  variations       String?            @db.LongText
+  startTimes       String?            @db.LongText
   status           TourStatus         @default(DRAFT)
   featured         Boolean            @default(false)
   likelyToSellOut  Boolean            @default(false)

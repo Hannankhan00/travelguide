@@ -15,7 +15,13 @@ export async function submitBookingAction(formData: FormData) {
   const email       = (formData.get("email")       as string)?.trim().toLowerCase();
   const phone       = (formData.get("phone")       as string)?.trim();
   const pickupLocation  = formData.get("pickupLocation")  as string;
+  const pickupLat       = formData.get("pickupLat")       as string;
+  const pickupLng       = formData.get("pickupLng")       as string;
   const specialRequests = formData.get("specialRequests") as string;
+  const startTime       = (formData.get("startTime")      as string)?.trim() || null;
+  const variationId     = (formData.get("variationId")    as string)?.trim() || null;
+  const variationName   = (formData.get("variationName")  as string)?.trim() || null;
+  const variationExtra  = parseFloat(formData.get("variationExtra") as string) || 0;
 
   // ── Basic field validation ────────────────────────────────────────────────
   if (!firstName || !lastName || !email || !phone) {
@@ -60,9 +66,22 @@ export async function submitBookingAction(formData: FormData) {
   const childPrice    = tour.childPrice ? Number(tour.childPrice) : basePrice;
   const tourType      = ((tour as any).tourType as "SOLO" | "GROUP") ?? "GROUP";
   const baseGroupSize = Number((tour as any).baseGroupSize ?? 4);
-  const calculatedTotal = tourType === "GROUP"
+  const baseTotal = tourType === "GROUP"
     ? calcGroupPrice(totalGuests, baseGroupSize, basePrice)
     : adultsNum * basePrice + childrenNum * childPrice;
+
+  // Validate variation extra cost server-side
+  let serverVariationExtra = 0;
+  if (variationId) {
+    const safeParseArr = (v: unknown): any[] => {
+      if (!v || typeof v !== "string") return [];
+      try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch { return []; }
+    };
+    const tourVariations = safeParseArr((tour as any).variations);
+    const matched = tourVariations.find((v: any) => v.id === variationId);
+    serverVariationExtra = matched ? Number(matched.extraCost) : 0;
+  }
+  const calculatedTotal = baseTotal + serverVariationExtra;
 
   const session = await auth();
   const isLoggedIn = !!session?.user?.email;
@@ -150,7 +169,13 @@ export async function submitBookingAction(formData: FormData) {
           tourDate:       tourDateObj,
           numAdults:      adultsNum,
           numChildren:    childrenNum,
-          specialRequests: specialRequests + (pickupLocation ? `\nPickup: ${pickupLocation}` : ""),
+          specialRequests: [
+            specialRequests,
+            pickupLocation ? `Pickup: ${pickupLocation}` : "",
+            (pickupLat && pickupLng) ? `Pickup coords: ${parseFloat(pickupLat).toFixed(6)},${parseFloat(pickupLng).toFixed(6)}` : "",
+            startTime ? `Starting time: ${startTime}` : "",
+            variationName ? `Upgrade: ${variationName}` : "",
+          ].filter(Boolean).join("\n"),
           subtotal:       calculatedTotal,
           totalAmount:    calculatedTotal,
           discountAmount: 0,

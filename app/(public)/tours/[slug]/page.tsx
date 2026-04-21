@@ -87,6 +87,8 @@ export default async function TourDetailPage({ params }: PageProps) {
   const basePrice     = Number(tourData.basePrice);
   const tourType      = (tourData.tourType as "SOLO" | "GROUP") ?? "GROUP";
   const baseGroupSize = Number(tourData.baseGroupSize ?? 4);
+  const variations    = safeArr(tourData.variations) as { id: string; name: string; description: string; extraCost: string }[];
+  const startTimes    = safeArr(tourData.startTimes).filter(Boolean) as string[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const coverImage  = (tourData.images as any[]).find(i => i.isPrimary)?.url || tourData.images[0]?.url;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -367,6 +369,13 @@ export default async function TourDetailPage({ params }: PageProps) {
               childPrice={tourData.childPrice ? Number(tourData.childPrice) : null}
               likelyToSellOut={tourData.likelyToSellOut}
               maxGroupSize={tourData.maxGroupSize}
+              variations={variations}
+              tourTitle={tour.title}
+              meetingPoint={tourData.meetingPoint}
+              languages={languages}
+              duration={Number(tour.duration)}
+              durationType={tour.durationType}
+              startTimes={startTimes}
             />
           </div>
 
@@ -441,6 +450,13 @@ export default async function TourDetailPage({ params }: PageProps) {
         childPrice={tourData.childPrice ? Number(tourData.childPrice) : null}
         likelyToSellOut={tourData.likelyToSellOut}
         maxGroupSize={tourData.maxGroupSize}
+        variations={variations}
+        tourTitle={tour.title}
+        meetingPoint={tourData.meetingPoint}
+        languages={languages}
+        duration={Number(tour.duration)}
+        durationType={tour.durationType}
+        startTimes={startTimes}
       />
     </div>
   );

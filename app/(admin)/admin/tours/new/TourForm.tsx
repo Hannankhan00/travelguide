@@ -28,6 +28,13 @@ export type PriceTier = {
   pricePerPerson: string;
 };
 
+export type TourVariation = {
+  id:          string;
+  name:        string;
+  description: string;
+  extraCost:   string;
+};
+
 type TourData = {
   tourId?:          string;
   tourType:         "SOLO" | "GROUP";
@@ -54,9 +61,11 @@ type TourData = {
   dailyCapacity:    string;
   languages:        string[];
   serviceProvider:  string;
+  startTimes:       string[];
   basePrice:        string;
   childPrice:       string;
   priceTiers:       PriceTier[];
+  variations:       TourVariation[];
   includes:         string[];
   excludes:         string[];
   importantInfo:    string[];
@@ -88,7 +97,8 @@ const DEFAULT_DATA: TourData = {
   itinerary: [{ order: 1, title: "", description: "", stayMinutes: "30", isOptional: false }],
   meetingPoint: "", endPoint: "", duration: "1", durationType: "days", maxGroupSize: "10",
   minGroupSize: "1", dailyCapacity: "10", languages: ["English"], serviceProvider: "",
-  basePrice: "", childPrice: "", priceTiers: [], includes: [""], excludes: [""], importantInfo: [""],
+  startTimes: [],
+  basePrice: "", childPrice: "", priceTiers: [], variations: [], includes: [""], excludes: [""], importantInfo: [""],
   coverImage: "", galleryImages: ["", "", "", ""],
   metaTitle: "", metaDescription: "", featured: false, likelyToSellOut: false, status: "DRAFT",
 };
@@ -219,6 +229,19 @@ export function TourForm({ initialData }: TourFormProps) {
     update("itinerary", items.map((item, i) => ({ ...item, order: i + 1 })));
   }
 
+  // ── Variations ─────────────────────────────
+  function addVariation() {
+    update("variations", [...(data.variations || []), { id: crypto.randomUUID(), name: "", description: "", extraCost: "" }]);
+  }
+  function updateVariation(index: number, key: keyof TourVariation, val: string) {
+    const updated = [...(data.variations || [])];
+    updated[index] = { ...updated[index], [key]: val };
+    update("variations", updated);
+  }
+  function removeVariation(index: number) {
+    update("variations", (data.variations || []).filter((_, i) => i !== index));
+  }
+
   // ── Pricing Tiers ──────────────────────────
   function addPriceTier() {
     update("priceTiers", [...(data.priceTiers || []), { minGuests: "", maxGuests: "", pricePerPerson: "" }]);
@@ -287,6 +310,8 @@ export function TourForm({ initialData }: TourFormProps) {
     formData.set("basePrice", data.basePrice.toString());
     formData.set("childPrice", data.childPrice.toString());
     formData.set("priceTiers", JSON.stringify(data.priceTiers.filter(t => t.minGuests && t.pricePerPerson)));
+    formData.set("variations", JSON.stringify((data.variations || []).filter(v => v.name && v.extraCost)));
+    formData.set("startTimes", JSON.stringify((data.startTimes || []).filter(Boolean)));
     formData.set("includes", JSON.stringify(data.includes.filter(Boolean)));
     formData.set("excludes", JSON.stringify(data.excludes.filter(Boolean)));
     formData.set("importantInfo", JSON.stringify(data.importantInfo.filter(Boolean)));
@@ -710,6 +735,52 @@ export function TourForm({ initialData }: TourFormProps) {
               <label className={labelCls}>Service Provider <span className="text-[#A8A29E] font-normal">(optional)</span></label>
               <input className={inputCls} value={data.serviceProvider} onChange={(e) => update("serviceProvider", e.target.value)} placeholder="e.g. Sakura Tours Co." />
             </div>
+
+            {/* Starting Times */}
+            <div className="md:col-span-2 pt-4 border-t border-[#E4E0D9]">
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <label className={labelCls + " mb-0"}>Starting Times</label>
+                  <p className={hintCls}>Add one or more departure times customers can choose from</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => update("startTimes", [...(data.startTimes || []), "09:00"])}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#1B2847] hover:bg-[#0C447C] px-3 py-1.5 rounded-lg transition-colors shrink-0"
+                >
+                  <Plus size={13} /> Add time
+                </button>
+              </div>
+              {(data.startTimes || []).length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {(data.startTimes || []).map((t, i) => (
+                    <div key={i} className="flex items-center gap-1.5 bg-[#F8F7F5] border border-[#E4E0D9] rounded-lg px-2 py-1">
+                      <input
+                        type="time"
+                        className="text-sm font-medium text-[#111] bg-transparent focus:outline-none"
+                        value={t}
+                        onChange={(e) => {
+                          const updated = [...(data.startTimes || [])];
+                          updated[i] = e.target.value;
+                          update("startTimes", updated);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => update("startTimes", (data.startTimes || []).filter((_, idx) => idx !== i))}
+                        className="text-[#A8A29E] hover:text-[#C41230] transition-colors"
+                      >
+                        <X size={13} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {(data.startTimes || []).length === 0 && (
+                <p className="text-xs text-[#A8A29E] mt-1 italic">No starting times added — customers won&apos;t see a time selector</p>
+              )}
+            </div>
+
             <div className="md:col-span-2">
               <label className={labelCls}>Guide Languages</label>
               <div className="border border-[#E4E0D9] rounded-lg p-2 flex flex-wrap gap-2 items-center bg-white transition-colors focus-within:border-[#C41230] focus-within:ring-2 focus-within:ring-[#C41230]/20">
@@ -847,6 +918,49 @@ export function TourForm({ initialData }: TourFormProps) {
                 </div>
               </div>
             )}
+
+            {/* ── Variations ── */}
+            <div className="pt-4 border-t border-[#E4E0D9]">
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <label className={labelCls + " mb-0"}>Upgrade Variations <span className="text-[#A8A29E] font-normal">(optional)</span></label>
+                  <p className={hintCls}>Add premium options customers can choose at booking, e.g. Luxury Car, Private Guide</p>
+                </div>
+                <button type="button" onClick={addVariation} className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#1B2847] hover:bg-[#0C447C] px-3 py-1.5 rounded-lg transition-colors shrink-0">
+                  <Plus size={13} /> Add variation
+                </button>
+              </div>
+
+              {(data.variations || []).length > 0 && (
+                <div className="space-y-3 mt-3">
+                  {(data.variations || []).map((v, i) => (
+                    <div key={v.id} className="bg-[#F8F7F5] border border-[#E4E0D9] rounded-xl p-4 space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-[#1B2847] uppercase tracking-wide">Variation {i + 1}</span>
+                        <button type="button" onClick={() => removeVariation(i)} className="p-1 text-[#A8A29E] hover:text-[#C41230] transition-colors"><X size={14} /></button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className={labelCls}>Name <span className="text-[#C41230]">*</span></label>
+                          <input className={inputCls} value={v.name} onChange={(e) => updateVariation(i, "name", e.target.value)} placeholder="e.g. Luxury Car Transfer" />
+                        </div>
+                        <div>
+                          <label className={labelCls}>Extra Cost (USD) <span className="text-[#C41230]">*</span></label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A29E] text-sm">+$</span>
+                            <input type="number" step="0.01" min="0" className={inputCls + " pl-8"} value={v.extraCost} onChange={(e) => updateVariation(i, "extraCost", e.target.value)} placeholder="0.00" />
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <label className={labelCls}>Description <span className="text-[#A8A29E] font-normal">(optional)</span></label>
+                        <input className={inputCls} value={v.description} onChange={(e) => updateVariation(i, "description", e.target.value)} placeholder="e.g. Private luxury sedan with professional chauffeur" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <div className="pt-4 border-t border-[#E4E0D9]">
               <label className={labelCls}>What&apos;s Included</label>

@@ -13,14 +13,20 @@ interface CheckoutFormProps {
   adults: number;
   children: number;
   totalPrice: number;
+  startTime?: string | null;
+  variationId?: string | null;
+  variationName?: string | null;
+  variationExtra?: number;
   userProfile: { name: string | null; email: string | null; phone: string | null } | null;
 }
 
-export function CheckoutForm({ tourId, date, adults, children, totalPrice, userProfile }: CheckoutFormProps) {
+export function CheckoutForm({ tourId, date, adults, children, totalPrice, startTime, variationId, variationName, variationExtra = 0, userProfile }: CheckoutFormProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   const [pickupLocation, setPickupLocation] = useState("");
+  const [pickupLat, setPickupLat] = useState<number | null>(null);
+  const [pickupLng, setPickupLng] = useState<number | null>(null);
   const [showMap, setShowMap] = useState(false);
 
   // Split name if exists
@@ -44,6 +50,10 @@ export function CheckoutForm({ tourId, date, adults, children, totalPrice, userP
       <input type="hidden" name="adults" value={adults} />
       <input type="hidden" name="children" value={children} />
       <input type="hidden" name="totalPrice" value={totalPrice} />
+      {startTime && <input type="hidden" name="startTime" value={startTime} />}
+      {variationId && <input type="hidden" name="variationId" value={variationId} />}
+      {variationName && <input type="hidden" name="variationName" value={variationName} />}
+      {variationExtra > 0 && <input type="hidden" name="variationExtra" value={variationExtra} />}
 
       {error && (
         <div className="p-4 bg-[#FEE2E2] text-[#185FA5] rounded-xl border border-[#FCA5A5]/50 font-medium animate-fade-in">
@@ -98,13 +108,18 @@ export function CheckoutForm({ tourId, date, adults, children, totalPrice, userP
           <div>
             <label className="block text-sm font-semibold text-[#111] mb-2">Pickup Location (Hotel Name / Address)</label>
             <div className="flex gap-2">
-              <input 
-                type="text" 
-                name="pickupLocation" 
+              <input
+                type="text"
+                name="pickupLocation"
                 value={pickupLocation}
-                onChange={(e) => setPickupLocation(e.target.value)}
-                className="flex-1 w-full h-12 px-4 rounded-lg border border-[#E7E8EE] bg-[#F8F9FF] focus:bg-white focus:ring-2 focus:ring-[#185FA5]/20 focus:border-[#185FA5] outline-none transition-colors" 
-                placeholder="e.g. Shinjuku Prince Hotel" 
+                onChange={(e) => {
+                  setPickupLocation(e.target.value);
+                  // Clear coordinates when user manually edits the address
+                  setPickupLat(null);
+                  setPickupLng(null);
+                }}
+                className="flex-1 w-full h-12 px-4 rounded-lg border border-[#E7E8EE] bg-[#F8F9FF] focus:bg-white focus:ring-2 focus:ring-[#185FA5]/20 focus:border-[#185FA5] outline-none transition-colors"
+                placeholder="e.g. Shinjuku Prince Hotel"
               />
               <button
                 type="button"
@@ -115,7 +130,17 @@ export function CheckoutForm({ tourId, date, adults, children, totalPrice, userP
                 <span className="max-sm:hidden">Pick on Map</span>
               </button>
             </div>
-            <p className="text-xs text-[#7A746D] mt-1.5">If your tour includes hotel pickup, please specify. Otherwise, leave blank.</p>
+            {/* Show coordinates badge when pin was placed */}
+            {pickupLat !== null && pickupLng !== null && (
+              <p className="text-xs text-[#15803D] mt-1.5 flex items-center gap-1">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#15803D]" />
+                Exact pin: {pickupLat.toFixed(6)}, {pickupLng.toFixed(6)}
+              </p>
+            )}
+            {/* Hidden coordinate fields — sent with the form */}
+            {pickupLat !== null && <input type="hidden" name="pickupLat" value={pickupLat} />}
+            {pickupLng !== null && <input type="hidden" name="pickupLng" value={pickupLng} />}
+            <p className="text-xs text-[#7A746D] mt-1">If your tour includes hotel pickup, please specify. Otherwise, leave blank.</p>
           </div>
 
           <div>
@@ -125,12 +150,14 @@ export function CheckoutForm({ tourId, date, adults, children, totalPrice, userP
         </div>
 
         {showMap && (
-          <MapPicker 
-            onLocationSelect={(addr) => {
+          <MapPicker
+            onLocationSelect={(addr, lat, lng) => {
               setPickupLocation(addr);
+              setPickupLat(lat);
+              setPickupLng(lng);
               setShowMap(false);
-            }} 
-            onClose={() => setShowMap(false)} 
+            }}
+            onClose={() => setShowMap(false)}
           />
         )}
       </section>

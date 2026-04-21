@@ -7,6 +7,7 @@ import {
   Clock, CheckCircle2, XCircle, AlertCircle,
   CreditCard, Banknote, Users, Calendar, Mail, Phone,
   FileText, StickyNote, Check, MapPin, Ticket, Download,
+  ExternalLink, Filter,
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import {
@@ -48,6 +49,9 @@ interface Props {
   query:      string;
   status:     string;
   payment:    string;
+  dateFrom:   string;
+  dateTo:     string;
+  tourDate:   string;
   currency:   string;
   locale:     string;
 }
@@ -85,6 +89,34 @@ function fmtDateTime(iso: string) {
 }
 function fmtShort(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+// ── Parse structured lines out of specialRequests ──────────────────────────────
+
+function parseSpecialRequests(raw: string) {
+  const lines = raw.split("\n").map(l => l.trim()).filter(Boolean);
+  let pickupLocation = "";
+  let pickupCoords   = "";   // "lat,lng"
+  let startingTime   = "";
+  let upgrade        = "";
+  const other: string[] = [];
+
+  for (const line of lines) {
+    if (line.startsWith("Pickup coords:")) pickupCoords   = line.replace("Pickup coords:", "").trim();
+    else if (line.startsWith("Pickup:"))   pickupLocation = line.replace("Pickup:", "").trim();
+    else if (line.startsWith("Starting time:")) startingTime = line.replace("Starting time:", "").trim();
+    else if (line.startsWith("Upgrade:"))  upgrade = line.replace("Upgrade:", "").trim();
+    else                                   other.push(line);
+  }
+
+  // Build the best possible Maps URL
+  const mapsUrl = pickupCoords
+    ? `https://www.google.com/maps?q=${pickupCoords}`
+    : pickupLocation
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pickupLocation)}`
+      : "";
+
+  return { pickupLocation, pickupCoords, mapsUrl, startingTime, upgrade, other: other.join("\n") };
 }
 
 // ── Status badge ──────────────────────────────────────────────────────────────
@@ -126,6 +158,7 @@ function DetailPanel({ booking, currency, locale }: {
   }
 
   const totalGuests = booking.numAdults + booking.numChildren;
+  const { pickupLocation, pickupCoords, mapsUrl, startingTime, upgrade, other } = parseSpecialRequests(booking.specialRequests);
 
   const detailRows: { label: string; value: React.ReactNode }[] = [
     {
@@ -137,6 +170,18 @@ function DetailPanel({ booking, currency, locale }: {
         </div>
       ),
     },
+
+    // Starting time — only shown when present
+    ...(startingTime ? [{
+      label: "Starting time",
+      value: (
+        <div className="flex items-center gap-2 text-sm text-[#111]">
+          <Clock className="size-3.5 text-[#7A746D] shrink-0" />
+          <span className="font-semibold">{startingTime}</span>
+        </div>
+      ),
+    }] : []),
+
     {
       label: "Lead traveler",
       value: (
@@ -154,7 +199,7 @@ function DetailPanel({ booking, currency, locale }: {
       ),
     },
     {
-      label: "Number of travelers",
+      label: "Participants",
       value: (
         <div className="text-sm text-[#111]">
           <p>{booking.numAdults} adult{booking.numAdults !== 1 ? "s" : ""}
@@ -164,6 +209,48 @@ function DetailPanel({ booking, currency, locale }: {
         </div>
       ),
     },
+
+    // Pickup location with map link
+    ...(pickupLocation ? [{
+      label: "Pickup location",
+      value: (
+        <div className="space-y-1.5">
+          <div className="flex items-start gap-1.5 text-sm text-[#111]">
+            <MapPin className="size-3.5 text-[#7A746D] mt-0.5 shrink-0" />
+            <span>{pickupLocation}</span>
+          </div>
+          {pickupCoords && (
+            <p className="text-xs text-[#7A746D] flex items-center gap-1">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#15803D]" />
+              Exact pin: {pickupCoords}
+            </p>
+          )}
+          {mapsUrl && (
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-[#1B2847] hover:bg-[#243560] px-2.5 py-1 rounded-lg transition-colors"
+            >
+              <ExternalLink className="size-3" /> View exact location on Google Maps
+            </a>
+          )}
+        </div>
+      ),
+    }] : []),
+
+    // Upgrade / variation
+    ...(upgrade ? [{
+      label: "Upgrade selected",
+      value: (
+        <div className="flex items-center gap-2 text-sm text-[#111]">
+          <span className="inline-block bg-[#FEF3C7] text-[#B45309] text-xs font-semibold px-2 py-0.5 rounded-full">
+            {upgrade}
+          </span>
+        </div>
+      ),
+    }] : []),
+
     {
       label: "Payment",
       value: (
@@ -184,15 +271,18 @@ function DetailPanel({ booking, currency, locale }: {
         </p>
       ),
     },
-    ...(booking.specialRequests ? [{
+
+    // Other special requests (anything not parsed as a structured field)
+    ...(other ? [{
       label: "Special requests",
       value: (
         <div className="flex items-start gap-2 text-sm text-[#545454]">
           <FileText className="size-3.5 text-[#7A746D] mt-0.5 shrink-0" />
-          {booking.specialRequests}
+          <span className="whitespace-pre-wrap">{other}</span>
         </div>
       ),
     }] : []),
+
     {
       label: "Booking status",
       value: (
@@ -280,6 +370,7 @@ function BookingCard({ booking, isOpen, onToggle, currency, locale }: {
 }) {
   const totalGuests = booking.numAdults + booking.numChildren;
   const payCfg      = PAYMENT_CFG[booking.paymentStatus] ?? PAYMENT_CFG.PENDING;
+  const { startingTime, pickupLocation, mapsUrl } = parseSpecialRequests(booking.specialRequests);
 
   return (
     <div className={`border border-[#E4E0D9] rounded-xl overflow-hidden bg-white transition-shadow ${isOpen ? "shadow-md" : "shadow-sm hover:shadow-md"}`}>
@@ -306,7 +397,7 @@ function BookingCard({ booking, isOpen, onToggle, currency, locale }: {
             <div className="min-w-0">
               <p className="font-bold text-[#111] text-sm leading-snug truncate">{booking.tourTitle}</p>
               <p className="text-xs text-[#7A746D] mt-0.5 truncate">
-                Option: {booking.bookingRef} | {booking.tourTitle}
+                {booking.guestName} · {booking.guestEmail}
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -318,11 +409,17 @@ function BookingCard({ booking, isOpen, onToggle, currency, locale }: {
           </div>
 
           {/* Info row */}
-          <div className="flex items-center flex-wrap gap-x-5 gap-y-1 mt-2">
+          <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mt-2">
             <div className="flex items-center gap-1.5 text-xs text-[#545454]">
               <Calendar className="size-3.5 text-[#7A746D] shrink-0" />
               {fmtDateTime(booking.tourDate)}
             </div>
+            {startingTime && (
+              <div className="flex items-center gap-1 text-xs font-semibold text-[#1B6FA8]">
+                <Clock className="size-3.5 shrink-0" />
+                {startingTime}
+              </div>
+            )}
             <div className="flex items-center gap-1.5 text-xs text-[#545454]">
               <Ticket className="size-3.5 text-[#7A746D] shrink-0" />
               <span className="font-mono font-semibold text-[#1B2847]">{booking.bookingRef}</span>
@@ -331,6 +428,25 @@ function BookingCard({ booking, isOpen, onToggle, currency, locale }: {
               <Users className="size-3.5 text-[#7A746D] shrink-0" />
               {totalGuests} {totalGuests === 1 ? "person" : "people"}
             </div>
+            {pickupLocation && (
+              mapsUrl ? (
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-xs text-[#1B6FA8] hover:underline"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <MapPin className="size-3.5 shrink-0" />
+                  <span className="truncate max-w-40">{pickupLocation}</span>
+                </a>
+              ) : (
+                <div className="flex items-center gap-1 text-xs text-[#545454]">
+                  <MapPin className="size-3.5 text-[#7A746D] shrink-0" />
+                  <span className="truncate max-w-40">{pickupLocation}</span>
+                </div>
+              )
+            )}
             <div className={`text-xs font-bold ${payCfg.color}`}>
               {formatPrice(booking.totalAmount, booking.currency || currency, locale)}
             </div>
@@ -362,19 +478,23 @@ function BookingCard({ booking, isOpen, onToggle, currency, locale }: {
 
 export function BookingsTable({
   bookings, total, page, totalPages,
-  query, status, payment, currency, locale,
+  query, status, payment, dateFrom, dateTo, tourDate,
+  currency, locale,
 }: Props) {
   const router       = useRouter();
   const pathname     = usePathname();
   const searchParams = useSearchParams();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showDateFilters, setShowDateFilters] = useState(!!(dateFrom || dateTo || tourDate));
 
   const updateParam = useCallback((key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (value && value !== "ALL") { params.set(key, value); } else { params.delete(key); }
+    if (value) { params.set(key, value); } else { params.delete(key); }
     params.delete("page");
     router.push(pathname + "?" + params.toString());
   }, [router, pathname, searchParams]);
+
+  const clearAll = () => router.push(pathname);
 
   const goPage = (p: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -382,59 +502,147 @@ export function BookingsTable({
     router.push(pathname + "?" + params.toString());
   };
 
+  const hasActiveFilters = query || status !== "ALL" || payment !== "ALL" || dateFrom || dateTo || tourDate;
+
   return (
     <div className="space-y-4">
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl border border-[#E4E0D9] px-4 py-3 flex flex-wrap gap-3 items-center">
-        <div className="relative flex-1 min-w-52">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#A8A29E]" />
-          <input
-            defaultValue={query}
-            placeholder="Search ref, guest, tour…"
-            className="w-full pl-9 pr-4 py-2 text-sm border border-[#E4E0D9] rounded-lg bg-[#F8F7F5] text-[#111] placeholder-[#B0AAA3] focus:outline-none focus:ring-2 focus:ring-[#C41230]/30 focus:border-[#C41230] transition"
-            onKeyDown={(e) => { if (e.key === "Enter") updateParam("q", (e.target as HTMLInputElement).value); }}
-            onChange={(e)  => { if (!e.target.value) updateParam("q", ""); }}
-          />
-        </div>
-        <select
-          value={status}
-          onChange={(e) => updateParam("status", e.target.value)}
-          className="text-sm border border-[#E4E0D9] rounded-lg px-3 py-2 bg-white text-[#111] focus:outline-none focus:ring-2 focus:ring-[#C41230]/30 focus:border-[#C41230] transition"
-        >
-          {BOOKING_STATUSES.map((s) => (
-            <option key={s} value={s}>{s === "ALL" ? "All statuses" : STATUS_CFG[s]?.label ?? s}</option>
-          ))}
-        </select>
-        <select
-          value={payment}
-          onChange={(e) => updateParam("payment", e.target.value)}
-          className="text-sm border border-[#E4E0D9] rounded-lg px-3 py-2 bg-white text-[#111] focus:outline-none focus:ring-2 focus:ring-[#C41230]/30 focus:border-[#C41230] transition"
-        >
-          {PAYMENT_STATUSES.map((s) => (
-            <option key={s} value={s}>{s === "ALL" ? "All payments" : PAYMENT_CFG[s]?.label ?? s}</option>
-          ))}
-        </select>
-        {(query || status !== "ALL" || payment !== "ALL") && (
-          <button onClick={() => router.push(pathname)} className="flex items-center gap-1 text-xs font-semibold text-[#C41230] hover:underline">
-            <X className="size-3.5" /> Clear
+      {/* ── Filter bar ── */}
+      <div className="bg-white rounded-xl border border-[#E4E0D9] px-4 py-3 space-y-3">
+
+        {/* Row 1 — search + status + payment + toggles */}
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-52">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#A8A29E]" />
+            <input
+              defaultValue={query}
+              placeholder="Search ref, guest, tour…"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-[#E4E0D9] rounded-lg bg-[#F8F7F5] text-[#111] placeholder-[#B0AAA3] focus:outline-none focus:ring-2 focus:ring-[#C41230]/30 focus:border-[#C41230] transition"
+              onKeyDown={(e) => { if (e.key === "Enter") updateParam("q", (e.target as HTMLInputElement).value); }}
+              onChange={(e)  => { if (!e.target.value) updateParam("q", ""); }}
+            />
+          </div>
+          <select
+            value={status}
+            onChange={(e) => updateParam("status", e.target.value)}
+            className="text-sm border border-[#E4E0D9] rounded-lg px-3 py-2 bg-white text-[#111] focus:outline-none focus:ring-2 focus:ring-[#C41230]/30 focus:border-[#C41230] transition"
+          >
+            {BOOKING_STATUSES.map((s) => (
+              <option key={s} value={s}>{s === "ALL" ? "All statuses" : STATUS_CFG[s]?.label ?? s}</option>
+            ))}
+          </select>
+          <select
+            value={payment}
+            onChange={(e) => updateParam("payment", e.target.value)}
+            className="text-sm border border-[#E4E0D9] rounded-lg px-3 py-2 bg-white text-[#111] focus:outline-none focus:ring-2 focus:ring-[#C41230]/30 focus:border-[#C41230] transition"
+          >
+            {PAYMENT_STATUSES.map((s) => (
+              <option key={s} value={s}>{s === "ALL" ? "All payments" : PAYMENT_CFG[s]?.label ?? s}</option>
+            ))}
+          </select>
+          <button
+            onClick={() => setShowDateFilters(v => !v)}
+            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border transition-colors ${
+              showDateFilters || dateFrom || dateTo || tourDate
+                ? "bg-[#1B2847] text-white border-[#1B2847]"
+                : "bg-white text-[#545454] border-[#E4E0D9] hover:border-[#1B2847] hover:text-[#1B2847]"
+            }`}
+          >
+            <Filter className="size-3.5" /> Date filters
           </button>
+          {hasActiveFilters && (
+            <button onClick={clearAll} className="flex items-center gap-1 text-xs font-semibold text-[#C41230] hover:underline">
+              <X className="size-3.5" /> Clear all
+            </button>
+          )}
+          <p className="text-xs text-[#A8A29E] ml-auto">{total.toLocaleString()} result{total !== 1 ? "s" : ""}</p>
+          <a
+            href={
+              "/api/admin/bookings/export?" +
+              new URLSearchParams([
+                ...(query    ? [["q",        query   ]] : []),
+                ...(status   !== "ALL" ? [["status",   status  ]] : []),
+                ...(payment  !== "ALL" ? [["payment",  payment ]] : []),
+                ...(dateFrom ? [["dateFrom", dateFrom]] : []),
+                ...(dateTo   ? [["dateTo",   dateTo  ]] : []),
+                ...(tourDate ? [["tourDate", tourDate]] : []),
+              ]).toString()
+            }
+            download
+            className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#1B2847] hover:bg-[#243560] px-3 py-2 rounded-lg transition-colors"
+          >
+            <Download className="size-3.5" /> Export CSV
+          </a>
+        </div>
+
+        {/* Row 2 — date filters (collapsible) */}
+        {showDateFilters && (
+          <div className="flex flex-wrap gap-3 items-end pt-1 border-t border-[#F0EDE8]">
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-[#7A746D] uppercase tracking-wide">Booked from</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => updateParam("dateFrom", e.target.value)}
+                className="text-sm border border-[#E4E0D9] rounded-lg px-3 py-2 bg-white text-[#111] focus:outline-none focus:ring-2 focus:ring-[#C41230]/30 focus:border-[#C41230] transition"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-[#7A746D] uppercase tracking-wide">Booked until</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => updateParam("dateTo", e.target.value)}
+                className="text-sm border border-[#E4E0D9] rounded-lg px-3 py-2 bg-white text-[#111] focus:outline-none focus:ring-2 focus:ring-[#C41230]/30 focus:border-[#C41230] transition"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-[#7A746D] uppercase tracking-wide">Tour date (exact)</label>
+              <input
+                type="date"
+                value={tourDate}
+                onChange={(e) => updateParam("tourDate", e.target.value)}
+                className="text-sm border border-[#E4E0D9] rounded-lg px-3 py-2 bg-white text-[#111] focus:outline-none focus:ring-2 focus:ring-[#C41230]/30 focus:border-[#C41230] transition"
+              />
+            </div>
+            {(dateFrom || dateTo || tourDate) && (
+              <button
+                onClick={() => {
+                  updateParam("dateFrom", "");
+                  updateParam("dateTo", "");
+                  updateParam("tourDate", "");
+                }}
+                className="flex items-center gap-1 text-xs text-[#C41230] hover:underline pb-2"
+              >
+                <X className="size-3.5" /> Clear dates
+              </button>
+            )}
+          </div>
         )}
-        <p className="text-xs text-[#A8A29E] ml-auto">{total.toLocaleString()} result{total !== 1 ? "s" : ""}</p>
-        <a
-          href={
-            "/api/admin/bookings/export?" +
-            new URLSearchParams([
-              ...(query   ? [["q",       query  ]] : []),
-              ...(status  !== "ALL" ? [["status",  status ]] : []),
-              ...(payment !== "ALL" ? [["payment", payment]] : []),
-            ]).toString()
-          }
-          download
-          className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#1B2847] hover:bg-[#243560] px-3 py-2 rounded-lg transition-colors"
-        >
-          <Download className="size-3.5" /> Export CSV
-        </a>
+
+        {/* Active filter chips */}
+        {(dateFrom || dateTo || tourDate) && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {dateFrom && (
+              <span className="inline-flex items-center gap-1.5 text-xs bg-[#EEF2FF] text-[#1B2847] font-medium px-2.5 py-1 rounded-full">
+                Booked from: {dateFrom}
+                <button onClick={() => updateParam("dateFrom", "")}><X className="size-3" /></button>
+              </span>
+            )}
+            {dateTo && (
+              <span className="inline-flex items-center gap-1.5 text-xs bg-[#EEF2FF] text-[#1B2847] font-medium px-2.5 py-1 rounded-full">
+                Booked until: {dateTo}
+                <button onClick={() => updateParam("dateTo", "")}><X className="size-3" /></button>
+              </span>
+            )}
+            {tourDate && (
+              <span className="inline-flex items-center gap-1.5 text-xs bg-[#FEF3C7] text-[#B45309] font-medium px-2.5 py-1 rounded-full">
+                Tour date: {tourDate}
+                <button onClick={() => updateParam("tourDate", "")}><X className="size-3" /></button>
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Card list */}

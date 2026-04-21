@@ -15,9 +15,11 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const { tourId } = await params;
   const sp = await searchParams;
 
-  const dateParam = sp.date as string;
-  const adultsParam = sp.adults as string;
-  const childrenParam = sp.children as string;
+  const dateParam      = sp.date        as string;
+  const adultsParam    = sp.adults      as string;
+  const childrenParam  = sp.children   as string;
+  const startTimeParam = (sp.startTime  as string) || null;
+  const variationIdParam = (sp.variationId as string) || null;
 
   if (!dateParam || !adultsParam) {
     redirect("/"); // Or back to tour page, but we don't have slug easily here unless we query
@@ -43,7 +45,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   }
 
   if (!session?.user) {
-    const returnUrl = `/booking/${tourId}?date=${dateParam}&adults=${adultsParam}&children=${childrenParam ?? "0"}`;
+    const returnUrl = `/booking/${tourId}?date=${dateParam}&adults=${adultsParam}&children=${childrenParam ?? "0"}${startTimeParam ? `&startTime=${startTimeParam}` : ""}${variationIdParam ? `&variationId=${variationIdParam}` : ""}`;
     redirect(`/auth/login?callbackUrl=${encodeURIComponent(returnUrl)}`);
   }
 
@@ -62,10 +64,22 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const baseGroupSize = Number((tour as any).baseGroupSize ?? 4);
   const totalGuests   = adults + children;
   const isGroup       = tourType === "GROUP";
-  const totalPrice    = isGroup
+  const baseTotal     = isGroup
     ? calcGroupPrice(totalGuests, baseGroupSize, basePrice)
     : adults * basePrice + children * childPrice;
   const groupUnits    = isGroup ? Math.ceil(totalGuests / baseGroupSize) : 0;
+
+  // Resolve selected variation
+  const safeParseArr = (v: unknown): any[] => {
+    if (!v) return [];
+    if (typeof v === "string") { try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch { return []; } }
+    return [];
+  };
+  interface TourVariation { id: string; name: string; description: string; extraCost: string; }
+  const allVariations = safeParseArr((tour as any).variations) as TourVariation[];
+  const selectedVariation = variationIdParam ? allVariations.find(v => v.id === variationIdParam) ?? null : null;
+  const variationExtra    = selectedVariation ? Number(selectedVariation.extraCost) : 0;
+  const totalPrice        = baseTotal + variationExtra;
   
   const primaryImage = tour.images.find(img => img.isPrimary)?.url || tour.images[0]?.url;
 
@@ -81,12 +95,16 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left Column: Form */}
           <div className="lg:col-span-2 space-y-6">
-            <CheckoutForm 
+            <CheckoutForm
               tourId={tour.id}
               date={dateParam}
               adults={adults}
               children={children}
               totalPrice={totalPrice}
+              startTime={startTimeParam}
+              variationId={variationIdParam}
+              variationName={selectedVariation?.name ?? null}
+              variationExtra={variationExtra}
               userProfile={userProfile}
             />
           </div>
@@ -123,6 +141,16 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                     </div>
                   </div>
 
+                  {startTimeParam && (
+                    <div className="flex items-center gap-3">
+                      <Clock className="size-5 text-[#EF9F27]" />
+                      <div>
+                        <span className="block font-semibold">Starting time</span>
+                        <span className="text-[#545454]">{startTimeParam}</span>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-3">
                     <Users className="size-5 text-[#EF9F27]" />
                     <div>
@@ -136,7 +164,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                   {isGroup ? (
                     <div className="flex justify-between text-sm">
                       <span className="text-[#545454]">{groupUnits} × ${basePrice} (per {baseGroupSize} guests)</span>
-                      <span className="font-semibold text-[#111]">${totalPrice.toFixed(2)}</span>
+                      <span className="font-semibold text-[#111]">${baseTotal.toFixed(2)}</span>
                     </div>
                   ) : (
                     <>
@@ -151,6 +179,12 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                         </div>
                       )}
                     </>
+                  )}
+                  {selectedVariation && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-[#545454]">{selectedVariation.name}</span>
+                      <span className="font-semibold text-[#C41230]">+${variationExtra.toFixed(2)}</span>
+                    </div>
                   )}
                 </div>
 

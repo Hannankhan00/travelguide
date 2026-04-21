@@ -5,20 +5,26 @@ import { BookingsTable } from "@/components/admin/BookingsTable";
 
 interface PageProps {
   searchParams: Promise<{
-    q?:      string;
-    status?: string;
-    payment?: string;
-    page?:   string;
+    q?:        string;
+    status?:   string;
+    payment?:  string;
+    page?:     string;
+    dateFrom?: string;
+    dateTo?:   string;
+    tourDate?: string;
   }>;
 }
 
 export default async function BookingsPage({ searchParams }: PageProps) {
-  const sp     = await searchParams;
-  const query  = sp.q?.trim() ?? "";
-  const status = sp.status ?? "ALL";
-  const payment = sp.payment ?? "ALL";
-  const page   = Math.max(1, Number(sp.page ?? 1));
-  const skip   = (page - 1) * BOOKINGS_PER_PAGE;
+  const sp       = await searchParams;
+  const query    = sp.q?.trim() ?? "";
+  const status   = sp.status  ?? "ALL";
+  const payment  = sp.payment ?? "ALL";
+  const dateFrom = sp.dateFrom ?? "";
+  const dateTo   = sp.dateTo   ?? "";
+  const tourDate = sp.tourDate ?? "";
+  const page     = Math.max(1, Number(sp.page ?? 1));
+  const skip     = (page - 1) * BOOKINGS_PER_PAGE;
 
   const where: Record<string, unknown> = {};
 
@@ -30,8 +36,21 @@ export default async function BookingsPage({ searchParams }: PageProps) {
       { tour: { title: { contains: query } } },
     ];
   }
-  if (status !== "ALL")  where.status        = status;
+  if (status  !== "ALL") where.status        = status;
   if (payment !== "ALL") where.paymentStatus = payment;
+
+  // Date range filter on booking creation date
+  if (dateFrom || dateTo) {
+    where.createdAt = {
+      ...(dateFrom ? { gte: new Date(dateFrom + "T00:00:00.000Z") } : {}),
+      ...(dateTo   ? { lte: new Date(dateTo   + "T23:59:59.999Z") } : {}),
+    };
+  }
+
+  // Specific tour date filter
+  if (tourDate) {
+    where.tourDate = new Date(tourDate + "T00:00:00.000Z");
+  }
 
   const [bookings, total, stats] = await Promise.all([
     prisma.booking.findMany({
@@ -105,6 +124,9 @@ export default async function BookingsPage({ searchParams }: PageProps) {
         query={query}
         status={status}
         payment={payment}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        tourDate={tourDate}
         currency={COMPANY_CURRENCY}
         locale={COMPANY_LOCALE}
       />

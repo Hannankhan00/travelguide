@@ -5,6 +5,8 @@ import { X } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { BookingWidget } from "@/components/public/BookingWidget";
 
+interface TourVariation { id: string; name: string; description: string; extraCost: string; }
+
 interface Props {
   tourId: string;
   tourType: "SOLO" | "GROUP";
@@ -13,16 +15,21 @@ interface Props {
   childPrice?: number | null;
   likelyToSellOut?: boolean;
   maxGroupSize?: number;
+  variations?: TourVariation[];
+  tourTitle?: string;
+  meetingPoint?: string;
+  languages?: string[];
+  duration?: number;
+  durationType?: string;
+  startTimes?: string[];
 }
 
 export function MobileBookingCTA({
-  tourId,
-  tourType,
-  basePrice,
-  baseGroupSize,
-  childPrice,
-  likelyToSellOut = false,
-  maxGroupSize,
+  tourId, tourType, basePrice, baseGroupSize,
+  childPrice, likelyToSellOut = false, maxGroupSize,
+  variations = [], tourTitle = "", meetingPoint = "",
+  languages = [], duration = 0, durationType = "hours",
+  startTimes = [],
 }: Props) {
   const [open, setOpen] = useState(false);
 
@@ -89,6 +96,13 @@ export function MobileBookingCTA({
             childPrice={childPrice}
             likelyToSellOut={likelyToSellOut}
             maxGroupSize={maxGroupSize}
+            variations={variations}
+            tourTitle={tourTitle}
+            meetingPoint={meetingPoint}
+            languages={languages}
+            duration={duration}
+            durationType={durationType}
+            startTimes={startTimes}
           />
         </div>
       </div>

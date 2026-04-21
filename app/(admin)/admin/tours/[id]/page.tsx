@@ -77,6 +77,8 @@ export default async function EditTourPage(
     basePrice:        Number(tour.basePrice).toString(),
     childPrice:       tour.childPrice ? Number(tour.childPrice).toString() : "",
     priceTiers:       safeArray(tour.priceTiers, []),
+    variations:       safeArray((tour as any).variations, []),
+    startTimes:       safeArray((tour as any).startTimes, []),
     includes:         safeArray(tour.includes),
     excludes:         safeArray(tour.excludes),
     importantInfo:    safeArray(tour.importantInfo),
