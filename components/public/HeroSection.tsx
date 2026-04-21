@@ -30,7 +30,7 @@ export function HeroSection({ featuredTours = [] }: Props) {
           fill
           priority
           fetchPriority="high"
-          quality={75}
+          quality={55}
           sizes="100vw"
           className="object-cover"
         />

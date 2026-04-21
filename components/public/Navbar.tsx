@@ -74,6 +74,8 @@ export function Navbar({ isLoggedIn = false, destinations = [] }: NavbarProps) {
               alt="GoTripJapan"
               width={200}
               height={50}
+              sizes="200px"
+              quality={85}
               className="h-14 w-auto object-contain"
               priority
             />
@@ -304,6 +306,8 @@ export function Navbar({ isLoggedIn = false, destinations = [] }: NavbarProps) {
             alt="GoTripJapan"
             width={140}
             height={36}
+            sizes="140px"
+            quality={85}
             className="h-9 w-auto object-contain"
           />
           <button
