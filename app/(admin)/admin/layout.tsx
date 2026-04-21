@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { AdminShell } from "@/components/admin/AdminShell";
 
 export default async function AdminLayout({
@@ -13,11 +14,11 @@ export default async function AdminLayout({
   try {
     session = await auth();
   } catch (e) {
+    if (isRedirectError(e)) throw e;
     console.error("Auth error in AdminLayout:", e);
     redirect("/admin/login");
   }
 
-  // Guard: redirect to admin login if not authenticated or not admin
   if (!session?.user) {
     redirect("/admin/login");
   }

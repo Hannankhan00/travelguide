@@ -15,7 +15,7 @@ export default function AdminLoginPage() {
       {/* Background accents */}
       <div className="absolute inset-0 pointer-events-none">
         <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] opacity-[0.07]"
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-200 h-100 opacity-[0.07]"
           style={{
             background: "radial-gradient(ellipse, #C41230, transparent 70%)",
           }}
@@ -23,7 +23,7 @@ export default function AdminLoginPage() {
       </div>
 
       {/* Login card */}
-      <div className="w-full max-w-[400px] relative z-10">
+      <div className="w-full max-w-100 relative z-10">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2.5 mb-10">
           <div className="w-9 h-9 rounded-lg bg-[#C41230] flex items-center justify-center">

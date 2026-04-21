@@ -6,12 +6,18 @@ import { TourForm } from "../new/TourForm";
 import { TourImageManager } from "@/components/admin/TourImageManager";
 
 async function getTour(id: string) {
-  const tour = await prisma.tour.findUnique({
-    where: { id },
-    include: {
-      images: { orderBy: { order: "asc" } },
-    },
-  });
+  let tour;
+  try {
+    tour = await prisma.tour.findUnique({
+      where: { id },
+      include: {
+        images: { orderBy: { order: "asc" } },
+      },
+    });
+  } catch (e) {
+    console.error(`[EditTourPage] DB error fetching tour ${id}:`, e);
+    notFound();
+  }
   if (!tour) notFound();
   return tour;
 }
@@ -35,6 +41,7 @@ export default async function EditTourPage(
   props: { params: Promise<{ id: string }> }
 ) {
   const { id } = await props.params;
+  if (!id || typeof id !== "string") notFound();
   const tour = await getTour(id);
 
   const initialData = {
