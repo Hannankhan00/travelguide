@@ -54,6 +54,7 @@ interface Props {
   tourDate:   string;
   currency:   string;
   locale:     string;
+  isCompletedPage?: boolean;
 }
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -479,7 +480,7 @@ function BookingCard({ booking, isOpen, onToggle, currency, locale }: {
 export function BookingsTable({
   bookings, total, page, totalPages,
   query, status, payment, dateFrom, dateTo, tourDate,
-  currency, locale,
+  currency, locale, isCompletedPage
 }: Props) {
   const router       = useRouter();
   const pathname     = usePathname();
@@ -522,15 +523,17 @@ export function BookingsTable({
               onChange={(e)  => { if (!e.target.value) updateParam("q", ""); }}
             />
           </div>
-          <select
-            value={status}
-            onChange={(e) => updateParam("status", e.target.value)}
-            className="text-sm border border-[#E4E0D9] rounded-lg px-3 py-2 bg-white text-[#111] focus:outline-none focus:ring-2 focus:ring-[#C41230]/30 focus:border-[#C41230] transition"
-          >
-            {BOOKING_STATUSES.map((s) => (
-              <option key={s} value={s}>{s === "ALL" ? "All statuses" : STATUS_CFG[s]?.label ?? s}</option>
-            ))}
-          </select>
+          {!isCompletedPage && (
+            <select
+              value={status}
+              onChange={(e) => updateParam("status", e.target.value)}
+              className="text-sm border border-[#E4E0D9] rounded-lg px-3 py-2 bg-white text-[#111] focus:outline-none focus:ring-2 focus:ring-[#C41230]/30 focus:border-[#C41230] transition"
+            >
+              {["ACTIVE", "PENDING", "CONFIRMED", "CANCELLED", "NO_SHOW", "ALL"].map((s) => (
+                <option key={s} value={s}>{s === "ACTIVE" ? "All active" : s === "ALL" ? "All (inc. completed)" : STATUS_CFG[s]?.label ?? s}</option>
+              ))}
+            </select>
+          )}
           <select
             value={payment}
             onChange={(e) => updateParam("payment", e.target.value)}

@@ -56,7 +56,8 @@ export function Navbar({ isLoggedIn = false, destinations = [] }: NavbarProps) {
   const isToursActive = pathname?.startsWith("/tours");
 
   return (
-    <header
+    <>
+      <header
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
         scrolled
@@ -208,6 +209,7 @@ export function Navbar({ isLoggedIn = false, destinations = [] }: NavbarProps) {
           </button>
         </div>
       </div>
+      </header>
 
       {/* Mega dropdown */}
       {destOpen && destinations.length > 0 && (
@@ -286,7 +288,7 @@ export function Navbar({ isLoggedIn = false, destinations = [] }: NavbarProps) {
       {/* Mobile drawer backdrop */}
       {menuOpen && (
         <div
-          className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+          className="md:hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
           style={{ top: 0 }}
           onClick={() => setMenuOpen(false)}
         />
@@ -295,7 +297,7 @@ export function Navbar({ isLoggedIn = false, destinations = [] }: NavbarProps) {
       {/* Mobile slide-in drawer */}
       <div
         className={cn(
-          "md:hidden fixed top-0 right-0 bottom-0 z-50 w-[82vw] max-w-[320px] bg-white flex flex-col shadow-2xl transition-transform duration-300 ease-in-out",
+          "md:hidden fixed top-0 right-0 bottom-0 z-[60] w-[82vw] max-w-[320px] bg-white flex flex-col shadow-2xl transition-transform duration-300 ease-in-out",
           menuOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
@@ -470,6 +472,6 @@ export function Navbar({ isLoggedIn = false, destinations = [] }: NavbarProps) {
           )}
         </div>
       </div>
-    </header>
+    </>
   );
 }

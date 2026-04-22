@@ -11,22 +11,32 @@ import {
   XCircle,
   AlertCircle,
 } from "lucide-react";
+import { DateFilter } from "@/components/admin/DateFilter";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-async function getStats() {
+async function getStats(dateFrom: string, dateTo: string) {
   try {
+    const whereDate: Record<string, unknown> = {};
+    if (dateFrom || dateTo) {
+      whereDate.createdAt = {
+        ...(dateFrom ? { gte: new Date(dateFrom + "T00:00:00.000Z") } : {}),
+        ...(dateTo   ? { lte: new Date(dateTo   + "T23:59:59.999Z") } : {}),
+      };
+    }
+
     const [totalBookings, revenue, activeTours, totalCustomers, recentBookings] =
       await Promise.all([
-        prisma.booking.count(),
+        prisma.booking.count({ where: whereDate }),
         prisma.booking.aggregate({
           _sum: { totalAmount: true },
-          where: { paymentStatus: "PAID" },
+          where: { paymentStatus: "PAID", ...whereDate },
         }),
         prisma.tour.count({ where: { status: "PUBLISHED" } }),
         prisma.user.count({ where: { role: "CUSTOMER" } }),
         prisma.booking.findMany({
           take: 8,
+          where: whereDate,
           orderBy: { createdAt: "desc" },
           include: {
             tour: { select: { title: true } },
@@ -64,9 +74,20 @@ const statusConfig = {
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-export default async function DashboardPage() {
+interface PageProps {
+  searchParams: Promise<{
+    dateFrom?: string;
+    dateTo?:   string;
+  }>;
+}
+
+export default async function DashboardPage({ searchParams }: PageProps) {
+  const sp = await searchParams;
+  const dateFrom = sp.dateFrom ?? "";
+  const dateTo = sp.dateTo ?? "";
+
   const { totalBookings, revenue, activeTours, totalCustomers, recentBookings } =
-    await getStats();
+    await getStats(dateFrom, dateTo);
 
   const stats = [
     {
@@ -106,11 +127,14 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[#111111]">Dashboard</h1>
-        <p className="text-sm text-[#7A746D] mt-0.5">
-          Welcome back. Here&apos;s what&apos;s happening with your tours today.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[#111111]">Dashboard</h1>
+          <p className="text-sm text-[#7A746D] mt-0.5">
+            Welcome back. Here&apos;s what&apos;s happening with your tours today.
+          </p>
+        </div>
+        <DateFilter />
       </div>
 
       {/* Stat cards */}

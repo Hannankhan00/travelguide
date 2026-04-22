@@ -4,13 +4,29 @@ import { COMPANY_CURRENCY, COMPANY_LOCALE } from "@/lib/constants";
 import { TrendingUp, CalendarCheck, Users, DollarSign, Star, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { RevenueChart } from "@/components/admin/RevenueChart";
 import { BookingStatusChart } from "@/components/admin/BookingStatusChart";
+import { DateFilter } from "@/components/admin/DateFilter";
 
 // ── Data fetching ─────────────────────────────────────────────────────────────
 
-async function getAnalyticsData() {
+async function getAnalyticsData(dateFrom: string, dateTo: string) {
   const now = new Date();
-  const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  
+  let currentStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  let currentEnd = new Date();
+  let prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  let prevEnd = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const isCustomDate = !!(dateFrom || dateTo);
+
+  if (isCustomDate) {
+    currentStart = dateFrom ? new Date(dateFrom + "T00:00:00.000Z") : new Date(0);
+    currentEnd = dateTo ? new Date(dateTo + "T23:59:59.999Z") : new Date();
+    
+    const diff = currentEnd.getTime() - currentStart.getTime();
+    prevEnd = new Date(currentStart.getTime() - 1);
+    prevStart = new Date(prevEnd.getTime() - diff);
+  }
+
   const twelveMonthsAgo  = new Date(now.getFullYear() - 1, now.getMonth(), 1);
 
   const [
@@ -28,23 +44,23 @@ async function getAnalyticsData() {
       select: { createdAt: true, totalAmount: true, paymentStatus: true, status: true },
       orderBy: { createdAt: "asc" },
     }),
-    // This month count
-    prisma.booking.count({ where: { createdAt: { gte: startOfThisMonth } } }),
-    // Last month count
+    // Current period count
+    prisma.booking.count({ where: { createdAt: { gte: currentStart, lte: currentEnd } } }),
+    // Previous period count
     prisma.booking.count({
-      where: { createdAt: { gte: startOfLastMonth, lt: startOfThisMonth } },
+      where: { createdAt: { gte: prevStart, lt: prevEnd } },
     }),
-    // This month revenue (paid)
+    // Current period revenue (paid)
     prisma.booking.aggregate({
       _sum: { totalAmount: true },
-      where: { paymentStatus: "PAID", createdAt: { gte: startOfThisMonth } },
+      where: { paymentStatus: "PAID", createdAt: { gte: currentStart, lte: currentEnd } },
     }),
-    // Last month revenue
+    // Previous period revenue
     prisma.booking.aggregate({
       _sum: { totalAmount: true },
       where: {
         paymentStatus: "PAID",
-        createdAt: { gte: startOfLastMonth, lt: startOfThisMonth },
+        createdAt: { gte: prevStart, lt: prevEnd },
       },
     }),
     // Top tours by revenue
@@ -52,7 +68,7 @@ async function getAnalyticsData() {
       by:      ["tourId"],
       _sum:    { totalAmount: true },
       _count:  { id: true },
-      where:   { paymentStatus: "PAID" },
+      where:   { paymentStatus: "PAID", createdAt: { gte: currentStart, lte: currentEnd } },
       orderBy: { _sum: { totalAmount: "desc" } },
       take:    5,
     }),
@@ -60,6 +76,7 @@ async function getAnalyticsData() {
     prisma.booking.groupBy({
       by:     ["status"],
       _count: { id: true },
+      where:  { createdAt: { gte: currentStart, lte: currentEnd } },
     }),
   ]);
 
@@ -134,6 +151,7 @@ async function getAnalyticsData() {
       revenue:  Number(t._sum.totalAmount ?? 0),
       bookings: t._count.id,
     })),
+    isCustomDate,
   };
 }
 
@@ -152,8 +170,19 @@ function Delta({ value }: { value: number | null }) {
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-export default async function AnalyticsPage() {
-  const data = await getAnalyticsData();
+interface PageProps {
+  searchParams: Promise<{
+    dateFrom?: string;
+    dateTo?:   string;
+  }>;
+}
+
+export default async function AnalyticsPage({ searchParams }: PageProps) {
+  const sp = await searchParams;
+  const dateFrom = sp.dateFrom ?? "";
+  const dateTo = sp.dateTo ?? "";
+
+  const data = await getAnalyticsData(dateFrom, dateTo);
 
   const STATUS_LABEL: Record<string, string> = {
     PENDING:   "Pending",
@@ -165,19 +194,19 @@ export default async function AnalyticsPage() {
 
   const kpis = [
     {
-      label:  "Revenue this month",
+      label:  data.isCustomDate ? "Revenue (selected period)" : "Revenue this month",
       value:  formatPrice(data.thisMonthRevenue, COMPANY_CURRENCY, COMPANY_LOCALE),
       delta:  data.revDelta,
-      sub:    `Last month: ${formatPrice(data.lastMonthRevenue, COMPANY_CURRENCY, COMPANY_LOCALE)}`,
+      sub:    data.isCustomDate ? `Prev period: ${formatPrice(data.lastMonthRevenue, COMPANY_CURRENCY, COMPANY_LOCALE)}` : `Last month: ${formatPrice(data.lastMonthRevenue, COMPANY_CURRENCY, COMPANY_LOCALE)}`,
       icon:   DollarSign,
       color:  "text-[#15803D]",
       bg:     "bg-[#DCFCE7]",
     },
     {
-      label:  "Bookings this month",
+      label:  data.isCustomDate ? "Bookings (selected period)" : "Bookings this month",
       value:  data.thisMonthBookings.toLocaleString(),
       delta:  data.bkgDelta,
-      sub:    `Last month: ${data.lastMonthBookings}`,
+      sub:    data.isCustomDate ? `Prev period: ${data.lastMonthBookings}` : `Last month: ${data.lastMonthBookings}`,
       icon:   CalendarCheck,
       color:  "text-[#C41230]",
       bg:     "bg-[#F5E6E9]",
@@ -217,11 +246,14 @@ export default async function AnalyticsPage() {
     <div className="space-y-6">
 
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[#111111]">Analytics</h1>
-        <p className="text-sm text-[#7A746D] mt-0.5">
-          Revenue trends, bookings over time, and tour performance.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[#111111]">Analytics</h1>
+          <p className="text-sm text-[#7A746D] mt-0.5">
+            Revenue trends, bookings over time, and tour performance.
+          </p>
+        </div>
+        <DateFilter />
       </div>
 
       {/* KPI cards */}
@@ -253,7 +285,7 @@ export default async function AnalyticsPage() {
         {/* Status breakdown */}
         <div className="bg-white rounded-xl border border-[#E4E0D9] shadow-(--shadow-card) p-6">
           <h2 className="text-sm font-semibold text-[#111111] mb-1">Booking status</h2>
-          <p className="text-xs text-[#A8A29E] mb-6">All time</p>
+          <p className="text-xs text-[#A8A29E] mb-6">{data.isCustomDate ? "Selected Period" : "All time"}</p>
           <BookingStatusChart data={statusData} />
         </div>
       </div>

@@ -6,7 +6,6 @@ import { BookingsTable } from "@/components/admin/BookingsTable";
 interface PageProps {
   searchParams: Promise<{
     q?:        string;
-    status?:   string;
     payment?:  string;
     page?:     string;
     dateFrom?: string;
@@ -15,10 +14,9 @@ interface PageProps {
   }>;
 }
 
-export default async function BookingsPage({ searchParams }: PageProps) {
+export default async function CompletedBookingsPage({ searchParams }: PageProps) {
   const sp       = await searchParams;
   const query    = sp.q?.trim() ?? "";
-  const status   = sp.status  ?? "ACTIVE";
   const payment  = sp.payment ?? "ALL";
   const dateFrom = sp.dateFrom ?? "";
   const dateTo   = sp.dateTo   ?? "";
@@ -26,7 +24,9 @@ export default async function BookingsPage({ searchParams }: PageProps) {
   const page     = Math.max(1, Number(sp.page ?? 1));
   const skip     = (page - 1) * BOOKINGS_PER_PAGE;
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = {
+    status: "COMPLETED" // Force status to COMPLETED
+  };
 
   if (query) {
     where.OR = [
@@ -35,11 +35,6 @@ export default async function BookingsPage({ searchParams }: PageProps) {
       { guestEmail:  { contains: query } },
       { tour: { title: { contains: query } } },
     ];
-  }
-  if (status  !== "ALL" && status !== "ACTIVE") {
-    where.status = status;
-  } else if (status === "ACTIVE") {
-    where.status = { not: "COMPLETED" };
   }
   if (payment !== "ALL") where.paymentStatus = payment;
 
@@ -77,7 +72,7 @@ export default async function BookingsPage({ searchParams }: PageProps) {
     prisma.booking.aggregate({
       _sum:   { totalAmount: true },
       _count: { id: true },
-      where:  { paymentStatus: "PAID" },
+      where:  { paymentStatus: "PAID", status: "COMPLETED" },
     }),
   ]);
 
@@ -111,9 +106,9 @@ export default async function BookingsPage({ searchParams }: PageProps) {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#111111]">Bookings</h1>
+          <h1 className="text-2xl font-bold text-[#111111]">Completed Bookings</h1>
           <p className="text-sm text-[#7A746D] mt-0.5">
-            {total.toLocaleString()} booking{total !== 1 ? "s" : ""}
+            {total.toLocaleString()} completed booking{total !== 1 ? "s" : ""}
             {" · "}
             {formatPrice(Number(stats._sum.totalAmount ?? 0), COMPANY_CURRENCY, COMPANY_LOCALE)} collected
           </p>
@@ -126,13 +121,14 @@ export default async function BookingsPage({ searchParams }: PageProps) {
         page={page}
         totalPages={totalPages}
         query={query}
-        status={status}
+        status="COMPLETED"
         payment={payment}
         dateFrom={dateFrom}
         dateTo={dateTo}
         tourDate={tourDate}
         currency={COMPANY_CURRENCY}
         locale={COMPANY_LOCALE}
+        isCompletedPage={true}
       />
     </div>
   );
