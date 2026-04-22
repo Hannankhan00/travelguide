@@ -11,6 +11,7 @@ interface Props {
   tourId: string;
   tourType: "SOLO" | "GROUP";
   basePrice: number;
+  originalBasePrice?: number;
   baseGroupSize: number;
   childPrice?: number | null;
   likelyToSellOut?: boolean;
@@ -27,7 +28,7 @@ interface Props {
 }
 
 export function MobileBookingCTA({
-  tourId, tourType, basePrice, baseGroupSize,
+  tourId, tourType, basePrice, originalBasePrice, baseGroupSize,
   childPrice, likelyToSellOut = false, maxGroupSize,
   variations = [], tourTitle = "", meetingPoint = "",
   languages = [], duration = 0, durationType = "hours",
@@ -48,10 +49,17 @@ export function MobileBookingCTA({
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E4E0D9] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-4 py-3 flex items-center justify-between gap-4">
         <div>
           <span className="text-xs text-[#7A746D] block">from</span>
-          <span className="text-2xl font-bold font-display text-[#111]">
-            {formatPrice(basePrice)}
-          </span>
-          <span className="text-xs text-[#7A746D] ml-1">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            {originalBasePrice && (
+              <span className="text-lg font-medium text-[#A8A29E] line-through">
+                {formatPrice(originalBasePrice)}
+              </span>
+            )}
+            <span className="text-2xl font-bold font-display text-[#111]">
+              {formatPrice(basePrice)}
+            </span>
+          </div>
+          <span className="text-xs text-[#7A746D] block mt-0.5">
             {tourType === "SOLO" ? "/ person" : `/ ${baseGroupSize} guests`}
           </span>
         </div>
@@ -96,6 +104,7 @@ export function MobileBookingCTA({
             tourId={tourId}
             tourType={tourType}
             basePrice={basePrice}
+            originalBasePrice={originalBasePrice}
             baseGroupSize={baseGroupSize}
             childPrice={childPrice}
             likelyToSellOut={likelyToSellOut}

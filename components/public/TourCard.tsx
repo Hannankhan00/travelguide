@@ -13,6 +13,7 @@ interface TourCardProps {
   location:       string;
   duration:       number;          // days
   price:          number;
+  originalPrice?: number;
   currency?:      string;
   rating?:        number;
   reviewCount?:   number;
@@ -33,6 +34,7 @@ export function TourCard({
   location,
   duration,
   price,
+  originalPrice,
   currency    = "USD",
   rating      = 5,
   reviewCount = 0,
@@ -157,9 +159,20 @@ export function TourCard({
           {/* Price */}
           <div className="text-right">
             <span className="text-xs text-muted block">from</span>
-            <span className="text-primary font-bold text-lg leading-tight">
-              {formatPrice(price, currency)}
-            </span>
+            {originalPrice ? (
+              <div className="flex flex-col items-end">
+                <span className="text-xs text-muted line-through font-medium">
+                  {formatPrice(originalPrice, currency)}
+                </span>
+                <span className="text-[#C41230] font-bold text-lg leading-none mt-0.5">
+                  {formatPrice(price, currency)}
+                </span>
+              </div>
+            ) : (
+              <span className="text-primary font-bold text-lg leading-tight">
+                {formatPrice(price, currency)}
+              </span>
+            )}
           </div>
         </div>
       </div>

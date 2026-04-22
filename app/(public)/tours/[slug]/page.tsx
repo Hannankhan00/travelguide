@@ -47,6 +47,7 @@ export default async function TourDetailPage({ params }: PageProps) {
           user: { select: { name: true, image: true, id: true } },
         },
       },
+      discounts: { where: { isActive: true } }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any,
   });
@@ -91,6 +92,26 @@ export default async function TourDetailPage({ params }: PageProps) {
   const startTimes          = safeArr(tourData.startTimes).filter(Boolean) as string[];
   const cancellationHours   = Number(tourData.cancellationHours ?? 24);
   const rescheduleHours     = Number(tourData.rescheduleHours   ?? 48);
+  // Calculate discounted base price
+  let finalBasePrice = basePrice;
+  let hasDiscount = false;
+  if (tourData.discounts && tourData.discounts.length > 0) {
+    const now = new Date();
+    const activeDiscount = tourData.discounts.find((d: any) => 
+      new Date(d.validFrom) <= now && 
+      (!d.validUntil || new Date(d.validUntil) >= now)
+    );
+    
+    if (activeDiscount) {
+      hasDiscount = true;
+      if (activeDiscount.discountType === "PERCENTAGE") {
+        finalBasePrice = basePrice * (1 - Number(activeDiscount.discountValue) / 100);
+      } else if (activeDiscount.discountType === "FIXED_AMOUNT") {
+        finalBasePrice = Math.max(0, basePrice - Number(activeDiscount.discountValue));
+      }
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const coverImage  = (tourData.images as any[]).find(i => i.isPrimary)?.url || tourData.images[0]?.url;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -371,7 +392,8 @@ export default async function TourDetailPage({ params }: PageProps) {
             <BookingWidget
               tourId={tourData.id}
               tourType={tourType}
-              basePrice={basePrice}
+              basePrice={finalBasePrice}
+              originalBasePrice={hasDiscount ? basePrice : undefined}
               baseGroupSize={baseGroupSize}
               childPrice={tourData.childPrice ? Number(tourData.childPrice) : null}
               likelyToSellOut={tourData.likelyToSellOut}
@@ -454,7 +476,8 @@ export default async function TourDetailPage({ params }: PageProps) {
       <MobileBookingCTA
         tourId={tourData.id}
         tourType={tourType}
-        basePrice={basePrice}
+        basePrice={finalBasePrice}
+        originalBasePrice={hasDiscount ? basePrice : undefined}
         baseGroupSize={baseGroupSize}
         childPrice={tourData.childPrice ? Number(tourData.childPrice) : null}
         likelyToSellOut={tourData.likelyToSellOut}

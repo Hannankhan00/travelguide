@@ -12,6 +12,7 @@ interface BookingWidgetProps {
   tourId:        string;
   tourType:      "SOLO" | "GROUP";
   basePrice:     number;
+  originalBasePrice?: number;
   baseGroupSize: number;
   childPrice?:   number | null;
   likelyToSellOut: boolean;
@@ -28,7 +29,7 @@ interface BookingWidgetProps {
 }
 
 export function BookingWidget({
-  tourId, tourType, basePrice, baseGroupSize,
+  tourId, tourType, basePrice, originalBasePrice, baseGroupSize,
   childPrice, likelyToSellOut, maxGroupSize,
   variations = [], tourTitle = "", meetingPoint = "",
   languages = [], duration = 0, durationType = "hours",
@@ -61,6 +62,13 @@ export function BookingWidget({
     : isSolo
       ? (adults * basePrice + children * (childPrice ?? basePrice))
       : calcGroupPrice(totalGuests, baseGroupSize, basePrice);
+  
+  const originalTotalPrice = originalBasePrice && priceOverride === null
+    ? (isSolo
+        ? (adults * originalBasePrice + children * (childPrice ? childPrice / basePrice * originalBasePrice : originalBasePrice))
+        : calcGroupPrice(totalGuests, baseGroupSize, originalBasePrice))
+    : null;
+
   const totalPrice = baseTotalPrice + variationExtra;
 
   const spotsLeft = dateRec ? dateRec.maxCapacity - dateRec.bookedCount : null;
@@ -108,7 +116,10 @@ export function BookingWidget({
           </span>
         )}
         <p className="text-[#7A746D] text-sm mb-0.5">{isSolo ? "From" : `Total for ${totalGuests} guest${totalGuests !== 1 ? "s" : ""}`}</p>
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-baseline gap-2 flex-wrap">
+          {originalTotalPrice && (
+            <span className="text-xl font-medium text-[#A8A29E] line-through">${originalTotalPrice.toFixed(0)}</span>
+          )}
           <span className="text-[2rem] font-bold text-[#C41230] leading-none">${baseTotalPrice.toFixed(0)}</span>
           <span className="text-[#7A746D] text-sm">
             {isSolo ? "per person" : ""}
