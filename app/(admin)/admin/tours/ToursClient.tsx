@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -43,6 +43,12 @@ export function ToursClient({ tours }: { tours: TourRow[] }) {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, statusFilter, categoryFilter]);
 
   const filtered = tours.filter((t) => {
     if (statusFilter !== "ALL" && t.status !== statusFilter) return false;
@@ -57,6 +63,12 @@ export function ToursClient({ tours }: { tours: TourRow[] }) {
     }
     return true;
   });
+
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+  const validPage = Math.max(1, Math.min(currentPage, totalPages));
+
+  const paginatedTours = filtered.slice((validPage - 1) * ITEMS_PER_PAGE, validPage * ITEMS_PER_PAGE);
 
   const counts = {
     all:       tours.length,
@@ -174,7 +186,7 @@ export function ToursClient({ tours }: { tours: TourRow[] }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E4E0D9]">
-                {filtered.map((tour) => {
+                {paginatedTours.map((tour) => {
                   const cfg = statusConfig[tour.status];
                   const CfgIcon = cfg.icon;
                   const catLabel = TOUR_CATEGORIES.find((c) => c.value === tour.category)?.label ?? tour.category;
@@ -334,6 +346,53 @@ export function ToursClient({ tours }: { tours: TourRow[] }) {
                 })}
               </tbody>
             </table>
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 border-t border-[#E4E0D9] bg-white">
+                <span className="text-xs text-[#7A746D]">
+                  Showing {(validPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(validPage * ITEMS_PER_PAGE, totalItems)} of {totalItems} tours
+                </span>
+                <div className="flex items-center gap-1 overflow-x-auto max-w-full no-scrollbar pb-1 sm:pb-0">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={validPage === 1}
+                    className="px-3 py-1.5 rounded border border-[#E4E0D9] text-sm text-[#555] disabled:opacity-50 hover:bg-[#F8F7F5] transition-colors"
+                  >
+                    Previous
+                  </button>
+                  {Array.from({ length: totalPages }).map((_, i) => {
+                    const pageNum = i + 1;
+                    if (totalPages > 7 && pageNum !== 1 && pageNum !== totalPages && Math.abs(pageNum - validPage) > 1) {
+                      if (pageNum === 2 || pageNum === totalPages - 1) {
+                        return <span key={pageNum} className="px-2 text-[#A8A29E]">...</span>;
+                      }
+                      return null;
+                    }
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-8 h-8 shrink-0 flex items-center justify-center rounded text-sm transition-colors ${
+                          pageNum === validPage 
+                            ? "bg-[#1B2847] text-white border border-[#1B2847]" 
+                            : "border border-[#E4E0D9] text-[#555] hover:bg-[#F8F7F5]"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={validPage === totalPages}
+                    className="px-3 py-1.5 rounded border border-[#E4E0D9] text-sm text-[#555] disabled:opacity-50 hover:bg-[#F8F7F5] transition-colors"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
