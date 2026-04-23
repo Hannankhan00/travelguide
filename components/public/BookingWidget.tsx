@@ -127,7 +127,7 @@ export function BookingWidget({
         </div>
         {!isSolo && (
           <p className="text-xs text-[#7A746D] mt-1">
-            Base: ${basePrice} / {baseGroupSize} guests · +${basePrice} per extra {baseGroupSize}
+            Base: ${Number(basePrice).toFixed(2).replace(/\.00$/, '')} / {baseGroupSize} guests · +${Number(basePrice).toFixed(2).replace(/\.00$/, '')} per extra {baseGroupSize}
           </p>
         )}
       </div>
