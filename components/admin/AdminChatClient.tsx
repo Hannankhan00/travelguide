@@ -97,19 +97,21 @@ function ThreadPanel({ convo, onMessageSent, onResolved, onRead }: ThreadPanelPr
     });
 
     const channelName = `conversation-${convo.id}`;
-    const channel = getPusherClient().subscribe(channelName);
-
-    channel.bind("new_message", (msg: Message) => {
-      setMessages((prev) => mergeMessages(prev, [msg]));
-      if (msg.senderRole !== "ADMIN") {
-        adminMarkRead(convo.id);
-        onRead();
-      }
-    });
+    const pusher = getPusherClient();
+    if (pusher) {
+      const channel = pusher.subscribe(channelName);
+      channel.bind("new_message", (msg: Message) => {
+        setMessages((prev) => mergeMessages(prev, [msg]));
+        if (msg.senderRole !== "ADMIN") {
+          adminMarkRead(convo.id);
+          onRead();
+        }
+      });
+    }
 
     return () => {
       cancelled = true;
-      getPusherClient().unsubscribe(channelName);
+      getPusherClient()?.unsubscribe(channelName);
     };
     // onRead is stable (defined in parent without deps); skip to avoid resubscribing
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -247,7 +249,10 @@ export function AdminChatClient({ conversations: initial }: { conversations: Con
   // Subscribe to the admin-wide conversations channel — every server-side change
   // emits a fresh AdminConversationSummary that we reconcile into our list.
   useEffect(() => {
-    const channel = getPusherClient().subscribe(ADMIN_CONVERSATIONS_CHANNEL);
+    const pusher = getPusherClient();
+    if (!pusher) return;
+
+    const channel = pusher.subscribe(ADMIN_CONVERSATIONS_CHANNEL);
 
     channel.bind(ADMIN_CONVERSATIONS_EVENT, (payload: { summary: ConversationSummary }) => {
       const incoming = payload.summary;
@@ -263,7 +268,7 @@ export function AdminChatClient({ conversations: initial }: { conversations: Con
     });
 
     return () => {
-      getPusherClient().unsubscribe(ADMIN_CONVERSATIONS_CHANNEL);
+      pusher.unsubscribe(ADMIN_CONVERSATIONS_CHANNEL);
     };
   }, []);
 

@@ -57,16 +57,18 @@ export function ChatPopup({ bookingId, tourTitle, onClose }: Props) {
       markConversationRead(convo.id, "CUSTOMER");
       setLoading(false);
 
-      channelName = `conversation-${convo.id}`;
-      const channel = getPusherClient().subscribe(channelName);
-
-      channel.bind("new_message", (msg: Message) => {
-        setMessages((prev) => mergeMessages(prev, [msg]));
-        if (msg.senderRole !== "CUSTOMER") markConversationRead(convo.id, "CUSTOMER");
-      });
+      const pusher = getPusherClient();
+      if (pusher) {
+        channelName = `conversation-${convo.id}`;
+        const channel = pusher.subscribe(channelName);
+        channel.bind("new_message", (msg: Message) => {
+          setMessages((prev) => mergeMessages(prev, [msg]));
+          if (msg.senderRole !== "CUSTOMER") markConversationRead(convo.id, "CUSTOMER");
+        });
+      }
     });
 
-    return () => { if (channelName) getPusherClient().unsubscribe(channelName); };
+    return () => { if (channelName) getPusherClient()?.unsubscribe(channelName); };
   }, [bookingId]);
 
   // Scroll to bottom on new messages
