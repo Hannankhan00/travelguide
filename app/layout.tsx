@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
+import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -77,11 +78,11 @@ export default function RootLayout({
       className="h-full"
     >
       <body suppressHydrationWarning className="min-h-full flex flex-col bg-background text-foreground antialiased">
-        <Script 
-          src="//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js" 
-          strategy="afterInteractive" 
+        <Script
+          src="//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js"
+          strategy="afterInteractive"
         />
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

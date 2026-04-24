@@ -22,7 +22,9 @@ function extractCloudinaryPublicId(url: string): string | null {
 }
 
 function clearToursCache() {
-  revalidateTag("tours", "default");
+  // Next.js 16: revalidateTag requires two arguments.
+  // "max" marks entries as stale; they regenerate on next visit (SWR semantics).
+  revalidateTag("tours", "max");
   revalidatePath("/tours");
   revalidatePath("/");
 }
@@ -247,6 +249,9 @@ export async function toggleFeaturedAction(tourId: string): Promise<ActionResult
       where: { id: tourId },
       data:  { featured: !tour.featured },
     });
+    // Featured tours appear on the homepage hero and featured rows — must bust
+    // the tours cache AND the homepage ISR cache immediately.
+    clearToursCache();
     revalidatePath("/admin/tours");
     return { success: tour.featured ? "Removed from featured." : "Added to featured." };
   } catch {
@@ -284,6 +289,8 @@ export async function addTourImageAction(
       },
     });
 
+    // Images appear on public tour detail and listing card thumbnails.
+    revalidateTag("tours", "max");
     revalidatePath(`/admin/tours/${tourId}`);
     return { success: "Image added." };
   } catch {
@@ -310,6 +317,8 @@ export async function deleteTourImageAction(imageId: string, tourId: string): Pr
       }
     }
 
+    // Images appear on public tour detail and listing card thumbnails.
+    revalidateTag("tours", "max");
     revalidatePath(`/admin/tours/${tourId}`);
     return { success: "Image deleted." };
   } catch {
@@ -322,6 +331,8 @@ export async function setPrimaryImageAction(imageId: string, tourId: string): Pr
   try {
     await prisma.tourImage.updateMany({ where: { tourId }, data: { isPrimary: false } });
     await prisma.tourImage.update({ where: { id: imageId }, data: { isPrimary: true } });
+    // The primary image is the cover thumbnail shown on listings and the detail hero.
+    revalidateTag("tours", "max");
     revalidatePath(`/admin/tours/${tourId}`);
     return { success: "Primary image updated." };
   } catch {
@@ -365,6 +376,8 @@ export async function duplicateTourAction(tourId: string): Promise<ActionResult>
       await prisma.tourImage.create({ data: { ...imgRest, tourId: newTour.id } });
     }
 
+    // A new DRAFT tour is created — bust the tours list so it appears in admin
+    // immediately. No public cache bust needed because status is DRAFT.
     revalidatePath("/admin/tours");
     return { success: "Tour duplicated.", tourId: newTour.id };
   } catch (e: any) {

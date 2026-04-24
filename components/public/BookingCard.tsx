@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Image from "next/image";
+import { cldUrl, CLD_CARD } from "@/lib/cloudinary";
 import Link from "next/link";
 import {
   Calendar, Users, MapPin, ChevronDown, ChevronUp,
@@ -95,7 +96,7 @@ export function BookingCard({ booking }: BookingCardProps) {
         {/* Thumbnail */}
         <div className="md:w-64 h-48 md:h-auto relative shrink-0">
           {booking.tour.image ? (
-            <Image src={booking.tour.image} alt={booking.tour.title} fill className="object-cover" />
+            <Image src={cldUrl(booking.tour.image, CLD_CARD)} alt={booking.tour.title} fill sizes="(max-width: 768px) 100vw, 256px" className="object-cover" />
           ) : (
             <div className="w-full h-full bg-[#F0EDE8] flex items-center justify-center">
               <MapPin className="size-8 text-[#C4BAB0]" />

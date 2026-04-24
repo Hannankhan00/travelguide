@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 async function assertAdmin() {
   const session = await auth();
@@ -43,6 +43,9 @@ export async function upsertAvailability(tourId: string, input: AvailabilityInpu
     },
   });
 
+  // Availability priceOverrides and capacity are reflected on the public tour
+  // detail page — bust the "tours" tag so the cached page is regenerated.
+  revalidateTag("tours", "max");
   revalidatePath(`/admin/tours/${tourId}/availability`);
   return { success: true };
 }
@@ -88,6 +91,7 @@ export async function bulkUpsertAvailability(
     });
   }
 
+  revalidateTag("tours", "max");
   revalidatePath(`/admin/tours/${tourId}/availability`);
   return { success: true, count: dates.length };
 }
@@ -126,6 +130,7 @@ export async function bulkCloseWeekday(
     });
   }
 
+  revalidateTag("tours", "max");
   revalidatePath(`/admin/tours/${tourId}/availability`);
   return { success: true, count: dates.length };
 }
@@ -134,6 +139,7 @@ export async function bulkCloseWeekday(
 export async function deleteAvailability(tourId: string, availId: string) {
   await assertAdmin();
   await prisma.tourAvailability.delete({ where: { id: availId } });
+  revalidateTag("tours", "max");
   revalidatePath(`/admin/tours/${tourId}/availability`);
   return { success: true };
 }

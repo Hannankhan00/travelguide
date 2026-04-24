@@ -4,11 +4,22 @@ const CANONICAL_DOMAIN = "gotripjapan.com";
 
 const nextConfig: NextConfig = {
   images: {
-    formats: ["image/webp"],
-    qualities: [60, 75, 90, 100],
+    // Delegate all Cloudinary image optimization to Cloudinary's CDN.
+    // The loader returns Cloudinary-transformed URLs directly — /_next/image
+    // never fetches or re-encodes Cloudinary images, eliminating the server
+    // CPU/memory load that was causing 500/503 errors under heavy traffic.
+    loader: "custom",
+    loaderFile: "./lib/cloudinary-loader.ts",
+
+    // Kept for <Image src> domain validation (security) and for local assets
+    // that still go through the browser fetch path.
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+
+    // Reduced to the sizes that actually appear in the UI.
+    // Fewer buckets = fewer variant cache entries, less disk churn.
+    deviceSizes: [640, 828, 1080, 1200, 1920],
+    imageSizes: [64, 128, 256, 384],
+
     remotePatterns: [
       {
         protocol: "https",

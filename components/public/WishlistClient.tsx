@@ -7,6 +7,7 @@ import { MapPin, Clock, Star, Users, Heart } from "lucide-react";
 import { toggleWishlistAction } from "@/app/actions/wishlist";
 import { toast } from "sonner";
 import { formatPrice } from "@/lib/utils";
+import { cldUrl, CLD_CARD } from "@/lib/cloudinary";
 
 interface WishlistTour {
   id: string;
@@ -65,7 +66,7 @@ export function WishlistClient({ initialTours }: { initialTours: WishlistTour[] 
           {/* Image */}
           <div className="md:w-65 h-48 md:h-auto relative shrink-0">
             {tour.coverImage ? (
-              <Image src={tour.coverImage} alt={tour.title} fill className="object-cover" />
+              <Image src={cldUrl(tour.coverImage, CLD_CARD)} alt={tour.title} fill sizes="(max-width: 768px) 100vw, 260px" className="object-cover" />
             ) : (
               <div className="w-full h-full bg-linear-to-br from-[#1B2847] to-[#C41230]" />
             )}

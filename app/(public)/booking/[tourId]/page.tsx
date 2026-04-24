@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { CheckoutForm } from "@/components/public/CheckoutForm";
 import { MapPin, Calendar, Users, Clock } from "lucide-react";
 import Image from "next/image";
+import { cldUrl, CLD_CARD } from "@/lib/cloudinary";
 import { calcGroupPrice } from "@/lib/utils";
 
 interface BookingPageProps {
@@ -114,7 +115,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
             <div className="bg-white rounded-2xl border border-[#E7E8EE] shadow-sm overflow-hidden sticky top-24">
               {primaryImage && (
                 <div className="relative h-48 w-full">
-                  <Image src={primaryImage} alt={tour.title} fill className="object-cover" />
+                  <Image src={cldUrl(primaryImage, CLD_CARD)} alt={tour.title} fill sizes="(max-width: 1024px) 100vw, 400px" className="object-cover" />
                 </div>
               )}
               

@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Clock, Star, Users, ChevronLeft, ChevronRight, TrendingUp } from "lucide-react";
 import { WishlistButton } from "./WishlistButton";
+import { cldUrl, CLD_CARD } from "@/lib/cloudinary";
 
 interface FeaturedTour {
   id: string;
@@ -125,10 +126,10 @@ export function FeaturedToursCarousel({ tours }: Props) {
                   <div className="relative h-52 overflow-hidden">
                     {tour.coverImage ? (
                       <Image
-                        src={tour.coverImage}
+                        src={cldUrl(tour.coverImage, CLD_CARD)}
                         alt={tour.title}
                         fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        sizes="(max-width: 640px) 100vw, 340px"
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (

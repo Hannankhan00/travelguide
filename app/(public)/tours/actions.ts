@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 export type ReviewResult = {
   error?: string;
@@ -72,6 +72,11 @@ export async function submitReviewAction(formData: FormData): Promise<ReviewResu
     // Get tour slug so we can revalidate the correct path
     const tour = await prisma.tour.findUnique({ where: { id: tourId }, select: { slug: true } });
     if (tour) {
+      // revalidatePath alone does NOT bust unstable_cache entries — we must
+      // also call revalidateTag so the cached tour detail and homepage reviews
+      // are regenerated immediately rather than waiting for their TTL.
+      revalidateTag("tours", "max");    // busts getCachedTourBySlug (embeds reviews)
+      revalidateTag("reviews", "max");  // busts getCachedHomeReviews on the homepage
       revalidatePath(`/tours/${tour.slug}`);
     }
     revalidatePath("/tours");

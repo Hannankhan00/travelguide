@@ -6,7 +6,10 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { slugify } from "@/lib/utils";
 
 function clearDestinationsCache() {
-  revalidateTag("destinations", "default");
+  // Next.js 16: revalidateTag requires two arguments.
+  // "max" marks entries as stale; they regenerate on next visit (SWR semantics).
+  revalidateTag("destinations", "max");
+  revalidatePath("/");
   revalidatePath("/admin/destinations");
 }
 

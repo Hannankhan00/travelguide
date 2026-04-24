@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { sendEmail, wishlistDiscountHtml, dealAlertHtml } from "@/lib/email";
 import { COMPANY_NAME, COMPANY_CURRENCY } from "@/lib/constants";
 import { formatPrice } from "@/lib/utils";
@@ -181,6 +181,9 @@ export async function createDiscountCodeAction(data: {
     }
   }
 
+  // Discounts are included in the public tours listing and detail pages
+  // (both tagged "tours"). Bust the tag so stale pricing never reaches users.
+  revalidateTag("tours", "max");
   revalidatePath("/admin/discounts");
   revalidatePath("/admin/tours");
   return { success: "Discount code created.", discountId: discount.id };
@@ -204,6 +207,8 @@ export async function toggleDiscountActiveAction(id: string): Promise<DiscountRe
     const dc = await prisma.discountCode.findUnique({ where: { id }, select: { isActive: true } });
     if (!dc) return { error: "Discount not found." };
     await prisma.discountCode.update({ where: { id }, data: { isActive: !dc.isActive } });
+    // Active/inactive discount directly affects the price shown on public pages.
+    revalidateTag("tours", "max");
     revalidatePath("/admin/discounts");
     return { success: dc.isActive ? "Deactivated." : "Activated." };
   } catch {
@@ -246,6 +251,8 @@ export async function updateDiscountCodeAction(id: string, data: {
         isActive:         data.isActive,
       },
     });
+    // Discount value/dates changed — bust the tours cache so public pricing is accurate.
+    revalidateTag("tours", "max");
     revalidatePath("/admin/discounts");
     return { success: "Discount code updated." };
   } catch {
@@ -259,6 +266,8 @@ export async function deleteDiscountCodeAction(id: string): Promise<DiscountResu
   await assertAdmin();
   try {
     await prisma.discountCode.delete({ where: { id } });
+    // Deleted discount — pricing reverts to base; bust the tours cache.
+    revalidateTag("tours", "max");
     revalidatePath("/admin/discounts");
     return { success: "Discount code deleted." };
   } catch {

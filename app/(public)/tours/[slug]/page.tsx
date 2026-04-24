@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { unstable_cache } from "next/cache";
 import { auth } from "@/lib/auth";
 import { Clock, MapPin, Users, CheckCircle, XCircle, ChevronRight, Star, Globe, Zap, CalendarCheck, BadgeCheck } from "lucide-react";
 import Link from "next/link";
@@ -10,6 +11,44 @@ import { WishlistButton } from "@/components/public/WishlistButton";
 import { MobileBookingCTA } from "@/components/public/MobileBookingCTA";
 import { ExpandableDescription } from "@/components/public/ExpandableDescription";
 import { ItineraryTimeline } from "@/components/public/ItineraryTimeline";
+
+// ---------------------------------------------------------------------------
+// Cached data loaders — tour content rarely changes; 1-hour TTL is fine.
+// revalidateTag("tours") from admin actions busts both entries immediately.
+// ---------------------------------------------------------------------------
+
+const getCachedTourBySlug = unstable_cache(
+  async (slug: string) =>
+    prisma.tour.findUnique({
+      where:   { slug },
+      include: {
+        images:    { orderBy: { order: "asc" } },
+        reviews:   {
+          orderBy: { createdAt: "desc" },
+          include: { user: { select: { name: true, image: true, id: true } } },
+        },
+        discounts: { where: { isActive: true } },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
+    }),
+  ["tour-by-slug"],
+  { revalidate: 3600, tags: ["tours"] }
+);
+
+const getCachedRelatedTours = unstable_cache(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async (category: string, excludeId: string) =>
+    (prisma.tour.findMany as any)({
+      where:   { category, status: "PUBLISHED", NOT: { id: excludeId } },
+      take:    4,
+      orderBy: { rating: "desc" },
+      include: { images: { orderBy: { order: "asc" }, take: 1 } },
+    }),
+  ["related-tours"],
+  { revalidate: 3600, tags: ["tours"] }
+);
+
+// ---------------------------------------------------------------------------
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -37,20 +76,7 @@ export default async function TourDetailPage({ params }: PageProps) {
   }
   const currentUserId = session?.user?.id ?? null;
 
-  const tour = await prisma.tour.findUnique({
-    where: { slug },
-    include: {
-      images: { orderBy: { order: "asc" } },
-      reviews: {
-        orderBy: { createdAt: "desc" },
-        include: {
-          user: { select: { name: true, image: true, id: true } },
-        },
-      },
-      discounts: { where: { isActive: true } }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any,
-  });
+  const tour = await getCachedTourBySlug(slug);
 
   if (!tour || tour.status !== "PUBLISHED") notFound();
 
@@ -130,13 +156,7 @@ export default async function TourDetailPage({ params }: PageProps) {
 
   const descParagraphs = tour.description.split("\n").filter(p => p.trim().length > 0);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const relatedRaw = await (prisma.tour.findMany as any)({
-    where: { category: tour.category, status: "PUBLISHED", NOT: { id: tour.id } },
-    take: 4,
-    orderBy: { rating: "desc" },
-    include: { images: { orderBy: { order: "asc" }, take: 1 } },
-  });
+  const relatedRaw = await getCachedRelatedTours(tour.category, tour.id);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const relatedTours = relatedRaw.map((t: any) => ({
     id: t.id,

@@ -6,7 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X, MapPin, Heart, User, LogIn, LogOut, Bell, HelpCircle, ChevronRight, Ticket, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 
 interface DestinationNav {
   id: string;
@@ -16,11 +16,12 @@ interface DestinationNav {
 
 interface NavbarProps {
   transparent?: boolean;
-  isLoggedIn?: boolean;
   destinations?: DestinationNav[];
 }
 
-export function Navbar({ isLoggedIn = false, destinations = [] }: NavbarProps) {
+export function Navbar({ destinations = [] }: NavbarProps) {
+  const { data: session } = useSession();
+  const isLoggedIn = !!session?.user;
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);

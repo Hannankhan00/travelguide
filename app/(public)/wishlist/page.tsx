@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { WishlistClient } from "@/components/public/WishlistClient";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Your Wishlist",
 };
