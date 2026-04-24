@@ -11,6 +11,9 @@ export const COMPANY_EMAIL =
 export const COMPANY_PHONE =
   process.env.NEXT_PUBLIC_COMPANY_PHONE ?? "";
 
+export const COMPANY_WHATSAPP =
+  process.env.NEXT_PUBLIC_COMPANY_WHATSAPP ?? "+81 70-4501-1947";
+
 export const COMPANY_CURRENCY =
   process.env.NEXT_PUBLIC_CURRENCY ?? "USD";
 

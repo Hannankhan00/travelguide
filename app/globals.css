@@ -197,6 +197,11 @@ h4, h5, h6 {
   to   { opacity: 1; transform: scale(1);    }
 }
 
+@keyframes bounce-subtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position: 200% 0;  }
@@ -205,6 +210,7 @@ h4, h5, h6 {
 .animate-fade-in        { animation: fade-in 0.3s ease both; }
 .animate-slide-in-right { animation: slide-in-right 0.25s ease both; }
 .animate-zoom-in        { animation: zoom-in-95 0.2s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-bounce-subtle  { animation: bounce-subtle 3s ease-in-out infinite; }
 
 .skeleton {
   background: linear-gradient(

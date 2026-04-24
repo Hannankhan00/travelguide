@@ -36,6 +36,9 @@ interface Message {
   isRead:     boolean;
 }
 
+const ADMIN_CONVERSATIONS_CHANNEL = "admin-conversations";
+const ADMIN_CONVERSATIONS_EVENT   = "update";
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmtTime(iso: string) {
@@ -51,9 +54,22 @@ function fmtFull(iso: string) {
   return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
+function upsertAndSort(list: ConversationSummary[], next: ConversationSummary): ConversationSummary[] {
+  const without = list.filter((c) => c.id !== next.id);
+  const merged  = [next, ...without];
+  return merged.sort((a, b) => +new Date(b.lastMessageAt) - +new Date(a.lastMessageAt));
+}
+
 // ── Thread view ───────────────────────────────────────────────────────────────
 
-function ThreadPanel({ convo }: { convo: ConversationSummary }) {
+interface ThreadPanelProps {
+  convo:         ConversationSummary;
+  onMessageSent: (msg: Message) => void;
+  onResolved:    () => void;
+  onRead:        () => void;
+}
+
+function ThreadPanel({ convo, onMessageSent, onResolved, onRead }: ThreadPanelProps) {
   const [messages,  setMessages]  = useState<Message[]>([]);
   const [input,     setInput]     = useState("");
   const [loading,   setLoading]   = useState(true);
@@ -68,13 +84,16 @@ function ThreadPanel({ convo }: { convo: ConversationSummary }) {
   }
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
     setMessages([]);
 
     getConversationMessages(convo.id).then((msgs) => {
-      setMessages(msgs as unknown as Message[]);
+      if (cancelled) return;
+      setMessages(msgs);
       setLoading(false);
       adminMarkRead(convo.id);
+      onRead();
     });
 
     const channelName = `conversation-${convo.id}`;
@@ -82,10 +101,18 @@ function ThreadPanel({ convo }: { convo: ConversationSummary }) {
 
     channel.bind("new_message", (msg: Message) => {
       setMessages((prev) => mergeMessages(prev, [msg]));
-      if (msg.senderRole !== "ADMIN") adminMarkRead(convo.id);
+      if (msg.senderRole !== "ADMIN") {
+        adminMarkRead(convo.id);
+        onRead();
+      }
     });
 
-    return () => { getPusherClient().unsubscribe(channelName); };
+    return () => {
+      cancelled = true;
+      getPusherClient().unsubscribe(channelName);
+    };
+    // onRead is stable (defined in parent without deps); skip to avoid resubscribing
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [convo.id]);
 
   useEffect(() => {
@@ -99,14 +126,18 @@ function ThreadPanel({ convo }: { convo: ConversationSummary }) {
     startSend(async () => {
       const res = await sendAdminMessage(convo.id, text);
       if ("message" in res && res.message) {
-        const m = res.message as unknown as Message;
+        const m = res.message;
         setMessages((prev) => mergeMessages(prev, [m]));
+        onMessageSent(m);
       }
     });
   }
 
   function handleResolve() {
-    startResolve(async () => { await resolveConversation(convo.id); });
+    startResolve(async () => {
+      await resolveConversation(convo.id);
+      onResolved();
+    });
   }
 
   return (
@@ -204,10 +235,82 @@ function ThreadPanel({ convo }: { convo: ConversationSummary }) {
 
 // ── Main client component ─────────────────────────────────────────────────────
 
-export function AdminChatClient({ conversations }: { conversations: ConversationSummary[] }) {
-  const [selectedId, setSelectedId] = useState<string | null>(
-    conversations.length > 0 ? conversations[0].id : null
+export function AdminChatClient({ conversations: initial }: { conversations: ConversationSummary[] }) {
+  const [conversations, setConversations] = useState<ConversationSummary[]>(initial);
+  const [selectedId,    setSelectedId]    = useState<string | null>(
+    initial.length > 0 ? initial[0].id : null,
   );
+
+  const selectedIdRef = useRef(selectedId);
+  selectedIdRef.current = selectedId;
+
+  // Subscribe to the admin-wide conversations channel — every server-side change
+  // emits a fresh AdminConversationSummary that we reconcile into our list.
+  useEffect(() => {
+    const channel = getPusherClient().subscribe(ADMIN_CONVERSATIONS_CHANNEL);
+
+    channel.bind(ADMIN_CONVERSATIONS_EVENT, (payload: { summary: ConversationSummary }) => {
+      const incoming = payload.summary;
+      setConversations((prev) => {
+        // If this conversation is currently open in the admin's view, suppress
+        // the unread bump so the badge doesn't flicker before adminMarkRead lands.
+        const reconciled =
+          selectedIdRef.current === incoming.id
+            ? { ...incoming, unreadCount: 0 }
+            : incoming;
+        return upsertAndSort(prev, reconciled);
+      });
+    });
+
+    return () => {
+      getPusherClient().unsubscribe(ADMIN_CONVERSATIONS_CHANNEL);
+    };
+  }, []);
+
+  // Local optimistic updates for the admin's own actions — Pusher will follow
+  // up with the authoritative summary, but the UI shouldn't wait for it.
+  function handleAdminMessageSent(msg: Message) {
+    setConversations((prev) => {
+      const c = prev.find((x) => x.id === selectedIdRef.current);
+      if (!c) return prev;
+      const updated: ConversationSummary = {
+        ...c,
+        lastMessageAt: msg.createdAt,
+        status:        "OPEN",
+        lastMessage:   {
+          content:    msg.content,
+          senderRole: "ADMIN",
+          createdAt:  msg.createdAt,
+          isRead:     false,
+        },
+      };
+      return upsertAndSort(prev, updated);
+    });
+  }
+
+  function handleResolved() {
+    const id = selectedIdRef.current;
+    if (!id) return;
+    setConversations((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, status: "RESOLVED" } : c)),
+    );
+  }
+
+  function handleRead() {
+    const id = selectedIdRef.current;
+    if (!id) return;
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === id
+          ? {
+              ...c,
+              unreadCount: 0,
+              lastMessage: c.lastMessage ? { ...c.lastMessage, isRead: true } : null,
+            }
+          : c,
+      ),
+    );
+  }
 
   const selected = conversations.find((c) => c.id === selectedId) ?? null;
 
@@ -277,7 +380,13 @@ export function AdminChatClient({ conversations }: { conversations: Conversation
       {/* ── Thread panel ── */}
       <div className="flex-1 min-w-0">
         {selected ? (
-          <ThreadPanel key={selected.id} convo={selected} />
+          <ThreadPanel
+            key={selected.id}
+            convo={selected}
+            onMessageSent={handleAdminMessageSent}
+            onResolved={handleResolved}
+            onRead={handleRead}
+          />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center gap-3">
             <MessageCircle className="size-10 text-[#D4CFCA]" />

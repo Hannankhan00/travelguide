@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { emitNewMessage } from "@/lib/pusher-server";
+import { serializeMessage, notifyAdminConversationChanged } from "@/lib/chat-server";
 import { sendEmail, guideMessageHtml } from "@/lib/email";
 import { COMPANY_NAME } from "@/lib/constants";
 
@@ -25,11 +26,12 @@ export async function getConversations() {
 }
 
 export async function getConversationMessages(conversationId: string) {
-  return prisma.chatMessage.findMany({
+  const messages = await prisma.chatMessage.findMany({
     where:   { conversationId },
     orderBy: { createdAt: "asc" },
     select:  { id: true, senderName: true, senderRole: true, content: true, createdAt: true, isRead: true },
   });
+  return messages.map(serializeMessage);
 }
 
 export async function sendAdminMessage(conversationId: string, content: string) {
@@ -37,24 +39,28 @@ export async function sendAdminMessage(conversationId: string, content: string) 
   if (!session?.user) return { error: "Not authenticated" };
 
   const guideName = session.user.name ?? "Your Guide";
+  const trimmed   = content.trim();
 
-  const msg = await prisma.chatMessage.create({
+  const created = await prisma.chatMessage.create({
     data: {
       conversationId,
       senderId:   session.user.id,
       senderName: guideName,
       senderRole: "ADMIN",
-      content:    content.trim(),
+      content:    trimmed,
     },
     select: { id: true, senderName: true, senderRole: true, content: true, createdAt: true, isRead: true },
   });
+
+  const msg = serializeMessage(created);
 
   await prisma.chatConversation.update({
     where: { id: conversationId },
     data:  { lastMessageAt: new Date(), status: "OPEN" },
   });
 
-  emitNewMessage(conversationId, msg);
+  await emitNewMessage(conversationId, msg);
+  await notifyAdminConversationChanged(conversationId);
 
   // Email the customer so they know a reply is waiting
   const convo = await prisma.chatConversation.findUnique({
@@ -74,9 +80,9 @@ export async function sendAdminMessage(conversationId: string, content: string) 
         html:    guideMessageHtml({
           customerName:   convo.customer.name ?? "Traveller",
           guideName,
-          messagePreview: content.trim().slice(0, 200),
-          tourTitle:      convo.booking?.tour.title   ?? "",
-          bookingRef:     convo.booking?.bookingRef   ?? "",
+          messagePreview: trimmed.slice(0, 200),
+          tourTitle:      convo.booking?.tour.title ?? "",
+          bookingRef:     convo.booking?.bookingRef ?? "",
           viewUrl:        `${baseUrl}/bookings`,
         }),
       });
@@ -90,7 +96,6 @@ export async function sendAdminMessage(conversationId: string, content: string) 
         },
       });
     } catch (err) {
-      // Don't fail the message send if email fails
       console.error("Guide message email error:", err);
     }
   }
@@ -104,28 +109,18 @@ export async function resolveConversation(conversationId: string) {
     where: { id: conversationId },
     data:  { status: "RESOLVED" },
   });
+  await notifyAdminConversationChanged(conversationId);
   revalidatePath("/admin/chat");
 }
 
-export async function adminPollMessages(conversationId: string, after: string) {
-  const messages = await prisma.chatMessage.findMany({
-    where:   { conversationId, createdAt: { gt: new Date(after) } },
-    orderBy: { createdAt: "asc" },
-    select:  { id: true, senderName: true, senderRole: true, content: true, createdAt: true, isRead: true },
-  });
-  // Mark customer messages as read
-  await prisma.chatMessage.updateMany({
-    where: { conversationId, senderRole: "CUSTOMER", isRead: false },
-    data:  { isRead: true },
-  });
-  return { messages };
-}
-
 export async function adminMarkRead(conversationId: string) {
-  await prisma.chatMessage.updateMany({
+  const result = await prisma.chatMessage.updateMany({
     where: { conversationId, senderRole: "CUSTOMER", isRead: false },
     data:  { isRead: true },
   });
+  if (result.count > 0) {
+    await notifyAdminConversationChanged(conversationId);
+  }
 }
 
 export async function getUnreadCounts() {

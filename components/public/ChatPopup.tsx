@@ -53,7 +53,7 @@ export function ChatPopup({ bookingId, tourTitle, onClose }: Props) {
 
       const convo = res.conversation;
       setConversationId(convo.id);
-      setMessages(convo.messages as unknown as Message[]);
+      setMessages(convo.messages);
       markConversationRead(convo.id, "CUSTOMER");
       setLoading(false);
 
@@ -81,8 +81,7 @@ export function ChatPopup({ bookingId, tourTitle, onClose }: Props) {
     startSend(async () => {
       const res = await sendCustomerMessage(conversationId, text);
       if ("message" in res && res.message) {
-        const m = res.message as unknown as Message;
-        setMessages((prev) => mergeMessages(prev, [m]));
+        setMessages((prev) => mergeMessages(prev, [res.message]));
       }
     });
   }

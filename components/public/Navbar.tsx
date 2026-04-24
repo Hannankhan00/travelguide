@@ -188,10 +188,14 @@ export function Navbar({ isLoggedIn = false, destinations = [] }: NavbarProps) {
                       <ChevronRight className="size-4 text-[#A8A29E]" />
                     </button>
                     <div className="h-px bg-[#E7E8EE] mx-5 my-2" />
-                    <button className="flex items-center gap-4 px-5 py-3 hover:bg-[#F2F3FA] transition-colors w-full text-left">
+                    <Link 
+                      href="/contact"
+                      onClick={() => setProfileMenuOpen(false)}
+                      className="flex items-center gap-4 px-5 py-3 hover:bg-[#F2F3FA] transition-colors w-full text-left"
+                    >
                       <HelpCircle className="size-5" />
                       <span className="text-sm font-semibold">Support</span>
-                    </button>
+                    </Link>
                   </div>
                   <div className="h-2" />
                 </div>
