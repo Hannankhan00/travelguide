@@ -5,12 +5,15 @@ import { Calendar, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { BookingCard } from "@/components/public/BookingCard";
 
+export const dynamic = "force-dynamic";
+
 export default async function CustomerBookingsPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | undefined }>;
 }) {
   const sp = await searchParams;
+
   let session = null;
   try {
     session = await auth();
@@ -18,43 +21,57 @@ export default async function CustomerBookingsPage({
     console.error("Auth error in CustomerBookingsPage:", e);
   }
 
-  if (!session?.user) redirect("/?auth=login");
+  // Require a fully-resolved user ID — not just `session.user` —
+  // because an undefined ID would silently drop the WHERE filter in Prisma,
+  // returning every booking in the database.
+  if (!session?.user?.id) redirect("/?auth=login");
 
-  const bookings = await prisma.booking.findMany({
-    where:   { customerId: session.user.id },
-    orderBy: { createdAt: "desc" },
-    include: {
-      tour: {
-        select: {
-          title:    true,
-          slug:     true,
-          location: true,
-          images:   { where: { isPrimary: true }, select: { url: true }, take: 1 },
+  const userId = session.user.id;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let bookings: any[] = [];
+
+  try {
+    bookings = await prisma.booking.findMany({
+      where:   { customerId: userId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        tour: {
+          select: {
+            title:    true,
+            slug:     true,
+            location: true,
+            images:   { where: { isPrimary: true }, select: { url: true }, take: 1 },
+          },
         },
       },
-    },
-  });
+    });
+  } catch (e) {
+    console.error("Bookings query error for user", userId, e);
+  }
 
-  const serialized = bookings.map((b) => ({
-    id:              b.id,
-    bookingRef:      b.bookingRef,
-    status:          b.status,
-    paymentStatus:   b.paymentStatus,
-    paymentMethod:   b.paymentMethod,
-    tourDate:        b.tourDate.toISOString(),
-    numAdults:       b.numAdults,
-    numChildren:     b.numChildren,
-    totalAmount:     Number(b.totalAmount),
-    currency:        b.currency,
-    specialRequests: b.specialRequests ?? null,
-    createdAt:       b.createdAt.toISOString(),
-    tour: {
-      title:    b.tour.title,
-      slug:     b.tour.slug,
-      location: b.tour.location,
-      image:    b.tour.images[0]?.url ?? null,
-    },
-  }));
+  const serialized = bookings
+    .filter((b) => b.tour != null)
+    .map((b) => ({
+      id:              b.id,
+      bookingRef:      b.bookingRef,
+      status:          b.status,
+      paymentStatus:   b.paymentStatus,
+      paymentMethod:   b.paymentMethod,
+      tourDate:        b.tourDate.toISOString(),
+      numAdults:       b.numAdults,
+      numChildren:     b.numChildren,
+      totalAmount:     Number(b.totalAmount),
+      currency:        b.currency,
+      specialRequests: b.specialRequests ?? null,
+      createdAt:       b.createdAt.toISOString(),
+      tour: {
+        title:    b.tour!.title,
+        slug:     b.tour!.slug,
+        location: b.tour!.location,
+        image:    b.tour!.images[0]?.url ?? null,
+      },
+    }));
 
   return (
     <div className="bg-[#F8F7F5] min-h-screen pt-28 pb-12">

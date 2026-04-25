@@ -302,7 +302,7 @@ export function Navbar({ destinations = [] }: NavbarProps) {
       {/* Mobile slide-in drawer */}
       <div
         className={cn(
-          "md:hidden fixed top-0 right-0 bottom-0 z-[60] w-[82vw] max-w-[320px] bg-white flex flex-col shadow-2xl transition-transform duration-300 ease-in-out",
+          "md:hidden fixed top-0 right-0 bottom-0 z-60 w-[82vw] max-w-[320px] bg-white flex flex-col shadow-2xl transition-transform duration-300 ease-in-out",
           menuOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
