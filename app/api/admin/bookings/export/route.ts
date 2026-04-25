@@ -25,9 +25,16 @@ export async function GET(req: NextRequest) {
   if (status  !== "ALL") where.status        = status;
   if (payment !== "ALL") where.paymentStatus = payment;
 
+  // Hard cap prevents loading an unbounded result set into RAM.
+  // Without this, exporting with no filters would pull every booking row into
+  // memory at once, exhausting the Node.js heap on the Hostinger VPS → OOM
+  // crash → 503 until the process restarts.
+  const EXPORT_LIMIT = 10_000;
+
   const bookings = await prisma.booking.findMany({
     where,
     orderBy: { createdAt: "desc" },
+    take:    EXPORT_LIMIT,
     include: {
       tour: { select: { title: true } },
     },
@@ -65,11 +72,13 @@ export async function GET(req: NextRequest) {
     .join("\n");
 
   const filename = `bookings-${new Date().toISOString().slice(0, 10)}.csv`;
+  const wasTruncated = bookings.length === EXPORT_LIMIT;
 
   return new NextResponse(csv, {
     headers: {
       "Content-Type":        "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="${filename}"`,
+      ...(wasTruncated ? { "X-Export-Truncated": "true" } : {}),
     },
   });
 }

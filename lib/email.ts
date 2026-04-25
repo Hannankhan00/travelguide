@@ -1,17 +1,20 @@
 import nodemailer from "nodemailer";
 import { COMPANY_NAME, COMPANY_EMAIL } from "./constants";
 
-function createTransporter() {
-  return nodemailer.createTransport({
-    host:   process.env.SMTP_HOST,
-    port:   Number(process.env.SMTP_PORT ?? 587),
-    secure: process.env.SMTP_SECURE === "true",
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-}
+// Module-level singleton — one TCP connection pool for the process lifetime.
+// Previously createTransporter() was called inside sendEmail(), which opened a
+// new raw connection on every single email. Under any load (discount batch sends,
+// booking confirmations, password resets) this exhausted the SMTP server's
+// connection limit, causing sendMail() to throw and surfacing as HTTP 500s.
+const transporter = nodemailer.createTransport({
+  host:   process.env.SMTP_HOST,
+  port:   Number(process.env.SMTP_PORT ?? 587),
+  secure: process.env.SMTP_SECURE === "true",
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
 
 interface SendEmailOptions {
   to:      string;
@@ -21,8 +24,7 @@ interface SendEmailOptions {
 }
 
 export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
-  const from        = process.env.SMTP_FROM ?? COMPANY_EMAIL;
-  const transporter = createTransporter();
+  const from = process.env.SMTP_FROM ?? COMPANY_EMAIL;
   return transporter.sendMail({
     from:       `"${COMPANY_NAME}" <${from}>`,
     replyTo:    from,

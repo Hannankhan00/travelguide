@@ -8,7 +8,16 @@ import { serializeMessage, notifyAdminConversationChanged } from "@/lib/chat-ser
 import { sendEmail, guideMessageHtml } from "@/lib/email";
 import { COMPANY_NAME } from "@/lib/constants";
 
+async function assertAdmin() {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+  return session;
+}
+
 export async function getConversations() {
+  await assertAdmin();
   const conversations = await prisma.chatConversation.findMany({
     where:   { type: "BOOKING_SUPPORT" },
     orderBy: { lastMessageAt: "desc" },
@@ -26,6 +35,7 @@ export async function getConversations() {
 }
 
 export async function getConversationMessages(conversationId: string) {
+  await assertAdmin();
   const messages = await prisma.chatMessage.findMany({
     where:   { conversationId },
     orderBy: { createdAt: "asc" },
@@ -35,8 +45,7 @@ export async function getConversationMessages(conversationId: string) {
 }
 
 export async function sendAdminMessage(conversationId: string, content: string) {
-  const session = await auth();
-  if (!session?.user) return { error: "Not authenticated" };
+  const session = await assertAdmin();
 
   const guideName = session.user.name ?? "Your Guide";
   const trimmed   = content.trim();
@@ -105,6 +114,7 @@ export async function sendAdminMessage(conversationId: string, content: string) 
 }
 
 export async function resolveConversation(conversationId: string) {
+  await assertAdmin();
   await prisma.chatConversation.update({
     where: { id: conversationId },
     data:  { status: "RESOLVED" },
@@ -114,6 +124,7 @@ export async function resolveConversation(conversationId: string) {
 }
 
 export async function adminMarkRead(conversationId: string) {
+  await assertAdmin();
   const result = await prisma.chatMessage.updateMany({
     where: { conversationId, senderRole: "CUSTOMER", isRead: false },
     data:  { isRead: true },
@@ -124,6 +135,7 @@ export async function adminMarkRead(conversationId: string) {
 }
 
 export async function getUnreadCounts() {
+  await assertAdmin();
   const rows = await prisma.chatMessage.groupBy({
     by:     ["conversationId"],
     _count: { id: true },

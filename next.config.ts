@@ -83,6 +83,10 @@ const nextConfig: NextConfig = {
           // Force HTTPS for 1 year — only effective once the first HTTPS response is received.
           // DO NOT enable this if Hostinger panel "Force HTTPS" is off — pick one layer, not both.
           { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+
+          // Restrict access to sensitive browser APIs not used by this app.
+          // payment=(self) is required for the Stripe embedded checkout.
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(self)" },
         ],
       },
     ];

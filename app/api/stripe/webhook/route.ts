@@ -49,33 +49,48 @@ export async function POST(req: NextRequest) {
       // Note: bookedCount is incremented atomically during booking creation.
       // No second increment here.
 
-      // Send confirmation email
-      const recipientName = booking.guestName ?? booking.customer?.name ?? "Traveller";
-      await sendEmail({
-        to:      booking.guestEmail,
-        subject: `Booking Confirmed — ${booking.tour.title} · ${bookingRef}`,
-        html:    bookingConfirmationHtml({
-          customerName:  recipientName,
-          bookingRef,
-          tourTitle:     booking.tour.title,
-          tourDate:      formatDate(booking.tourDate),
-          numGuests:     booking.numAdults + booking.numChildren,
-          totalAmount:   formatPrice(Number(booking.totalAmount), COMPANY_CURRENCY),
-          paymentMethod: "Credit / Debit Card",
-        }),
-      });
-
-      // Log email
-      await prisma.emailLog.create({
-        data: {
-          to:        booking.guestEmail,
-          subject:   `Booking Confirmed — ${bookingRef}`,
-          type:      "BOOKING_CONFIRMATION",
-          bookingId: booking.id,
-          status:    "SENT",
-          sentAt:    new Date(),
-        },
-      });
+      // Send confirmation email — wrapped so a transient SMTP failure never
+      // returns 500 to Stripe. Stripe would retry on 500, but the idempotency
+      // guard above would skip the DB update; the email would still not send.
+      // Isolating here keeps the webhook idempotent AND always returns 200.
+      try {
+        const recipientName = booking.guestName ?? booking.customer?.name ?? "Traveller";
+        await sendEmail({
+          to:      booking.guestEmail,
+          subject: `Booking Confirmed — ${booking.tour.title} · ${bookingRef}`,
+          html:    bookingConfirmationHtml({
+            customerName:  recipientName,
+            bookingRef,
+            tourTitle:     booking.tour.title,
+            tourDate:      formatDate(booking.tourDate),
+            numGuests:     booking.numAdults + booking.numChildren,
+            totalAmount:   formatPrice(Number(booking.totalAmount), COMPANY_CURRENCY),
+            paymentMethod: "Credit / Debit Card",
+          }),
+        });
+        await prisma.emailLog.create({
+          data: {
+            to:        booking.guestEmail,
+            subject:   `Booking Confirmed — ${bookingRef}`,
+            type:      "BOOKING_CONFIRMATION",
+            bookingId: booking.id,
+            status:    "SENT",
+            sentAt:    new Date(),
+          },
+        });
+      } catch (emailErr) {
+        console.error("[webhook] Confirmation email failed for", bookingRef, emailErr);
+        await prisma.emailLog.create({
+          data: {
+            to:        booking.guestEmail,
+            subject:   `Booking Confirmed — ${bookingRef}`,
+            type:      "BOOKING_CONFIRMATION",
+            bookingId: booking.id,
+            status:    "FAILED",
+            error:     String(emailErr),
+          },
+        }).catch(() => {});
+      }
       break;
     }
 

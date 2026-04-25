@@ -4,16 +4,20 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
+import { authConfig } from "./auth.config";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   adapter: PrismaAdapter(prisma) as any,
 
   providers: [
     Google({
-      clientId: process.env.AUTH_GOOGLE_ID!,
+      clientId:     process.env.AUTH_GOOGLE_ID!,
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
-      allowDangerousEmailAccountLinking: true,
+      // allowDangerousEmailAccountLinking intentionally omitted:
+      // enabling it lets an attacker register a Google account with the
+      // same email as an existing admin and gain instant admin access.
     }),
 
     // Email + password credentials (admin login only)
@@ -32,18 +36,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!user || !user.email) return null;
 
-        // Any user can log in if they have a hashed password
-        // Admins might also fall back to the env password if they don't have one
-        let hashToCheck = (user as any).hashedPassword;
-        if (user.role === "ADMIN" && !hashToCheck) {
-          hashToCheck = process.env.ADMIN_PASSWORD_HASH;
-        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const hashToCheck = (user as any).hashedPassword;
 
-        if (!hashToCheck) return null; // No password set
+        // No ADMIN_PASSWORD_HASH env fallback: every admin must have their
+        // own hashed password in the database. A shared env password is a
+        // single point of compromise across all deployments.
+        if (!hashToCheck) return null;
 
         const valid = await bcrypt.compare(
           credentials.password as string,
-          hashToCheck
+          hashToCheck,
         );
         if (!valid) return null;
 
@@ -54,43 +57,4 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
-
-  session: {
-    strategy: "jwt",
-  },
-
-  callbacks: {
-    async jwt({ token, user }) {
-      // On first sign-in, persist id + role into the JWT
-      if (user) {
-        token.id   = user.id;
-        token.role = (user as { role: "ADMIN" | "CUSTOMER" }).role;
-      }
-      return token;
-    },
-
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id   = token.id as string;
-        session.user.role = token.role as "ADMIN" | "CUSTOMER";
-      }
-      return session;
-    },
-
-    async signIn({ account }) {
-      // Block credential sign-in for non-admins
-      if (account?.provider === "credentials") {
-        return true; // already validated in authorize()
-      }
-
-      // Google OAuth — allow customers only
-      // Admin uses credentials, not OAuth
-      return true;
-    },
-  },
-
-  pages: {
-    signIn:  "/auth/login",
-    error:   "/auth/error",
-  },
 });
