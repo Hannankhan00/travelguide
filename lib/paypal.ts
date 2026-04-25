@@ -87,3 +87,24 @@ export async function capturePayPalOrder(orderId: string): Promise<{
   }
   return res.json();
 }
+
+// Refunds a completed capture. Call this when payment was captured but the
+// downstream booking creation failed — money must be returned to the customer.
+// Throws if the refund API call itself fails; callers must log and alert.
+export async function refundPayPalCapture(captureId: string): Promise<void> {
+  const token = await getAccessToken();
+
+  const res = await fetch(`${PAYPAL_BASE}/v2/payments/captures/${captureId}/refund`, {
+    method: "POST",
+    headers: {
+      Authorization:  `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({}),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`PayPal refund failed for capture ${captureId} (${res.status}): ${err}`);
+  }
+}

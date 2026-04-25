@@ -1,18 +1,11 @@
 import { listDiscountCodesAction } from "./actions";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import { DiscountsClient } from "./DiscountsClient";
 import { COMPANY_CURRENCY } from "@/lib/constants";
 
 export const metadata = { title: "Discounts — Admin" };
 
 export default async function DiscountsPage() {
-  const session = await auth();
-  if (!session?.user || (session.user as { role?: string }).role !== "ADMIN") {
-    redirect("/auth/login");
-  }
-
   const [discounts, tours] = await Promise.all([
     listDiscountCodesAction(),
     prisma.tour.findMany({

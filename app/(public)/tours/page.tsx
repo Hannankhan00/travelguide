@@ -4,16 +4,32 @@ import Link from "next/link";
 import { TourCard } from "@/components/public/TourCard";
 import { ToursFilterBar } from "@/components/public/ToursFilterBar";
 import { auth } from "@/lib/auth";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
+import type { Tour, TourImage, DiscountCode } from "@prisma/client";
+
+// This page reads searchParams and session cookies — it must render dynamically.
+// Declaring it here prevents Next.js from attempting static generation at build
+// time, which would cause auth() to throw a DYNAMIC_SERVER_USAGE signal.
+export const dynamic = "force-dynamic";
+
+type TourRow = Tour & {
+  images:    Pick<TourImage, "url">[];
+  discounts: Pick<DiscountCode, "validFrom" | "validUntil" | "discountType" | "discountValue">[];
+};
+
+interface WishlistRow {
+  tourId: string;
+}
 
 const getCachedPublishedTours = unstable_cache(
   async () => prisma.tour.findMany({
     where:   { status: "PUBLISHED" },
     orderBy: { createdAt: "desc" },
-    include: { 
-      images: { where: { isPrimary: true }, take: 1 },
-      discounts: { where: { isActive: true } }
-    } as any,
-  }),
+    include: {
+      images:    { where: { isPrimary: true }, take: 1 },
+      discounts: { where: { isActive: true } },
+    },
+  }) as Promise<TourRow[]>,
   ["published-tours"],
   { revalidate: 300, tags: ["tours"] }
 );
@@ -37,7 +53,12 @@ interface PageProps {
 
 export default async function PublicToursPage({ searchParams }: PageProps) {
   let session = null;
-  try { session = await auth(); } catch {}
+  try {
+    session = await auth();
+  } catch (e) {
+    if (isRedirectError(e)) throw e;
+    console.error("[tours] Auth error:", e);
+  }
   const userId = session?.user?.id;
   const sp     = await searchParams;
 
@@ -50,8 +71,8 @@ export default async function PublicToursPage({ searchParams }: PageProps) {
   const currentPage = sp.page ? parseInt(sp.page, 10) : 1;
   const ITEMS_PER_PAGE = 12;
 
-  const allTours = await getCachedPublishedTours().catch(() => [] as any[]);
-  const filteredTours = allTours.filter((t: any) => {
+  const allTours = await getCachedPublishedTours().catch(() => [] as TourRow[]);
+  const filteredTours = allTours.filter((t) => {
     if (q) {
       const ql = q.toLowerCase();
       if (
@@ -86,13 +107,13 @@ export default async function PublicToursPage({ searchParams }: PageProps) {
     return `/tours?${params.toString()}`;
   };
 
-  let userWishlists: any[] = [];
+  let userWishlists: WishlistRow[] = [];
   if (userId) {
     try {
-      userWishlists = await prisma.$queryRaw`SELECT * FROM Wishlist WHERE userId = ${userId}`;
+      userWishlists = await prisma.$queryRaw<WishlistRow[]>`SELECT tourId FROM Wishlist WHERE userId = ${userId}`;
     } catch {}
   }
-  const wishlistedTourIds = new Set(userWishlists.map((w: any) => w.tourId));
+  const wishlistedTourIds = new Set(userWishlists.map((w) => w.tourId));
 
   const activeCategory = category && category !== "ALL" ? category : null;
 
@@ -127,15 +148,14 @@ export default async function PublicToursPage({ searchParams }: PageProps) {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {tours.map((tour) => {
-              const t = tour as any;
               const originalPrice = tour.basePrice ? Number(tour.basePrice) : 0;
               let finalPrice = originalPrice;
               let hasDiscount = false;
-              
-              if (t.discounts && t.discounts.length > 0) {
+
+              if (tour.discounts.length > 0) {
                 const now = new Date();
-                const activeDiscount = t.discounts.find((d: any) => 
-                  new Date(d.validFrom) <= now && 
+                const activeDiscount = tour.discounts.find((d) =>
+                  new Date(d.validFrom) <= now &&
                   (!d.validUntil || new Date(d.validUntil) >= now)
                 );
                 
@@ -166,7 +186,7 @@ export default async function PublicToursPage({ searchParams }: PageProps) {
                   category={tour.category}
                   featured={tour.featured}
                   likelyToSellOut={tour.likelyToSellOut}
-                  coverImage={t.images?.[0]?.url}
+                  coverImage={tour.images[0]?.url}
                   isWishlisted={wishlistedTourIds.has(tour.id)}
                   gradient="linear-gradient(135deg, #0C447C 0%, #185FA5 100%)"
                 />
@@ -187,7 +207,7 @@ export default async function PublicToursPage({ searchParams }: PageProps) {
               </Link>
             )}
             
-            <div className="flex items-center gap-1 mx-2 overflow-x-auto max-w-[200px] sm:max-w-none no-scrollbar">
+            <div className="flex items-center gap-1 mx-2 overflow-x-auto max-w-50 sm:max-w-none no-scrollbar">
               {Array.from({ length: totalPages }).map((_, i) => {
                 const pageNum = i + 1;
                 const isCurrent = pageNum === validPage;

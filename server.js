@@ -7,7 +7,6 @@ const hostname = process.env.HOSTNAME || "0.0.0.0";
 
 console.log(`[server] Starting — NODE_ENV=${process.env.NODE_ENV} port=${port}`);
 
-// Prevent unhandled errors from killing the process silently
 process.on("unhandledRejection", (reason) => {
   console.error("[server] Unhandled Rejection:", reason);
 });
@@ -42,6 +41,31 @@ app.prepare()
     httpServer.listen(port, hostname, () => {
       console.log(`[server] Ready at http://${hostname}:${port} [${dev ? "development" : "production"}]`);
     });
+
+    // Graceful shutdown — let in-flight requests finish before the process exits.
+    // Hostinger sends SIGTERM when restarting the app. Without this handler,
+    // the process exits immediately, dropping active connections mid-response.
+    // The 10-second timeout is a hard ceiling: if requests haven't finished by
+    // then, we exit anyway to avoid blocking the restart indefinitely.
+    function shutdown(signal) {
+      console.log(`[server] ${signal} received — starting graceful shutdown`);
+      httpServer.close((err) => {
+        if (err) {
+          console.error("[server] Error during shutdown:", err);
+          process.exit(1);
+        }
+        console.log("[server] All connections closed — exiting cleanly");
+        process.exit(0);
+      });
+
+      setTimeout(() => {
+        console.error("[server] Graceful shutdown timed out — forcing exit");
+        process.exit(1);
+      }, 10_000).unref();
+    }
+
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
+    process.on("SIGINT",  () => shutdown("SIGINT"));
   })
   .catch((err) => {
     console.error("[server] FATAL — app.prepare() failed:");

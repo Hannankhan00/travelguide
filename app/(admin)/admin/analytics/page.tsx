@@ -37,6 +37,7 @@ async function getAnalyticsData(dateFrom: string, dateTo: string) {
     lastMonthRevenue,
     topTours,
     statusBreakdown,
+    totalCustomers,
   ] = await Promise.all([
     // All bookings for 12-month trend
     prisma.booking.findMany({
@@ -78,6 +79,8 @@ async function getAnalyticsData(dateFrom: string, dateTo: string) {
       _count: { id: true },
       where:  { createdAt: { gte: currentStart, lte: currentEnd } },
     }),
+    // Customer count — pulled in parallel rather than sequentially in the page
+    prisma.user.count({ where: { role: "CUSTOMER" } }),
   ]);
 
   // Resolve tour names for top tours
@@ -136,6 +139,7 @@ async function getAnalyticsData(dateFrom: string, dateTo: string) {
     lastMonthBookings,
     bkgDelta,
     avgBookingValue,
+    totalCustomers,
     monthLabels,
     revenueByMonth,
     bookingsByMonth,
@@ -222,7 +226,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
     },
     {
       label:  "Total customers",
-      value:  (await prisma.user.count({ where: { role: "CUSTOMER" } }).catch(() => 0)).toLocaleString(),
+      value:  data.totalCustomers.toLocaleString(),
       delta:  null,
       sub:    "Registered accounts",
       icon:   Users,
