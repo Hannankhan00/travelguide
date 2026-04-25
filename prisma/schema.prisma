@@ -205,6 +205,8 @@ model Booking {
   paymentStatus    PaymentStatus      @default(PENDING)
   stripeSessionId  String?
   stripePaymentId  String?
+  paypalOrderId    String?
+  paypalCaptureId  String?
   bankTransferRef  String?
   paidAt           DateTime?
   status           BookingStatus      @default(PENDING)
@@ -386,6 +388,7 @@ enum AvailabilityStatus {
 
 enum PaymentMethod {
   STRIPE
+  PAYPAL
   BANK_TRANSFER
 }
 

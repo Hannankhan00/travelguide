@@ -215,10 +215,12 @@ export function BookingCard({ booking }: BookingCardProps) {
                 label: "Payment",
                 value: (
                   <div className="flex items-center gap-2">
-                    {booking.paymentMethod === "STRIPE"
-                      ? <CreditCard className="size-3.5 text-[#7A746D]" />
-                      : <Banknote className="size-3.5 text-[#7A746D]" />}
-                    {booking.paymentMethod === "STRIPE" ? "Card / Stripe" : "Bank transfer"}
+                    {booking.paymentMethod === "BANK_TRANSFER"
+                      ? <Banknote className="size-3.5 text-[#7A746D]" />
+                      : <CreditCard className="size-3.5 text-[#7A746D]" />}
+                    {booking.paymentMethod === "STRIPE"        ? "Card / Stripe"
+                      : booking.paymentMethod === "PAYPAL"     ? "PayPal"
+                      : "Bank transfer"}
                     <span className="text-xs text-[#7A746D]">· {PAYMENT_LABEL[booking.paymentStatus] ?? booking.paymentStatus}</span>
                   </div>
                 ),
