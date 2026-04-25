@@ -6,7 +6,7 @@ import { cldUrl, CLD_CARD } from "@/lib/cloudinary";
 import Link from "next/link";
 import {
   Calendar, Users, MapPin, ChevronDown, ChevronUp,
-  Hash, CreditCard, Banknote, FileText, AlertTriangle, X, Loader2, MessageCircle,
+  Hash, CreditCard, Banknote, FileText, AlertTriangle, X, Loader2, MessageCircle, Wallet,
 } from "lucide-react";
 import { cancelBooking } from "@/app/(public)/bookings/actions";
 import { ChatPopup } from "@/components/public/ChatPopup";
@@ -75,6 +75,10 @@ export function BookingCard({ booking }: BookingCardProps) {
   const isPast   = dateObj < new Date();
   const diffDays = (dateObj.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
   const canCancel = !isPast && booking.status !== "CANCELLED" && booking.status !== "COMPLETED";
+  const canPay    = !isPast
+    && booking.status !== "CANCELLED"
+    && booking.status !== "COMPLETED"
+    && (booking.paymentStatus === "PENDING" || booking.paymentStatus === "FAILED");
 
   function handleCancel() {
     setError(null);
@@ -153,6 +157,15 @@ export function BookingCard({ booking }: BookingCardProps) {
                   className="text-sm font-bold text-white bg-[#1B2847] hover:bg-[#131e38] px-4 py-2 rounded-lg transition-colors"
                 >
                   Leave a review
+                </Link>
+              )}
+              {canPay && (
+                <Link
+                  href={"/bookings/" + booking.id + "/pay"}
+                  className="flex items-center gap-1.5 text-sm font-bold text-white bg-[#C41230] hover:bg-[#A00F27] transition-colors px-4 py-2 rounded-lg"
+                >
+                  <Wallet className="size-4" />
+                  Complete payment
                 </Link>
               )}
               {/* Chat with guide */}
