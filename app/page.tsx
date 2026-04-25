@@ -11,6 +11,7 @@ import { DestinationsSection } from "@/components/public/DestinationsSection";
 import { ExperienceSection } from "@/components/public/ExperienceSection";
 import { WhyUsSection, type ReviewItem } from "@/components/public/WhyUsSection";
 import { BookConfidenceSection }         from "@/components/public/BookConfidenceSection";
+import { WhatsAppButton }               from "@/components/public/WhatsAppButton";
 import { type RowTour } from "@/components/public/TourRowSection";
 import { prisma } from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
@@ -219,6 +220,7 @@ export default async function HomePage() {
       </main>
       <Footer />
       <AuthModal />
+      <WhatsAppButton />
     </>
   );
 }
