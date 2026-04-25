@@ -4,6 +4,7 @@ import { Navbar } from "@/components/public/Navbar";
 import { Footer } from "@/components/public/Footer";
 import { AuthModal } from "@/components/public/AuthModal";
 import { CookieConsent } from "@/components/public/CookieConsent";
+import { WhatsAppButton } from "@/components/public/WhatsAppButton";
 import { prisma } from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
 
@@ -39,6 +40,7 @@ export default async function PublicLayout({ children }: { children: React.React
       <Footer />
       <AuthModal />
       <CookieConsent />
+      <WhatsAppButton />
     </>
   );
 }
