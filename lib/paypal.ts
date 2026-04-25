@@ -4,8 +4,13 @@ const PAYPAL_BASE =
     : "https://api-m.sandbox.paypal.com";
 
 async function getAccessToken(): Promise<string> {
-  const id     = process.env.PAYPAL_CLIENT_ID!;
-  const secret = process.env.PAYPAL_CLIENT_SECRET!;
+  const id     = process.env.PAYPAL_CLIENT_ID;
+  const secret = process.env.PAYPAL_CLIENT_SECRET;
+
+  if (!id || !secret) {
+    throw new Error("PayPal credentials not configured (PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET missing from environment)");
+  }
+
   const creds  = Buffer.from(`${id}:${secret}`).toString("base64");
 
   const res = await fetch(`${PAYPAL_BASE}/v1/oauth2/token`, {
@@ -19,8 +24,8 @@ async function getAccessToken(): Promise<string> {
   });
 
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`PayPal auth failed: ${err}`);
+    const body = await res.text();
+    throw new Error(`PayPal auth failed (${res.status}): ${body}`);
   }
   const data = await res.json();
   return data.access_token as string;

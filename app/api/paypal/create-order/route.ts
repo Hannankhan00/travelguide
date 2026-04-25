@@ -48,7 +48,15 @@ export async function POST(req: NextRequest) {
     const order = await createPayPalOrder(totalAmount, currency, tour.title);
     return NextResponse.json({ orderId: order.id });
   } catch (err: any) {
-    console.error("[paypal/create-order]", err);
+    const msg: string = err?.message ?? "Unknown error";
+    console.error("[paypal/create-order]", msg);
+    // Surface credentials-missing errors clearly; keep other details server-side only
+    if (msg.includes("credentials not configured")) {
+      return NextResponse.json({ error: "PayPal is not configured on this server. Please contact support." }, { status: 503 });
+    }
+    if (msg.includes("PayPal auth failed")) {
+      return NextResponse.json({ error: "PayPal authentication failed. Please contact support." }, { status: 503 });
+    }
     return NextResponse.json({ error: "Failed to create PayPal order" }, { status: 500 });
   }
 }
