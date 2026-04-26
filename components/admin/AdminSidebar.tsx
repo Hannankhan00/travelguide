@@ -16,7 +16,6 @@ import {
   Globe,
   UserCheck,
   Tag,
-  CheckCircle2,
   CreditCard,
 } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
@@ -25,7 +24,6 @@ import { signOutAction } from "@/app/(admin)/admin/actions";
 const navItems = [
   { label: "Dashboard",    href: "/admin",                icon: LayoutDashboard },
   { label: "Bookings",     href: "/admin/bookings",       icon: CalendarCheck   },
-  { label: "Completed Bookings", href: "/admin/bookings/completed", icon: CheckCircle2 },
   { label: "Tours",        href: "/admin/tours",          icon: Map             },
   { label: "Destinations", href: "/admin/destinations",   icon: Globe           },
   { label: "Customers",    href: "/admin/customers",      icon: UserCheck       },

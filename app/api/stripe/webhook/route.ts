@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe, getWebhookSecret } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
-import { sendEmail, bookingConfirmationHtml } from "@/lib/email";
+import { sendEmail, bookingConfirmationHtml, adminNewBookingHtml } from "@/lib/email";
 import { formatPrice, formatDate } from "@/lib/utils";
-import { COMPANY_CURRENCY } from "@/lib/constants";
+import { COMPANY_CURRENCY, COMPANY_EMAIL } from "@/lib/constants";
 
 export async function POST(req: NextRequest) {
   const body      = await req.text();
@@ -88,6 +88,47 @@ export async function POST(req: NextRequest) {
             bookingId: booking.id,
             status:    "FAILED",
             error:     String(emailErr),
+          },
+        }).catch(() => {});
+      }
+
+      // Admin notification — isolated so a failure here never affects the customer email
+      try {
+        const recipientName = booking.guestName ?? booking.customer?.name ?? "Traveller";
+        await sendEmail({
+          to:      COMPANY_EMAIL,
+          subject: `New Booking — ${booking.tour.title} · ${bookingRef}`,
+          html:    adminNewBookingHtml({
+            bookingRef,
+            customerName:  recipientName,
+            customerEmail: booking.guestEmail,
+            tourTitle:     booking.tour.title,
+            tourDate:      formatDate(booking.tourDate),
+            numGuests:     booking.numAdults + booking.numChildren,
+            totalAmount:   formatPrice(Number(booking.totalAmount), COMPANY_CURRENCY),
+            paymentMethod: "Credit / Debit Card",
+          }),
+        });
+        await prisma.emailLog.create({
+          data: {
+            to:        COMPANY_EMAIL,
+            subject:   `New Booking — ${bookingRef}`,
+            type:      "ADMIN_NEW_BOOKING",
+            bookingId: booking.id,
+            status:    "SENT",
+            sentAt:    new Date(),
+          },
+        });
+      } catch (adminEmailErr) {
+        console.error("[webhook] Admin notification failed for", bookingRef, adminEmailErr);
+        await prisma.emailLog.create({
+          data: {
+            to:        COMPANY_EMAIL,
+            subject:   `New Booking — ${bookingRef}`,
+            type:      "ADMIN_NEW_BOOKING",
+            bookingId: booking.id,
+            status:    "FAILED",
+            error:     String(adminEmailErr),
           },
         }).catch(() => {});
       }

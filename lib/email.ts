@@ -494,7 +494,135 @@ export function passwordResetHtml(data: {
   });
 }
 
-// ─── 6. Deal alert (newsletter subscribers) ───────────────────────────────────
+// ─── 6. Admin: new booking notification ──────────────────────────────────────
+
+export function adminNewBookingHtml(data: {
+  bookingRef:    string;
+  customerName:  string;
+  customerEmail: string;
+  tourTitle:     string;
+  tourDate:      string;
+  numGuests:     number;
+  totalAmount:   string;
+  paymentMethod: string;
+}): string {
+  const adminUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/admin/bookings`;
+
+  const body = `
+    <p style="margin:0 0 6px;font-size:26px;font-weight:700;color:#0C1C35;line-height:1.2;">New booking received &#x1F4CB;</p>
+    <p style="margin:0 0 28px;font-size:15px;color:#5A5550;line-height:1.75;">
+      A new booking has been confirmed and payment collected. Review the details below.
+    </p>
+
+    <!-- Booking ref hero -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background:linear-gradient(135deg,#0C1C35,#1B3060);border-radius:14px;margin-bottom:24px;">
+      <tr>
+        <td style="padding:28px 32px;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+            <tr>
+              <td>
+                <p style="margin:0 0 4px;font-size:11px;color:rgba(200,168,75,0.85);letter-spacing:2px;text-transform:uppercase;">Booking Reference</p>
+                <p style="margin:0;font-size:28px;font-weight:700;color:#C8A84B;letter-spacing:3px;">${data.bookingRef}</p>
+              </td>
+              <td style="text-align:right;vertical-align:middle;">
+                <div style="display:inline-block;background-color:#16A34A;border-radius:20px;padding:7px 16px;">
+                  <span style="font-size:12px;font-weight:700;color:#ffffff;letter-spacing:0.5px;">&#10003; Payment Received</span>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Tour banner -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background:#FFF8E7;border-left:4px solid #C8A84B;border-radius:0 10px 10px 0;margin-bottom:24px;">
+      <tr>
+        <td style="padding:16px 20px;">
+          <p style="margin:0 0 2px;font-size:11px;color:#B45309;text-transform:uppercase;letter-spacing:1px;">Tour</p>
+          <p style="margin:0;font-size:18px;font-weight:700;color:#0C1C35;">${data.tourTitle}</p>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Detail rows -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin-bottom:4px;">
+      ${detailRow("&#128100; Customer", data.customerName)}
+      ${detailRow("&#128231; Email", data.customerEmail)}
+      ${detailRow("&#128197; Date", data.tourDate)}
+      ${detailRow("&#128101; Guests", `${data.numGuests} ${data.numGuests === 1 ? "person" : "people"}`)}
+      ${detailRow("&#128179; Payment", data.paymentMethod)}
+    </table>
+
+    <!-- Total -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background:#F8F7F5;border-radius:10px;margin-top:16px;border:1px solid #E8E4DD;">
+      <tr>
+        <td style="padding:18px 20px;font-size:14px;font-weight:600;color:#7A746D;">Total Collected</td>
+        <td style="padding:18px 20px;text-align:right;font-size:26px;font-weight:700;color:#16A34A;">${data.totalAmount}</td>
+      </tr>
+    </table>
+
+    ${ctaButton("View in Admin Panel", adminUrl, "#1B2847")}
+  `;
+
+  return baseTemplate({
+    previewText:  `New booking ${data.bookingRef} — ${data.tourTitle} (${data.totalAmount})`,
+    headerLabel:  "New Booking",
+    headerIcon:   "&#x1F4CB;",
+    accentColor:  "#16A34A",
+    body,
+  });
+}
+
+// ─── 7. Admin: new customer message notification ──────────────────────────────
+
+export function adminNewMessageHtml(data: {
+  customerName:   string;
+  bookingRef:     string;
+  tourTitle:      string;
+  messagePreview: string;
+  chatUrl:        string;
+}): string {
+  const body = `
+    <p style="margin:0 0 6px;font-size:26px;font-weight:700;color:#0C1C35;line-height:1.2;">New customer message &#x1F4AC;</p>
+    <p style="margin:0 0 28px;font-size:15px;color:#5A5550;line-height:1.75;">
+      <strong>${data.customerName}</strong> sent a message about their booking. Reply from the admin panel.
+    </p>
+
+    <!-- Booking badge -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background:#F8F7F5;border-radius:10px;border:1px solid #E8E4DD;margin-bottom:20px;">
+      <tr>
+        <td style="padding:16px 20px;">
+          <p style="margin:0 0 2px;font-size:11px;color:#7A746D;text-transform:uppercase;letter-spacing:1px;">Booking</p>
+          <p style="margin:0 0 2px;font-size:15px;font-weight:700;color:#0C1C35;">${data.tourTitle}</p>
+          <p style="margin:0;font-size:12px;color:#A8A29E;">Ref: ${data.bookingRef}</p>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Message bubble -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin-bottom:8px;">
+      <tr>
+        <td style="background:#EEF4FF;border-radius:12px;padding:24px;border:1px solid #D4E4FF;">
+          <p style="margin:0 0 10px;font-size:12px;font-weight:700;color:#1B5FA5;text-transform:uppercase;letter-spacing:1px;">&#x1F5E8; ${data.customerName} wrote:</p>
+          <p style="margin:0;font-size:15px;color:#2A2520;line-height:1.75;font-style:italic;">&ldquo;${data.messagePreview}${data.messagePreview.length >= 200 ? "&hellip;" : ""}&rdquo;</p>
+        </td>
+      </tr>
+    </table>
+
+    ${ctaButton("Reply in Admin Chat", data.chatUrl, "#1B2847")}
+  `;
+
+  return baseTemplate({
+    previewText:  `${data.customerName} sent a message — ${data.tourTitle} (${data.bookingRef})`,
+    headerLabel:  "Customer Message",
+    headerIcon:   "&#x1F4AC;",
+    accentColor:  "#1B5FA5",
+    body,
+  });
+}
+
+// ─── 8. Deal alert (newsletter subscribers) ───────────────────────────────────
 
 export function dealAlertHtml(data: {
   customerName:      string;

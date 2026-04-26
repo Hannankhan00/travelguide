@@ -4,8 +4,8 @@ import { prisma }                                        from "@/lib/prisma";
 import { capturePayPalOrder, refundPayPalCapture }       from "@/lib/paypal";
 import { auth }                                          from "@/lib/auth";
 import { calcGroupPrice, generateBookingRef, formatPrice, formatDate } from "@/lib/utils";
-import { sendEmail, bookingConfirmationHtml }             from "@/lib/email";
-import { COMPANY_CURRENCY }                              from "@/lib/constants";
+import { sendEmail, bookingConfirmationHtml, adminNewBookingHtml } from "@/lib/email";
+import { COMPANY_CURRENCY, COMPANY_EMAIL }               from "@/lib/constants";
 
 export async function POST(req: NextRequest) {
   try {
@@ -287,6 +287,45 @@ export async function POST(req: NextRequest) {
             bookingId: bookingSnapshot.id,
             status:    "FAILED",
             error:     String(emailErr),
+          },
+        }).catch(() => {});
+      }
+
+      try {
+        await sendEmail({
+          to:      COMPANY_EMAIL,
+          subject: `New Booking — ${tourTitle} · ${bookingSnapshot.bookingRef}`,
+          html:    adminNewBookingHtml({
+            bookingRef:    bookingSnapshot.bookingRef,
+            customerName:  bookingSnapshot.guestName ?? "Traveller",
+            customerEmail: bookingSnapshot.guestEmail,
+            tourTitle,
+            tourDate:      formatDate(bookingSnapshot.tourDate),
+            numGuests:     bookingSnapshot.numAdults + bookingSnapshot.numChildren,
+            totalAmount:   formatPrice(Number(bookingSnapshot.totalAmount), COMPANY_CURRENCY),
+            paymentMethod: "PayPal",
+          }),
+        });
+        await prisma.emailLog.create({
+          data: {
+            to:        COMPANY_EMAIL,
+            subject:   `New Booking — ${bookingSnapshot.bookingRef}`,
+            type:      "ADMIN_NEW_BOOKING",
+            bookingId: bookingSnapshot.id,
+            status:    "SENT",
+            sentAt:    new Date(),
+          },
+        });
+      } catch (adminEmailErr) {
+        console.error("[paypal/capture] Admin notification failed for", bookingSnapshot.bookingRef, adminEmailErr);
+        prisma.emailLog.create({
+          data: {
+            to:        COMPANY_EMAIL,
+            subject:   `New Booking — ${bookingSnapshot.bookingRef}`,
+            type:      "ADMIN_NEW_BOOKING",
+            bookingId: bookingSnapshot.id,
+            status:    "FAILED",
+            error:     String(adminEmailErr),
           },
         }).catch(() => {});
       }

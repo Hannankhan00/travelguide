@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { emitNewMessage } from "@/lib/pusher-server";
 import { serializeMessage, notifyAdminConversationChanged } from "@/lib/chat-server";
+import { sendEmail, adminNewMessageHtml } from "@/lib/email";
+import { COMPANY_EMAIL } from "@/lib/constants";
 
 // Get or create a BOOKING_SUPPORT conversation for a booking
 export async function getOrCreateConversation(bookingId: string) {
@@ -73,7 +75,16 @@ export async function sendCustomerMessage(conversationId: string, content: strin
 
   const convo = await prisma.chatConversation.findUnique({
     where:  { id: conversationId },
-    select: { id: true, customerId: true },
+    select: {
+      id:         true,
+      customerId: true,
+      booking: {
+        select: {
+          bookingRef: true,
+          tour:       { select: { title: true } },
+        },
+      },
+    },
   });
   if (!convo || convo.customerId !== dbUser.id) return { error: "Not found" as const };
 
@@ -97,6 +108,22 @@ export async function sendCustomerMessage(conversationId: string, content: strin
 
   await emitNewMessage(conversationId, msg);
   await notifyAdminConversationChanged(conversationId);
+
+  // Notify admin by email — fire-and-forget so chat is never blocked by SMTP
+  const adminUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/admin/chat`;
+  const bookingRef = convo.booking?.bookingRef ?? "N/A";
+  const tourTitle  = convo.booking?.tour?.title ?? "Unknown Tour";
+  sendEmail({
+    to:      COMPANY_EMAIL,
+    subject: `Customer Message — ${dbUser.name ?? "Customer"} · ${bookingRef}`,
+    html:    adminNewMessageHtml({
+      customerName:   dbUser.name ?? "Customer",
+      bookingRef,
+      tourTitle,
+      messagePreview: content.trim().slice(0, 200),
+      chatUrl:        adminUrl,
+    }),
+  }).catch((err) => console.error("[chat-actions] Admin email failed:", err));
 
   return { message: msg };
 }

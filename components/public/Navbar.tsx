@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X, MapPin, Heart, User, LogIn, LogOut, Bell, HelpCircle, ChevronRight, Ticket, ChevronDown } from "lucide-react";
+import { Menu, X, MapPin, Heart, User, LogIn, LogOut, HelpCircle, ChevronRight, Ticket, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut, useSession } from "next-auth/react";
 
@@ -180,14 +180,6 @@ export function Navbar({ destinations = [] }: NavbarProps) {
                         <span className="text-sm font-semibold">Log out</span>
                       </button>
                     )}
-                    <div className="h-px bg-[#E7E8EE] mx-5 my-2" />
-                    <button className="flex items-center justify-between px-5 py-3 hover:bg-[#F2F3FA] transition-colors w-full text-left">
-                      <div className="flex items-center gap-4">
-                        <Bell className="size-5" />
-                        <span className="text-sm font-semibold">Updates</span>
-                      </div>
-                      <ChevronRight className="size-4 text-[#A8A29E]" />
-                    </button>
                     <div className="h-px bg-[#E7E8EE] mx-5 my-2" />
                     <Link 
                       href="/contact"
