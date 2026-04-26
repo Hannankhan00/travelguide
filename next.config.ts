@@ -86,7 +86,7 @@ const nextConfig: NextConfig = {
 
           // Restrict access to sensitive browser APIs not used by this app.
           // payment=(self) is required for the Stripe embedded checkout.
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(self)" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self), payment=(self)" },
         ],
       },
     ];
