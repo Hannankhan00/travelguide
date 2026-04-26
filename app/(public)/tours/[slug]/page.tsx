@@ -76,7 +76,7 @@ export default async function TourDetailPage({ params }: PageProps) {
   }
   const currentUserId = session?.user?.id ?? null;
 
-  const tour = await getCachedTourBySlug(slug);
+  const tour = await getCachedTourBySlug(slug).catch(() => null);
 
   if (!tour || tour.status !== "PUBLISHED") notFound();
 
@@ -157,7 +157,7 @@ export default async function TourDetailPage({ params }: PageProps) {
 
   const descParagraphs = tour.description.split("\n").filter(p => p.trim().length > 0);
 
-  const relatedRaw = await getCachedRelatedTours(tour.category, tour.id);
+  const relatedRaw = await getCachedRelatedTours(tour.category, tour.id).catch(() => []);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const relatedTours = relatedRaw.map((t: any) => ({
     id: t.id,

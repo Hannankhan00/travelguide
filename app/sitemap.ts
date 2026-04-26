@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 
 const BASE_URL = (
-  process.env.NEXT_PUBLIC_BASE_URL || "https://www.gotripjapan.com"
+  process.env.NEXT_PUBLIC_BASE_URL || "https://gotripjapan.com"
 ).replace(/\/$/, "");
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
