@@ -101,6 +101,16 @@ const nextConfig: NextConfig = {
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self), payment=(self)" },
         ],
       },
+      // Prevent Hostinger's CDN from caching HTML pages.
+      // ISR sets s-maxage on HTML responses which the CDN caches. After a new deployment
+      // the CDN serves stale HTML referencing old chunk hashes → ChunkLoadError 404s.
+      // Static assets under /_next/static/ are excluded — they keep their immutable headers.
+      {
+        source: "/((?!_next/static|_next/image).*)",
+        headers: [
+          { key: "Cache-Control", value: "no-store" },
+        ],
+      },
     ];
   },
 };

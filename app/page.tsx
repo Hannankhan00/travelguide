@@ -1,7 +1,8 @@
-// ISR: regenerate the homepage in the background every 5 minutes.
-// With auth() removed, the page has no runtime dependencies and can be
-// fully prerendered. Wishlist state is client-only (WishlistButton handles it).
-export const revalidate = 300;
+// force-dynamic prevents Hostinger's CDN from caching the HTML page.
+// ISR (revalidate=300) caused the CDN to serve stale HTML (with old chunk hashes)
+// after deployments, producing ChunkLoadError 404s. Data is still fast because
+// all DB queries use unstable_cache with their own TTLs.
+export const dynamic = "force-dynamic";
 
 import nextDynamic from "next/dynamic";
 import { Navbar } from "@/components/public/Navbar";
