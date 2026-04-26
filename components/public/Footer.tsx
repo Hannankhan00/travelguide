@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Mail, Phone, ArrowRight } from "lucide-react";
 import { COMPANY_NAME, COMPANY_EMAIL, COMPANY_PHONE, COMPANY_WHATSAPP } from "@/lib/constants";
+import { TrustpilotWidget } from "@/components/public/TrustpilotWidget";
 
 const TOUR_LINKS = [
   { label: "All Tours",        href: "/tours"                         },
@@ -150,7 +151,7 @@ export function Footer() {
               Contact
             </h4>
             <ul className="space-y-3.5">
-              {COMPANY_EMAIL && (
+              {!!COMPANY_EMAIL && (
                 <li>
                   <a
                     href={`mailto:${COMPANY_EMAIL}`}
@@ -161,7 +162,7 @@ export function Footer() {
                   </a>
                 </li>
               )}
-              {COMPANY_WHATSAPP && (
+              {!!COMPANY_WHATSAPP && (
                 <li>
                   <a
                     href={`https://wa.me/${COMPANY_WHATSAPP.replace(/[^0-9]/g, "")}`}
@@ -176,7 +177,7 @@ export function Footer() {
                   </a>
                 </li>
               )}
-              {COMPANY_PHONE && (
+              {!!COMPANY_PHONE && (
                 <li>
                   <a
                     href={`tel:${COMPANY_PHONE}`}
@@ -193,26 +194,7 @@ export function Footer() {
               </li>
             </ul>
 
-            {/* Trustpilot TrustBox */}
-            <div className="mt-8">
-              <h4 className="font-semibold text-xs tracking-widest uppercase text-white/35 mb-4">
-                Trustpilot Reviews
-              </h4>
-              <div 
-                className="trustpilot-widget" 
-                data-locale="en-US" 
-                data-template-id="56278e9abfbbba0bdcd568bc" 
-                data-businessunit-id="69e422b612f246df35d09ea8" 
-                data-style-height="52px" 
-                data-style-width="100%" 
-                data-style-alignment="left"
-                data-token="a94f0544-3bce-4965-b5b5-9e4e0836f8ad"
-              >
-                <a href="https://www.trustpilot.com/review/gotripjapan.com" target="_blank" rel="noopener noreferrer">
-                  Trustpilot
-                </a>
-              </div>
-            </div>
+            <TrustpilotWidget />
           </div>
         </div>
       </div>
