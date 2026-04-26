@@ -194,14 +194,31 @@ export default auth((req) => {
     return res;
   }
 
-  // ── 5. Auth routes — suppress indexing ────────────────────────────────
+  // ── 5. Session endpoint — browser-side caching ────────────────────────
+  // Each SessionProvider mount and every page hydration hits this route.
+  // The session is a signed JWT: the server decodes it in microseconds, but
+  // hundreds of concurrent browser requests still exhaust worker slots.
+  // private, max-age=60 keeps the response in the browser cache for 60 s so
+  // a user navigating across pages doesn't repeat the round-trip.
+  // s-maxage=0 ensures Hostinger's nginx proxy never caches it server-side
+  // (sessions are per-user and must not be shared across requests).
+  if (pathname === "/api/auth/session") {
+    const res = NextResponse.next();
+    res.headers.set(
+      "Cache-Control",
+      "private, max-age=60, s-maxage=0, must-revalidate"
+    );
+    return res;
+  }
+
+  // ── 6. Auth routes — suppress indexing ────────────────────────────────
   if (pathname.startsWith("/auth/")) {
     const res = NextResponse.next();
     res.headers.set("X-Robots-Tag", "noindex, nofollow");
     return res;
   }
 
-  // ── 6. Booking routes — suppress indexing (contains personal data) ─────
+  // ── 7. Booking routes — suppress indexing (contains personal data) ─────
   if (pathname.startsWith("/bookings") || pathname.startsWith("/booking/")) {
     const res = NextResponse.next();
     res.headers.set("X-Robots-Tag", "noindex, nofollow");

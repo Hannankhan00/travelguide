@@ -32,6 +32,18 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  // Client-router cache for RSC responses.
+  // Default since Next 15: dynamic=0 (not cached) — every client-side
+  // navigation re-fetches from the server even for pages the user just visited.
+  // Raising dynamic to 30 s means a user clicking back/forward or revisiting a
+  // tour page within 30 s uses the cached RSC payload instead of spawning a
+  // new server request, directly reducing concurrent process load on Hostinger.
+  experimental: {
+    staleTimes: {
+      dynamic: 30,
+    },
+  },
+
   // Allow Turbopack (default in Next 16) to handle these packages
   serverExternalPackages: ["bcryptjs", "nodemailer"],
 
