@@ -9,7 +9,6 @@ import {
   Users,
   BarChart3,
   MessageSquare,
-  Settings,
   LogOut,
   ChevronLeft,
   ChevronsLeft,
@@ -35,7 +34,6 @@ const navItems = [
   { label: "Payments",     href: "/admin/payments",       icon: CreditCard      },
   { label: "Analytics",    href: "/admin/analytics",      icon: BarChart3       },
   { label: "Chat",         href: "/admin/chat",           icon: MessageSquare   },
-  { label: "Settings",     href: "/admin/settings",       icon: Settings        },
 ];
 
 interface AdminSidebarProps {
