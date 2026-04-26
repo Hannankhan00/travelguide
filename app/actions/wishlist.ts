@@ -16,7 +16,7 @@ export async function toggleWishlistAction(tourId: string) {
 
   try {
     // Check if entry exists using raw SQL
-    const existing: any[] = await prisma.$queryRaw`
+    const existing = await prisma.$queryRaw<{ id: string }[]>`
       SELECT id FROM Wishlist 
       WHERE userId = ${userId} AND tourId = ${tourId} 
       LIMIT 1

@@ -58,7 +58,7 @@ export default function RegisterPage() {
                 Check your inbox
               </h1>
               <p className="text-[#7A746D] mb-6 leading-relaxed">
-                We've sent a verification link to<br />
+                We&apos;ve sent a verification link to<br />
                 <strong className="text-[#0C447C]">{verifyEmail}</strong>
               </p>
 
@@ -70,8 +70,8 @@ export default function RegisterPage() {
                     <p className="text-sm font-semibold text-[#111] mb-0.5">What to do next</p>
                     <ol className="text-sm text-[#7A746D] space-y-1 list-decimal list-inside">
                       <li>Open the email from {COMPANY_NAME}</li>
-                      <li>Click the "Verify My Email Address" button</li>
-                      <li>You'll be redirected to the sign-in page</li>
+                      <li>Click the &quot;Verify My Email Address&quot; button</li>
+                      <li>You&apos;ll be redirected to the sign-in page</li>
                     </ol>
                   </div>
                 </div>
@@ -79,7 +79,7 @@ export default function RegisterPage() {
 
               {/* Expiry note */}
               <p className="text-xs text-[#A8A29E] mb-6">
-                The link expires in <strong>24 hours</strong>. Check your spam folder if you don't see it.
+                The link expires in <strong>24 hours</strong>. Check your spam folder if you don&apos;t see it.
               </p>
 
               {/* Resend */}

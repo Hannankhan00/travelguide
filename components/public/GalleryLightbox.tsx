@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -15,12 +16,12 @@ export function GalleryLightbox({ images, initialIndex = 0, onClose }: GalleryLi
     images.length > 0 ? Math.min(initialIndex, images.length - 1) : 0
   );
 
-  if (!images.length) return null;
-
+  // Hooks must be called unconditionally — the early return moves to after all hooks.
   const goNext = useCallback(() => setCurrent((c) => (c + 1) % images.length), [images.length]);
   const goPrev = useCallback(() => setCurrent((c) => (c - 1 + images.length) % images.length), [images.length]);
 
   useEffect(() => {
+    if (!images.length) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
       if (e.key === "ArrowRight") goNext();
@@ -32,7 +33,9 @@ export function GalleryLightbox({ images, initialIndex = 0, onClose }: GalleryLi
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [onClose, goNext, goPrev]);
+  }, [onClose, goNext, goPrev, images.length]);
+
+  if (!images.length) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center" onClick={onClose}>

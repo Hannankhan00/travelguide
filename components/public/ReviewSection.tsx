@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Image from "next/image";
 import { Star, Camera, Loader2, LogIn } from "lucide-react";
 import { submitReviewAction } from "@/app/(public)/tours/actions";
 import Link from "next/link";
@@ -161,7 +162,7 @@ export function ReviewSection({ tourId, reviews, currentUserId, averageRating, r
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-full bg-[#0C447C] text-white flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
                   {review.user.image ? (
-                    <img src={review.user.image} alt="" loading="lazy" className="w-full h-full object-cover" />
+                    <Image src={review.user.image} alt="" width={40} height={40} className="w-full h-full object-cover" />
                   ) : (
                     (review.user.name || "U")[0].toUpperCase()
                   )}
@@ -186,10 +187,12 @@ export function ReviewSection({ tourId, reviews, currentUserId, averageRating, r
                   <p className="text-[#545454] leading-relaxed">{review.message}</p>
                   {review.photoUrl && (
                     <div className="mt-4">
-                      <img
+                      <Image
                         src={review.photoUrl}
                         alt="Review photo"
-                        className="w-40 h-28 object-cover rounded-xl border border-[#E4E0D9]"
+                        width={160}
+                        height={112}
+                        className="object-cover rounded-xl border border-[#E4E0D9]"
                       />
                     </div>
                   )}

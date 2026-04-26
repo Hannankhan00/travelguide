@@ -59,7 +59,6 @@ interface Props {
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
-const BOOKING_STATUSES = ["ALL","PENDING","CONFIRMED","COMPLETED","CANCELLED","NO_SHOW"];
 const PAYMENT_STATUSES = ["ALL","PENDING","AWAITING_CONFIRMATION","PAID","REFUNDED","FAILED"];
 
 const STATUS_CFG: Record<string, { label: string; color: string; icon: React.ElementType }> = {

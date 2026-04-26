@@ -245,14 +245,17 @@ export function TourForm({ initialData }: TourFormProps) {
   }
 
   // ── Pricing Tiers ──────────────────────────
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function addPriceTier() {
     update("priceTiers", [...(data.priceTiers || []), { minGuests: "", maxGuests: "", pricePerPerson: "" }]);
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function updatePriceTier(index: number, key: keyof PriceTier, val: string) {
     const updated = [...(data.priceTiers || [])];
     updated[index][key] = val;
     update("priceTiers", updated);
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function removePriceTier(index: number) {
     update("priceTiers", (data.priceTiers || []).filter((_, i) => i !== index));
   }

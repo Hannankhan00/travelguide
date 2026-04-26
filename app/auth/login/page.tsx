@@ -130,7 +130,7 @@ function LoginForm() {
 
             {callbackUrl.startsWith("/booking/") && (
               <div className="mb-6 p-4 bg-[#FFF0F2] border border-[#185FA5]/20 rounded-xl text-sm text-[#185FA5] font-medium">
-                You need to be signed in to book a tour. Log in below and you'll be taken straight to checkout.
+                You need to be signed in to book a tour. Log in below and you&apos;ll be taken straight to checkout.
               </div>
             )}
 

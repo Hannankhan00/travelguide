@@ -22,7 +22,17 @@ async function getTour(id: string) {
   return tour;
 }
 
+interface ItineraryStop {
+  order?: number;
+  day?: number;
+  title?: string;
+  description?: string;
+  stayMinutes?: string;
+  isOptional?: boolean;
+}
+
 /** Safely extract a JSON array field — handles null, empty strings, raw strings, and already-parsed arrays */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function safeArray(value: unknown, fallback: string[] = [""]): any[] {
   if (!value) return fallback;
   if (Array.isArray(value)) return value.length > 0 ? value : fallback;
@@ -46,8 +56,8 @@ export default async function EditTourPage(
 
   const initialData = {
     tourId:           tour.id,
-    tourType:         ((tour as any).tourType as "SOLO" | "GROUP") ?? "GROUP",
-    baseGroupSize:    String((tour as any).baseGroupSize ?? 4),
+    tourType:         (tour.tourType as "SOLO" | "GROUP") ?? "GROUP",
+    baseGroupSize:    String(tour.baseGroupSize ?? 4),
     title:            tour.title,
     slug:             tour.slug,
     category:         tour.category,
@@ -63,7 +73,7 @@ export default async function EditTourPage(
     itinerary:        (() => {
                         const arr = safeArray(tour.itinerary, []);
                         return arr.length > 0
-                          ? arr.map((stop: any, idx: number) => ({
+                          ? (arr as ItineraryStop[]).map((stop, idx) => ({
                               order:       stop.order ?? stop.day ?? idx + 1,
                               title:       stop.title ?? "",
                               description: stop.description ?? "",
@@ -84,10 +94,10 @@ export default async function EditTourPage(
     basePrice:        Number(tour.basePrice).toString(),
     childPrice:       tour.childPrice ? Number(tour.childPrice).toString() : "",
     priceTiers:       safeArray(tour.priceTiers, []),
-    variations:       safeArray((tour as any).variations, []),
-    startTimes:           safeArray((tour as any).startTimes, []),
-    cancellationHours:    String((tour as any).cancellationHours ?? 24),
-    rescheduleHours:      String((tour as any).rescheduleHours   ?? 48),
+    variations:       safeArray(tour.variations, []),
+    startTimes:           safeArray(tour.startTimes, []),
+    cancellationHours:    String(tour.cancellationHours ?? 24),
+    rescheduleHours:      String(tour.rescheduleHours   ?? 48),
     includes:         safeArray(tour.includes),
     excludes:         safeArray(tour.excludes),
     importantInfo:    safeArray(tour.importantInfo),

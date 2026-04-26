@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { ShieldCheck, RefreshCcw, Headphones, CreditCard, MapPin, Award, Star, Quote } from "lucide-react";
 
 const TRUST_ITEMS = [
@@ -199,10 +200,11 @@ export function WhyUsSection({ reviews, avgRating, totalReviews }: Props) {
 
                   <div className="flex items-center gap-3 pt-5 border-t border-[#E4E0D9]/50">
                     {r.photoUrl ? (
-                      <img
+                      <Image
                         src={r.photoUrl}
                         alt={r.name}
-                        loading="lazy"
+                        width={44}
+                        height={44}
                         className="w-11 h-11 rounded-full object-cover shrink-0 shadow-sm"
                       />
                     ) : (

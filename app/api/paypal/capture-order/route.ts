@@ -17,8 +17,6 @@ export async function POST(req: NextRequest) {
       specialRequests, startTime,
       variationId, variationName,
     } = body;
-    const variationExtraRaw = body.variationExtra;
-
     // ── 1. Input guards ──────────────────────────────────────────────────────
     if (!orderId) return NextResponse.json({ error: "Missing orderId" },   { status: 400 });
     if (!tourId)  return NextResponse.json({ error: "Missing tourId" },    { status: 400 });
@@ -52,20 +50,22 @@ export async function POST(req: NextRequest) {
     const totalGuests   = adultsNum + childrenNum;
     const basePrice     = Number(tour.basePrice);
     const childPrice    = tour.childPrice ? Number(tour.childPrice) : basePrice;
-    const tourType      = ((tour as any).tourType as "SOLO" | "GROUP") ?? "GROUP";
-    const baseGroupSize = Number((tour as any).baseGroupSize ?? 4);
+    const tourType      = tour.tourType ?? "GROUP";
+    const baseGroupSize = Number(tour.baseGroupSize ?? 4);
     const baseTotal     =
       tourType === "GROUP"
         ? calcGroupPrice(totalGuests, baseGroupSize, basePrice)
         : adultsNum * basePrice + childrenNum * childPrice;
 
+    type Variation = { id: string; name: string; extraCost: number | string };
+    const parseVariations = (v: string | null): Variation[] => {
+      if (!v) return [];
+      try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch { return []; }
+    };
+
     let serverVariationExtra = 0;
     if (variationId) {
-      const safeArr = (v: unknown): any[] => {
-        if (!v || typeof v !== "string") return [];
-        try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch { return []; }
-      };
-      const matched = safeArr((tour as any).variations).find((v: any) => v.id === variationId);
+      const matched = parseVariations(tour.variations).find((v) => v.id === variationId);
       serverVariationExtra = matched ? Number(matched.extraCost) : 0;
     }
     const calculatedTotal = baseTotal + serverVariationExtra;
@@ -197,7 +197,7 @@ export async function POST(req: NextRequest) {
 
         return booking;
       });
-    } catch (txErr: any) {
+    } catch (txErr: unknown) {
       // Payment was already captured. Attempt a refund before returning the
       // error — the customer must not lose money due to a booking system failure.
       if (captureId) {
@@ -215,14 +215,16 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      if (txErr.message === "FULL") {
+      const message = txErr instanceof Error ? txErr.message : "";
+
+      if (message === "FULL") {
         return NextResponse.json({ error: "Sorry, this date is fully booked." }, { status: 409 });
       }
-      if (txErr.message === "UNAVAILABLE") {
+      if (message === "UNAVAILABLE") {
         return NextResponse.json({ error: "This date is no longer available." }, { status: 409 });
       }
-      if (typeof txErr.message === "string" && txErr.message.startsWith("CAPACITY:")) {
-        const spots = txErr.message.split(":")[1];
+      if (message.startsWith("CAPACITY:")) {
+        const spots = message.split(":")[1];
         return NextResponse.json(
           { error: `Only ${spots} spot${spots === "1" ? "" : "s"} left — reduce your group size or pick another date.` },
           { status: 409 },
@@ -292,7 +294,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, bookingRef: result.bookingRef, isLoggedIn });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[paypal/capture-order]", err);
     return NextResponse.json({ error: "Booking failed. Please contact support." }, { status: 500 });
   }

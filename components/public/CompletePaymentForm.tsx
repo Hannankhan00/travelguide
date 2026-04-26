@@ -6,6 +6,7 @@ import Script                           from "next/script";
 import { ShieldCheck }                  from "lucide-react";
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   interface Window { paypal?: any; }
 }
 
@@ -15,7 +16,7 @@ interface CompletePaymentFormProps {
   currency:    string;
 }
 
-export function CompletePaymentForm({ bookingId, totalAmount, currency }: CompletePaymentFormProps) {
+export function CompletePaymentForm({ bookingId, currency }: CompletePaymentFormProps) {
   const router              = useRouter();
   const containerRef        = useRef<HTMLDivElement>(null);
   const mounted             = useRef(false);

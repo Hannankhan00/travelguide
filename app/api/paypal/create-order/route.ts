@@ -24,8 +24,8 @@ export async function POST(req: NextRequest) {
 
     const basePrice     = Number(tour.basePrice);
     const childPrice    = tour.childPrice ? Number(tour.childPrice) : basePrice;
-    const tourType      = ((tour as any).tourType as "SOLO" | "GROUP") ?? "GROUP";
-    const baseGroupSize = Number((tour as any).baseGroupSize ?? 4);
+    const tourType      = (tour.tourType as "SOLO" | "GROUP") ?? "GROUP";
+    const baseGroupSize = Number(tour.baseGroupSize ?? 4);
 
     const baseTotal =
       tourType === "GROUP"
@@ -34,11 +34,14 @@ export async function POST(req: NextRequest) {
 
     let variationExtra = 0;
     if (variationId) {
-      const safeArr = (v: unknown): any[] => {
-        if (!v || typeof v !== "string") return [];
-        try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch { return []; }
+      type Variation = { id: string; extraCost?: number | string };
+      const safeArr = (v: unknown): Variation[] => {
+        if (!v) return [];
+        if (Array.isArray(v)) return v as Variation[];
+        if (typeof v !== "string") return [];
+        try { const p = JSON.parse(v); return Array.isArray(p) ? p as Variation[] : []; } catch { return []; }
       };
-      const matched = safeArr((tour as any).variations).find((v: any) => v.id === variationId);
+      const matched = safeArr(tour.variations).find((v) => v.id === variationId);
       variationExtra = matched ? Number(matched.extraCost) : 0;
     }
 
@@ -47,8 +50,8 @@ export async function POST(req: NextRequest) {
 
     const order = await createPayPalOrder(totalAmount, currency, tour.title);
     return NextResponse.json({ orderId: order.id });
-  } catch (err: any) {
-    const msg: string = err?.message ?? "Unknown error";
+  } catch (err: unknown) {
+    const msg: string = err instanceof Error ? err.message : "Unknown error";
     console.error("[paypal/create-order]", msg);
     // Surface credentials-missing errors clearly; keep other details server-side only
     if (msg.includes("credentials not configured")) {

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Clock, Star, Users } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/utils";
 import { WishlistButton } from "./WishlistButton";
 import { cldUrl, CLD_CARD } from "@/lib/cloudinary";

@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
-import { Search, X, SlidersHorizontal } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { TOUR_CATEGORIES } from "@/lib/constants";
 
 const DIFFICULTIES = [
@@ -18,7 +18,8 @@ const DURATION_OPTS = [
   { value: "days",  label: "Days"         },
 ];
 
-export function ToursFilterBar({ count }: { count: number }) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function ToursFilterBar({ count: _ }: { count: number }) {
   const router       = useRouter();
   const pathname     = usePathname();
   const searchParams = useSearchParams();

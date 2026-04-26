@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse }          from "next/server";
+import { NextRequest, NextResponse, after }   from "next/server";
 import { auth }                               from "@/lib/auth";
 import { prisma }                             from "@/lib/prisma";
 import { capturePayPalOrder }                 from "@/lib/paypal";
@@ -68,47 +68,65 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Send confirmation email
-    try {
-      await sendEmail({
-        to:      booking.guestEmail,
-        subject: `Booking Confirmed — ${booking.tour.title} · ${booking.bookingRef}`,
-        html:    bookingConfirmationHtml({
-          customerName:  booking.guestName ?? "Traveller",
-          bookingRef:    booking.bookingRef,
-          tourTitle:     booking.tour.title,
-          tourDate:      formatDate(booking.tourDate),
-          numGuests:     booking.numAdults + booking.numChildren,
-          totalAmount:   formatPrice(Number(booking.totalAmount), COMPANY_CURRENCY),
-          paymentMethod: "PayPal",
-        }),
-      });
-      await prisma.emailLog.create({
-        data: {
-          to:        booking.guestEmail,
-          subject:   `Booking Confirmed — ${booking.bookingRef}`,
-          type:      "BOOKING_CONFIRMATION",
-          bookingId: booking.id,
-          status:    "SENT",
-          sentAt:    new Date(),
-        },
-      });
-    } catch (emailErr) {
-      console.error("[paypal/complete-booking] Email failed for", booking.bookingRef, emailErr);
-      await prisma.emailLog.create({
-        data: {
-          to:        booking.guestEmail,
-          subject:   `Booking Confirmed — ${booking.bookingRef}`,
-          type:      "BOOKING_CONFIRMATION",
-          bookingId: booking.id,
-          status:    "FAILED",
-          error:     String(emailErr),
-        },
-      }).catch(() => {});
-    }
+    // ── Queue confirmation email — after response is sent ─────────────────────
+    // after() runs once the HTTP response has been flushed to the client.
+    // SMTP latency (2–5 s on shared hosting) no longer blocks the response
+    // or holds a worker slot open.
+    const bookingSnapshot = {
+      id:          booking.id,
+      bookingRef:  booking.bookingRef,
+      guestEmail:  booking.guestEmail,
+      guestName:   booking.guestName,
+      tourTitle:   booking.tour.title,
+      tourDate:    booking.tourDate,
+      numAdults:   booking.numAdults,
+      numChildren: booking.numChildren,
+      totalAmount: booking.totalAmount,
+      currency:    booking.currency,
+    };
+
+    after(async () => {
+      try {
+        await sendEmail({
+          to:      bookingSnapshot.guestEmail,
+          subject: `Booking Confirmed — ${bookingSnapshot.tourTitle} · ${bookingSnapshot.bookingRef}`,
+          html:    bookingConfirmationHtml({
+            customerName:  bookingSnapshot.guestName ?? "Traveller",
+            bookingRef:    bookingSnapshot.bookingRef,
+            tourTitle:     bookingSnapshot.tourTitle,
+            tourDate:      formatDate(bookingSnapshot.tourDate),
+            numGuests:     bookingSnapshot.numAdults + bookingSnapshot.numChildren,
+            totalAmount:   formatPrice(Number(bookingSnapshot.totalAmount), COMPANY_CURRENCY),
+            paymentMethod: "PayPal",
+          }),
+        });
+        await prisma.emailLog.create({
+          data: {
+            to:        bookingSnapshot.guestEmail,
+            subject:   `Booking Confirmed — ${bookingSnapshot.bookingRef}`,
+            type:      "BOOKING_CONFIRMATION",
+            bookingId: bookingSnapshot.id,
+            status:    "SENT",
+            sentAt:    new Date(),
+          },
+        });
+      } catch (emailErr) {
+        console.error("[paypal/complete-booking] Email failed for", bookingSnapshot.bookingRef, emailErr);
+        await prisma.emailLog.create({
+          data: {
+            to:        bookingSnapshot.guestEmail,
+            subject:   `Booking Confirmed — ${bookingSnapshot.bookingRef}`,
+            type:      "BOOKING_CONFIRMATION",
+            bookingId: bookingSnapshot.id,
+            status:    "FAILED",
+            error:     String(emailErr),
+          },
+        }).catch(() => {});
+      }
+    });
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[paypal/complete-booking]", err);
     return NextResponse.json({ error: "Payment failed. Please contact support." }, { status: 500 });
   }

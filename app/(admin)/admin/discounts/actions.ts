@@ -162,7 +162,7 @@ export async function createDiscountCodeAction(data: {
             discountLabel,
             originalPrice:    formatPrice(Number(tour.basePrice), COMPANY_CURRENCY),
             validUntil:       validUntilStr,
-            shortDescription: (tour as any).shortDescription,
+            shortDescription: tour.shortDescription,
             unsubscribeUrl:   `${baseUrl}/api/unsubscribe?email=${encodeURIComponent(sub.email!)}`,
           }),
         });

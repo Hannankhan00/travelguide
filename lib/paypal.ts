@@ -3,7 +3,28 @@ const PAYPAL_BASE =
     ? "https://api-m.paypal.com"
     : "https://api-m.sandbox.paypal.com";
 
-async function getAccessToken(): Promise<string> {
+// ── Token cache ───────────────────────────────────────────────────────────────
+// PayPal tokens are valid for `expires_in` seconds (typically 3 600 s in
+// production, 32 400 s in sandbox). Fetching a new one on every API call is
+// wasteful and doubles latency on every payment operation.
+//
+// _tokenCache   — the live token and the monotonic timestamp at which it expires
+// _inflight     — the in-progress fetch Promise, shared by concurrent callers so
+//                 that multiple simultaneous requests during a cold-start or
+//                 near-expiry window all await the same single HTTP call instead
+//                 of each firing their own.
+
+type TokenCache = { token: string; expiresAt: number };
+
+let _tokenCache: TokenCache | null = null;
+let _inflight:   Promise<string>   | null = null;
+
+// 60-second safety buffer: treat the token as expired one minute before PayPal
+// would, so we never hand an about-to-expire token to a caller that takes a
+// moment to use it.
+const TOKEN_EXPIRY_BUFFER_MS = 60_000;
+
+async function fetchFreshToken(): Promise<string> {
   const id     = process.env.PAYPAL_CLIENT_ID;
   const secret = process.env.PAYPAL_CLIENT_SECRET;
 
@@ -11,7 +32,7 @@ async function getAccessToken(): Promise<string> {
     throw new Error("PayPal credentials not configured (PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET missing from environment)");
   }
 
-  const creds  = Buffer.from(`${id}:${secret}`).toString("base64");
+  const creds = Buffer.from(`${id}:${secret}`).toString("base64");
 
   const res = await fetch(`${PAYPAL_BASE}/v1/oauth2/token`, {
     method: "POST",
@@ -27,8 +48,37 @@ async function getAccessToken(): Promise<string> {
     const body = await res.text();
     throw new Error(`PayPal auth failed (${res.status}): ${body}`);
   }
+
   const data = await res.json();
-  return data.access_token as string;
+  const expiresIn: number = typeof data.expires_in === "number" ? data.expires_in : 3_600;
+
+  _tokenCache = {
+    token:     data.access_token as string,
+    expiresAt: Date.now() + expiresIn * 1_000 - TOKEN_EXPIRY_BUFFER_MS,
+  };
+
+  return _tokenCache.token;
+}
+
+async function getAccessToken(): Promise<string> {
+  // Cache hit — token is still valid.
+  if (_tokenCache && Date.now() < _tokenCache.expiresAt) {
+    return _tokenCache.token;
+  }
+
+  // Another concurrent request is already fetching — join it instead of
+  // firing a second token request in parallel.
+  if (_inflight) {
+    return _inflight;
+  }
+
+  // Cache miss — start a fresh fetch and expose the Promise so concurrent
+  // callers can join it. Clear _inflight when the fetch settles (either way).
+  _inflight = fetchFreshToken().finally(() => {
+    _inflight = null;
+  });
+
+  return _inflight;
 }
 
 export async function createPayPalOrder(

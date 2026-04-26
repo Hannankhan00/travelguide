@@ -36,8 +36,8 @@ const getCachedTourBySlug = unstable_cache(
 );
 
 const getCachedRelatedTours = unstable_cache(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async (category: string, excludeId: string) =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (prisma.tour.findMany as any)({
       where:   { category, status: "PUBLISHED", NOT: { id: excludeId } },
       take:    4,
@@ -123,7 +123,8 @@ export default async function TourDetailPage({ params }: PageProps) {
   let hasDiscount = false;
   if (tourData.discounts && tourData.discounts.length > 0) {
     const now = new Date();
-    const activeDiscount = tourData.discounts.find((d: any) => 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const activeDiscount = tourData.discounts.find((d: any) =>
       new Date(d.validFrom) <= now && 
       (!d.validUntil || new Date(d.validUntil) >= now)
     );
@@ -452,6 +453,7 @@ export default async function TourDetailPage({ params }: PageProps) {
                   {/* Image */}
                   <div className="aspect-4/3 overflow-hidden bg-[#E7E8EE]">
                     {t.coverImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={t.coverImage}
                         alt={t.title}

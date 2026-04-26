@@ -61,8 +61,8 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
   const basePrice     = Number(tour.basePrice);
   const childPrice    = tour.childPrice ? Number(tour.childPrice) : basePrice;
-  const tourType      = ((tour as any).tourType as "SOLO" | "GROUP") ?? "GROUP";
-  const baseGroupSize = Number((tour as any).baseGroupSize ?? 4);
+  const tourType      = (tour.tourType as "SOLO" | "GROUP") ?? "GROUP";
+  const baseGroupSize = Number(tour.baseGroupSize ?? 4);
   const totalGuests   = adults + children;
   const isGroup       = tourType === "GROUP";
   const baseTotal     = isGroup
@@ -71,13 +71,14 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const groupUnits    = isGroup ? Math.ceil(totalGuests / baseGroupSize) : 0;
 
   // Resolve selected variation
-  const safeParseArr = (v: unknown): any[] => {
+  interface TourVariation { id: string; name: string; description: string; extraCost: string; }
+  const safeParseArr = (v: unknown): TourVariation[] => {
     if (!v) return [];
-    if (typeof v === "string") { try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch { return []; } }
+    if (Array.isArray(v)) return v as TourVariation[];
+    if (typeof v === "string") { try { const p = JSON.parse(v); return Array.isArray(p) ? p as TourVariation[] : []; } catch { return []; } }
     return [];
   };
-  interface TourVariation { id: string; name: string; description: string; extraCost: string; }
-  const allVariations = safeParseArr((tour as any).variations) as TourVariation[];
+  const allVariations = safeParseArr(tour.variations);
   const selectedVariation = variationIdParam ? allVariations.find(v => v.id === variationIdParam) ?? null : null;
   const variationExtra    = selectedVariation ? Number(selectedVariation.extraCost) : 0;
   const totalPrice        = baseTotal + variationExtra;
@@ -100,7 +101,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               tourId={tour.id}
               date={dateParam}
               adults={adults}
-              children={children}
+              numChildren={children}
               totalPrice={totalPrice}
               startTime={startTimeParam}
               variationId={variationIdParam}

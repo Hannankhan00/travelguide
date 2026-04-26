@@ -244,7 +244,7 @@ export function AdminChatClient({ conversations: initial }: { conversations: Con
   );
 
   const selectedIdRef = useRef(selectedId);
-  selectedIdRef.current = selectedId;
+  useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
 
   // Subscribe to the admin-wide conversations channel — every server-side change
   // emits a fresh AdminConversationSummary that we reconcile into our list.

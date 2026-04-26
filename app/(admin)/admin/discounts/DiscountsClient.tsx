@@ -61,7 +61,6 @@ export function DiscountsClient({ discounts: init, tours, currency }: Props) {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [isPending, startTransition] = useTransition();
 
   const fmt = (v: number) =>
@@ -73,7 +72,6 @@ export function DiscountsClient({ discounts: init, tours, currency }: Props) {
     setEditId(null);
     setForm({ ...emptyForm });
     setError("");
-    setSuccess("");
     setShowForm(true);
   };
 
@@ -94,7 +92,6 @@ export function DiscountsClient({ discounts: init, tours, currency }: Props) {
       notifySubscribers: false,
     });
     setError("");
-    setSuccess("");
     setShowForm(true);
   };
 
@@ -129,7 +126,6 @@ export function DiscountsClient({ discounts: init, tours, currency }: Props) {
       if (editId) {
         const res = await updateDiscountCodeAction(editId, payload);
         if (res.error) { setError(res.error); return; }
-        setSuccess(res.success ?? "Updated.");
       } else {
         const res = await createDiscountCodeAction({
           code: form.code,
@@ -138,7 +134,6 @@ export function DiscountsClient({ discounts: init, tours, currency }: Props) {
           ...payload,
         });
         if (res.error) { setError(res.error); return; }
-        setSuccess(res.success ?? "Created.");
       }
       closeForm();
       window.location.reload();
@@ -228,7 +223,7 @@ export function DiscountsClient({ discounts: init, tours, currency }: Props) {
                     <td className="px-5 py-3 font-mono font-bold text-[#1B2847]">
                       {d.code}
                       {d.description && (
-                        <p className="font-sans font-normal text-xs text-[#7A746D] mt-0.5 truncate max-w-[140px]">{d.description}</p>
+                        <p className="font-sans font-normal text-xs text-[#7A746D] mt-0.5 truncate max-w-35">{d.description}</p>
                       )}
                     </td>
                     <td className="px-5 py-3 font-semibold text-[#C41230]">
@@ -241,7 +236,7 @@ export function DiscountsClient({ discounts: init, tours, currency }: Props) {
                     </td>
                     <td className="px-5 py-3 text-[#545454]">
                       {d.tour ? (
-                        <span className="truncate max-w-[120px] block">{d.tour.title}</span>
+                        <span className="truncate max-w-30 block">{d.tour.title}</span>
                       ) : (
                         <span className="text-[#A8A29E] italic">All tours</span>
                       )}
@@ -459,7 +454,7 @@ export function DiscountsClient({ discounts: init, tours, currency }: Props) {
                     <label key={key} className="flex items-center gap-2.5 cursor-pointer">
                       <div
                         onClick={() => set(key, !form[key])}
-                        className={`flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
+                        className={`shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
                           form[key] ? "bg-[#C41230] border-[#C41230]" : "border-[#D6D3CF] bg-white"
                         }`}
                       >

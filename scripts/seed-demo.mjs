@@ -234,7 +234,7 @@ async function main() {
         for (const avail of availabilities) {
           try {
             await prisma.tourAvailability.create({ data: avail });
-          } catch (e) {
+          } catch {
             // unique constraint (tourId + date) — already exists
           }
         }

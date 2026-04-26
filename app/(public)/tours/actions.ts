@@ -82,7 +82,7 @@ export async function submitReviewAction(formData: FormData): Promise<ReviewResu
     revalidatePath("/tours");
 
     return { success: "Your review has been submitted!" };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Review submission error:", err);
     return { error: "Something went wrong. Please try again." };
   }

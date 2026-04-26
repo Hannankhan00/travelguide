@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Plus, Search, MoreHorizontal, Eye, Pencil, Trash2, Star, StarOff,
-  Map, Clock, Users, CheckCircle2, Archive, FileText,
+  Map, Clock, CheckCircle2, Archive, FileText,
   Globe, EyeOff, Copy
 } from "lucide-react";
-import { formatPrice, getInitials } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils";
 import { TOUR_CATEGORIES } from "@/lib/constants";
 import { deleteTourAction, toggleTourStatusAction, toggleFeaturedAction, duplicateTourAction } from "./actions";
 
@@ -38,17 +38,13 @@ const statusConfig = {
 
 export function ToursClient({ tours }: { tours: TourRow[] }) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [query, statusFilter, categoryFilter]);
 
   const filtered = tours.filter((t) => {
     if (statusFilter !== "ALL" && t.status !== statusFilter) return false;
@@ -200,6 +196,7 @@ export function ToursClient({ tours }: { tours: TourRow[] }) {
                             className="shrink-0 w-12 h-12 rounded-lg bg-[#F1EFE9] flex items-center justify-center overflow-hidden"
                           >
                             {tour.images[0] ? (
+                              // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={tour.images[0].url}
                                 alt={tour.title}

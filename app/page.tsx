@@ -54,6 +54,7 @@ const getCachedHomeTours = unstable_cache(
       where:    { status: "PUBLISHED" },
       take:     50,
       orderBy:  { updatedAt: "desc" },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       include:  { images: { where: { isPrimary: true }, take: 1 } } as any,
     }),
   ["home-tours"],
@@ -87,13 +88,14 @@ export default async function HomePage() {
   const [destinations, allTours, { reviews: rawReviews, stats: reviewStats }] =
     await Promise.all([
       getCachedHomeDestinations().catch(() => []),
-      getCachedHomeTours().catch(() => [] as any[]),
+      getCachedHomeTours().catch(() => []),
       getCachedHomeReviews().catch(() => ({ reviews: [], stats: null })),
     ]);
 
   // isWishlisted is always false on the prerendered page.
   // WishlistButton is a client component that manages its own toggled state
   // after the user interacts — no per-request auth() needed here.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const toRowTour = (tour: any): RowTour => ({
     id:             tour.id,
     slug:           tour.slug,
@@ -111,15 +113,15 @@ export default async function HomePage() {
     isWishlisted:   false,
   });
 
-  const heroTours = allTours.filter((t: any) => t.featured).slice(0, 6).map(toRowTour);
+  const heroTours = allTours.filter((t) => t.featured).slice(0, 6).map(toRowTour);
 
   const tokyoTours = allTours
-    .filter((t: any) => t.location?.toLowerCase().includes("tokyo"))
+    .filter((t) => t.location?.toLowerCase().includes("tokyo"))
     .slice(0, 8)
     .map(toRowTour);
 
   const kyotoTours = allTours
-    .filter((t: any) =>
+    .filter((t) =>
       t.location?.toLowerCase().includes("kyoto") ||
       t.location?.toLowerCase().includes("nara")
     )
@@ -127,18 +129,18 @@ export default async function HomePage() {
     .map(toRowTour);
 
   const adventureTours = allTours
-    .filter((t: any) => ["ADVENTURE", "NATURE"].includes(t.category))
+    .filter((t) => ["ADVENTURE", "NATURE"].includes(t.category))
     .slice(0, 8)
     .map(toRowTour);
 
   const topTours = [...allTours]
-    .sort((a: any, b: any) => (b.reviewCount ?? 0) - (a.reviewCount ?? 0))
+    .sort((a, b) => (b.reviewCount ?? 0) - (a.reviewCount ?? 0))
     .slice(0, 8)
     .map(toRowTour);
 
-  const featuredRows = allTours.filter((t: any) => t.featured).slice(0, 8).map(toRowTour);
+  const featuredRows = allTours.filter((t) => t.featured).slice(0, 8).map(toRowTour);
 
-  const reviews: ReviewItem[] = rawReviews.map((r: any) => ({
+  const reviews: ReviewItem[] = rawReviews.map((r) => ({
     id:       r.id,
     name:     r.user?.name ?? "Anonymous",
     country:  r.user?.country ?? null,

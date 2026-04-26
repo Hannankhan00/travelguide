@@ -22,7 +22,7 @@ export default async function WishlistPage() {
     redirect("/?auth=login");
   }
 
-  const wishlistRows: any[] = await prisma.$queryRaw`
+  const wishlistRows = await prisma.$queryRaw<{ tourId: string }[]>`
     SELECT tourId FROM Wishlist
     WHERE userId = ${session.user.id}
     ORDER BY createdAt DESC
@@ -36,16 +36,16 @@ export default async function WishlistPage() {
           where: { id: { in: tourIds } },
           include: {
             images: { where: { isPrimary: true }, take: 1 },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any,
         })
       : [];
 
   // preserve wishlist order
-  const sorted = tourIds
-    .map((id) => tours.find((t: any) => t.id === id))
-    .filter(Boolean) as any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sorted: any[] = tourIds.map((id) => tours.find((t) => t.id === id)).filter(Boolean);
 
-  const clientTours = sorted.map((tour: any) => ({
+  const clientTours = sorted.map((tour) => ({
     id: tour.id,
     slug: tour.slug,
     title: tour.title,

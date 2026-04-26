@@ -1,7 +1,6 @@
 import { COMPANY_NAME } from "@/lib/constants";
 import { Globe, Heart, ShieldCheck, Award, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 
 export const metadata = {
   title: "About Us | " + COMPANY_NAME,
@@ -52,8 +51,9 @@ export default function AboutPage() {
           
           <div className="relative h-100 w-full rounded-3xl overflow-hidden shadow-xl border-4 border-white">
             <div className="absolute inset-0 bg-[#0C447C]/10 z-10" />
-            <img 
-              src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?q=80&w=2070&auto=format&fit=crop" 
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?q=80&w=2070&auto=format&fit=crop"
               alt="Japanese Torii Gate in water"
               className="object-cover w-full h-full"
             />

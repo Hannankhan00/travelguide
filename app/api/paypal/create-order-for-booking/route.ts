@@ -45,8 +45,8 @@ export async function POST(req: NextRequest) {
     );
 
     return NextResponse.json({ orderId: order.id });
-  } catch (err: any) {
-    const msg: string = err?.message ?? "Unknown error";
+  } catch (err: unknown) {
+    const msg: string = err instanceof Error ? err.message : "Unknown error";
     console.error("[paypal/create-order-for-booking]", msg);
     if (msg.includes("credentials not configured")) {
       return NextResponse.json({ error: "PayPal is not configured on this server." }, { status: 503 });

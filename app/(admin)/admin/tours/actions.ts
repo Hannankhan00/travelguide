@@ -31,6 +31,7 @@ function clearToursCache() {
 import { slugify } from "@/lib/utils";
 
 /** Safely parse a JSON string — never throws, always returns a valid array */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function safeJsonParse(raw: string | null | undefined, fallback: any[] = []): any[] {
   if (!raw || raw.trim() === "") return fallback;
   try {
@@ -191,9 +192,9 @@ export async function saveTourAction(formData: FormData): Promise<ActionResult> 
       revalidatePath(`/tours/${tour.slug}`);
       return { success: "Tour created successfully.", tourId: tour.id };
     }
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("Tour save error:", e);
-    return { error: `Failed to save tour: ${e.message || String(e)}` };
+    return { error: `Failed to save tour: ${e instanceof Error ? e.message : String(e)}` };
   }
 }
 
@@ -355,10 +356,12 @@ export async function duplicateTourAction(tourId: string): Promise<ActionResult>
       newSlug = original.slug + "-copy-" + counter++;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id: _id, createdAt: _ca, updatedAt: _ua, slug: _sl, title: _ti, status: _st, rating: _ra, reviewCount: _rc, ...rest } = original;
 
     const newTour = await prisma.tour.create({
       data: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ...(rest as any),
         title:       original.title + " (Copy)",
         slug:        newSlug,
@@ -372,6 +375,7 @@ export async function duplicateTourAction(tourId: string): Promise<ActionResult>
     // Clone images
     const images = await prisma.tourImage.findMany({ where: { tourId }, orderBy: { order: "asc" } });
     for (const img of images) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id: _iid, tourId: _tid, ...imgRest } = img;
       await prisma.tourImage.create({ data: { ...imgRest, tourId: newTour.id } });
     }
@@ -380,8 +384,8 @@ export async function duplicateTourAction(tourId: string): Promise<ActionResult>
     // immediately. No public cache bust needed because status is DRAFT.
     revalidatePath("/admin/tours");
     return { success: "Tour duplicated.", tourId: newTour.id };
-  } catch (e: any) {
-    return { error: `Failed to duplicate: ${e.message || String(e)}` };
+  } catch (e: unknown) {
+    return { error: `Failed to duplicate: ${e instanceof Error ? e.message : String(e)}` };
   }
 }
 

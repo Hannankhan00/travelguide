@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { FeaturedToursCarousel } from "./FeaturedToursCarousel";
@@ -23,28 +21,28 @@ export async function FeaturedToursSection() {
     include: {
       images: {
         where: { isPrimary: true },
-        take: 1
-      }
-    } as any
+        take: 1,
+      },
+    },
   }).catch((e) => {
     console.error("Featured tours query error:", e);
     return [];
   });
 
-  // Absolute fallback for stale PrismaClient: use queryRaw
-  let userWishlists: any[] = [];
+  type WishlistRow = { tourId: string };
+  let userWishlists: WishlistRow[] = [];
   if (userId) {
     try {
-      userWishlists = await prisma.$queryRaw`SELECT * FROM Wishlist WHERE userId = ${userId}`;
+      userWishlists = await prisma.$queryRaw<WishlistRow[]>`SELECT tourId FROM Wishlist WHERE userId = ${userId}`;
     } catch (e) {
       console.error("Wishlist table raw query failed:", e);
     }
   }
-  const wishlistedTourIds = new Set(userWishlists.map((w: any) => w.tourId));
+  const wishlistedTourIds = new Set(userWishlists.map((w) => w.tourId));
 
   if (tours.length === 0) return null;
 
-  const tourData = tours.map((tour: any) => ({
+  const tourData = tours.map((tour) => ({
     id: tour.id,
     slug: tour.slug,
     title: tour.title,

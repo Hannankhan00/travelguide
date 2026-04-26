@@ -21,8 +21,6 @@ export async function submitBookingAction(formData: FormData) {
   const startTime       = (formData.get("startTime")      as string)?.trim() || null;
   const variationId     = (formData.get("variationId")    as string)?.trim() || null;
   const variationName   = (formData.get("variationName")  as string)?.trim() || null;
-  const variationExtra  = parseFloat(formData.get("variationExtra") as string) || 0;
-
   // ── Basic field validation ────────────────────────────────────────────────
   if (!firstName || !lastName || !email || !phone) {
     return { error: "Please fill in all required fields." };
@@ -64,8 +62,8 @@ export async function submitBookingAction(formData: FormData) {
   // ── Recalculate price server-side ─────────────────────────────────────────
   const basePrice     = Number(tour.basePrice);
   const childPrice    = tour.childPrice ? Number(tour.childPrice) : basePrice;
-  const tourType      = ((tour as any).tourType as "SOLO" | "GROUP") ?? "GROUP";
-  const baseGroupSize = Number((tour as any).baseGroupSize ?? 4);
+  const tourType      = (tour.tourType as "SOLO" | "GROUP") ?? "GROUP";
+  const baseGroupSize = Number(tour.baseGroupSize ?? 4);
   const baseTotal = tourType === "GROUP"
     ? calcGroupPrice(totalGuests, baseGroupSize, basePrice)
     : adultsNum * basePrice + childrenNum * childPrice;
@@ -73,12 +71,15 @@ export async function submitBookingAction(formData: FormData) {
   // Validate variation extra cost server-side
   let serverVariationExtra = 0;
   if (variationId) {
-    const safeParseArr = (v: unknown): any[] => {
-      if (!v || typeof v !== "string") return [];
-      try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch { return []; }
+    type Variation = { id: string; extraCost?: number | string };
+    const safeParseArr = (v: unknown): Variation[] => {
+      if (!v) return [];
+      if (Array.isArray(v)) return v as Variation[];
+      if (typeof v !== "string") return [];
+      try { const p = JSON.parse(v); return Array.isArray(p) ? p as Variation[] : []; } catch { return []; }
     };
-    const tourVariations = safeParseArr((tour as any).variations);
-    const matched = tourVariations.find((v: any) => v.id === variationId);
+    const tourVariations = safeParseArr(tour.variations);
+    const matched = tourVariations.find((v) => v.id === variationId);
     serverVariationExtra = matched ? Number(matched.extraCost) : 0;
   }
   const calculatedTotal = baseTotal + serverVariationExtra;
@@ -109,7 +110,6 @@ export async function submitBookingAction(formData: FormData) {
 
   // ── Atomic capacity check + booking creation ─────────────────────────────
   // Wrapped in a transaction with a SELECT FOR UPDATE to prevent overselling.
-  let bookingId: string;
   let bookingRef: string;
 
   try {
@@ -204,17 +204,17 @@ export async function submitBookingAction(formData: FormData) {
       return booking;
     });
 
-    bookingId  = result.id;
     bookingRef = result.bookingRef;
-  } catch (err: any) {
-    if (err.message === "FULL") {
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg === "FULL") {
       return { error: "Sorry, this date is fully booked. Please choose another date." };
     }
-    if (err.message === "UNAVAILABLE") {
+    if (msg === "UNAVAILABLE") {
       return { error: "This date is no longer available. Please choose another date." };
     }
-    if (typeof err.message === "string" && err.message.startsWith("CAPACITY:")) {
-      const spots = err.message.split(":")[1];
+    if (msg.startsWith("CAPACITY:")) {
+      const spots = msg.split(":")[1];
       return { error: `This date only has ${spots} spot${spots === "1" ? "" : "s"} available. Please reduce your group size or choose another date.` };
     }
     console.error("Booking error:", err);

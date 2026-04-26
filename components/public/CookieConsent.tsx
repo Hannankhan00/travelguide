@@ -1,20 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Cookie, X, Check } from "lucide-react";
 
 export function CookieConsent() {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
+  const [visible, setVisible] = useState(() => {
     try {
-      const consent = localStorage.getItem("cookie_consent");
-      if (!consent) setVisible(true);
+      return !localStorage.getItem("cookie_consent");
     } catch {
       // private browsing — don't show
+      return false;
     }
-  }, []);
+  });
 
   const accept = () => {
     try { localStorage.setItem("cookie_consent", "accepted"); } catch {}

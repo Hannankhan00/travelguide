@@ -108,7 +108,7 @@ export function parsePriceTiers(raw: unknown): PriceTier[] {
   const arr = typeof raw === "string" ? JSON.parse(raw) : raw;
   if (!Array.isArray(arr)) return [];
   return arr
-    .map((t: any) => ({
+    .map((t: Record<string, unknown>) => ({
       minGuests: Number(t.minGuests),
       maxGuests: Number(t.maxGuests),
       pricePerPerson: Number(t.pricePerPerson),

@@ -34,7 +34,7 @@ export function TourImageManager({ tourId, initialImages }: Props) {
   const [images, setImages] = useState<TourImage[]>(initialImages);
   const [loadingId, setLoadingId]   = useState<string | null>(null);
   const [uploadingNew, setUploadingNew] = useState(false);
-  const [isPending, startTransition]   = useTransition();
+  const [, startTransition]   = useTransition();
   const addInputRef  = useRef<HTMLInputElement>(null);
   const replaceRefs  = useRef<Record<string, HTMLInputElement | null>>({});
 

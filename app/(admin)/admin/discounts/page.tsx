@@ -6,7 +6,7 @@ import { COMPANY_CURRENCY } from "@/lib/constants";
 export const metadata = { title: "Discounts — Admin" };
 
 export default async function DiscountsPage() {
-  const [discounts, tours] = await Promise.all([
+  const [rawDiscounts, tours] = await Promise.all([
     listDiscountCodesAction(),
     prisma.tour.findMany({
       where:   { status: { not: "ARCHIVED" } },
@@ -14,6 +14,14 @@ export default async function DiscountsPage() {
       orderBy: { title: "asc" },
     }),
   ]);
+
+  // Prisma returns Decimal for discountValue / minBookingAmount.
+  // DiscountsClient expects plain numbers — serialize here at the boundary.
+  const discounts = rawDiscounts.map((d) => ({
+    ...d,
+    discountValue:    Number(d.discountValue),
+    minBookingAmount: d.minBookingAmount != null ? Number(d.minBookingAmount) : null,
+  }));
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -23,7 +31,7 @@ export default async function DiscountsPage() {
       </div>
 
       <DiscountsClient
-        discounts={discounts as any}
+        discounts={discounts}
         tours={tours}
         currency={COMPANY_CURRENCY}
       />

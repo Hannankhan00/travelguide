@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { X, MapPin, ArrowRight, Eye, EyeOff, Mail, RefreshCw, CheckCircle } from "lucide-react";
+import { X, MapPin, Eye, EyeOff, Mail, RefreshCw, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { COMPANY_NAME } from "@/lib/constants";
 import { googleSignInAction, credentialsSignInAction } from "@/app/auth/login/actions";
@@ -16,7 +16,7 @@ function AuthModalContent() {
   const searchParams = useSearchParams();
   const authMode = searchParams?.get("auth"); // "login" | "register" | null
   
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const mode = (authMode === "login" || authMode === "register") ? authMode : "login";
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -24,13 +24,6 @@ function AuthModalContent() {
   const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
-
-  useEffect(() => {
-    if (authMode === "login" || authMode === "register") {
-      setMode(authMode);
-      setError(null);
-    }
-  }, [authMode]);
 
   if (!authMode) return null;
 

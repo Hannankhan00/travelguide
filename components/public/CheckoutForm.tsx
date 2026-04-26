@@ -9,6 +9,7 @@ import dynamic from "next/dynamic";
 const MapPicker = dynamic(() => import("@/components/public/MapPickerComponent"), { ssr: false });
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   interface Window { paypal?: any; }
 }
 
@@ -16,7 +17,7 @@ interface CheckoutFormProps {
   tourId:         string;
   date:           string;
   adults:         number;
-  children:       number;
+  numChildren:    number;
   totalPrice:     number;
   startTime?:     string | null;
   variationId?:   string | null;
@@ -26,7 +27,7 @@ interface CheckoutFormProps {
 }
 
 export function CheckoutForm({
-  tourId, date, adults, children, totalPrice,
+  tourId, date, adults, numChildren, totalPrice,
   startTime, variationId, variationName, variationExtra = 0,
   userProfile,
 }: CheckoutFormProps) {
@@ -150,7 +151,7 @@ export function CheckoutForm({
         <input type="hidden" name="tourId"        value={tourId} />
         <input type="hidden" name="date"          value={date} />
         <input type="hidden" name="adults"        value={adults} />
-        <input type="hidden" name="children"      value={children} />
+        <input type="hidden" name="children"      value={numChildren} />
         <input type="hidden" name="totalPrice"    value={totalPrice} />
         {startTime     && <input type="hidden" name="startTime"     value={startTime} />}
         {variationId   && <input type="hidden" name="variationId"   value={variationId} />}

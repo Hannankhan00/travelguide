@@ -72,8 +72,9 @@ export function BookingCard({ booking }: BookingCardProps) {
   const [isPending,   startTransition] = useTransition();
 
   const dateObj  = new Date(booking.tourDate);
-  const isPast   = dateObj < new Date();
-  const diffDays = (dateObj.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+  const now      = new Date();
+  const isPast   = dateObj < now;
+  const diffDays = (dateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
   const canCancel = !isPast && booking.status !== "CANCELLED" && booking.status !== "COMPLETED";
   const canPay    = !isPast
     && booking.status !== "CANCELLED"
