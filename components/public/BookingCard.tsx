@@ -152,9 +152,9 @@ export function BookingCard({ booking }: BookingCardProps) {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              {isPast && booking.status === "COMPLETED" && (
+              {booking.status === "COMPLETED" && (
                 <Link
-                  href={"/tours/" + booking.tour.slug + "#reviews"}
+                  href={"/bookings/" + booking.id + "/review"}
                   className="text-sm font-bold text-white bg-[#1B2847] hover:bg-[#131e38] px-4 py-2 rounded-lg transition-colors"
                 >
                   Leave a review
@@ -179,7 +179,7 @@ export function BookingCard({ booking }: BookingCardProps) {
                   Chat with guide
                 </button>
               )}
-              {(canCancel || !isPast) && (
+              {booking.status !== "COMPLETED" && (canCancel || !isPast) && (
                 <button
                   onClick={() => setOpen((v) => !v)}
                   className="flex items-center gap-1.5 text-sm font-bold text-[#111] border border-[#E4E0D9] bg-white hover:border-[#C41230] hover:text-[#C41230] transition-colors px-4 py-2 rounded-lg"
