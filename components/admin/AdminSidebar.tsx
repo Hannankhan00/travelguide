@@ -18,6 +18,7 @@ import {
   UserCheck,
   Tag,
   CheckCircle2,
+  CreditCard,
 } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
 import { signOutAction } from "@/app/(admin)/admin/actions";
@@ -31,6 +32,7 @@ const navItems = [
   { label: "Customers",    href: "/admin/customers",      icon: UserCheck       },
   { label: "Users",        href: "/admin/users",          icon: Users           },
   { label: "Discounts",    href: "/admin/discounts",      icon: Tag             },
+  { label: "Payments",     href: "/admin/payments",       icon: CreditCard      },
   { label: "Analytics",    href: "/admin/analytics",      icon: BarChart3       },
   { label: "Chat",         href: "/admin/chat",           icon: MessageSquare   },
   { label: "Settings",     href: "/admin/settings",       icon: Settings        },
