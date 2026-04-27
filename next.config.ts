@@ -77,12 +77,6 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          // Disable nginx proxy buffering (required for streaming on Hostinger)
-          { key: "X-Accel-Buffering", value: "no" },
-
-          // Prevent the site from being embedded in any iframe
-          { key: "X-Frame-Options", value: "SAMEORIGIN" },
-
           // Belt-and-suspenders: CSP frame-ancestors overrides X-Frame-Options in modern browsers
           { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
 
