@@ -135,7 +135,10 @@ export function DiscountsClient({ discounts: init, tours, currency }: Props) {
         });
         if (res.error) { setError(res.error); return; }
       }
-      closeForm();
+      // Do NOT call closeForm() here — setting state inside a startTransition
+      // immediately before a hard navigation causes React 19 to throw when
+      // the concurrent transition is interrupted mid-commit. The reload
+      // resets all client state anyway.
       window.location.reload();
     });
   };

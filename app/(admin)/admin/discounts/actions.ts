@@ -203,17 +203,20 @@ export async function listDiscountCodesAction() {
 
 export async function toggleDiscountActiveAction(id: string): Promise<DiscountResult> {
   await assertAdmin();
+  let wasActive: boolean;
   try {
     const dc = await prisma.discountCode.findUnique({ where: { id }, select: { isActive: true } });
     if (!dc) return { error: "Discount not found." };
+    wasActive = dc.isActive;
     await prisma.discountCode.update({ where: { id }, data: { isActive: !dc.isActive } });
-    // Active/inactive discount directly affects the price shown on public pages.
-    revalidateTag("tours", "max");
-    revalidatePath("/admin/discounts");
-    return { success: dc.isActive ? "Deactivated." : "Activated." };
-  } catch {
+  } catch (e) {
+    console.error("[toggleDiscountActiveAction]", e);
     return { error: "Failed to update." };
   }
+
+  revalidateTag("tours", "max");
+  revalidatePath("/admin/discounts");
+  return { success: wasActive ? "Deactivated." : "Activated." };
 }
 
 // ── Update discount code ──────────────────────────────────────────────────────
@@ -251,13 +254,16 @@ export async function updateDiscountCodeAction(id: string, data: {
         isActive:         data.isActive,
       },
     });
-    // Discount value/dates changed — bust the tours cache so public pricing is accurate.
-    revalidateTag("tours", "max");
-    revalidatePath("/admin/discounts");
-    return { success: "Discount code updated." };
-  } catch {
+  } catch (e) {
+    console.error("[updateDiscountCodeAction]", e);
     return { error: "Failed to update discount code." };
   }
+
+  // Revalidation must run outside the try/catch — these functions use
+  // Next.js internal signalling that must not be swallowed by a catch block.
+  revalidateTag("tours", "max");
+  revalidatePath("/admin/discounts");
+  return { success: "Discount code updated." };
 }
 
 // ── Delete discount code ──────────────────────────────────────────────────────
@@ -266,11 +272,12 @@ export async function deleteDiscountCodeAction(id: string): Promise<DiscountResu
   await assertAdmin();
   try {
     await prisma.discountCode.delete({ where: { id } });
-    // Deleted discount — pricing reverts to base; bust the tours cache.
-    revalidateTag("tours", "max");
-    revalidatePath("/admin/discounts");
-    return { success: "Discount code deleted." };
-  } catch {
+  } catch (e) {
+    console.error("[deleteDiscountCodeAction]", e);
     return { error: "Failed to delete discount code." };
   }
+
+  revalidateTag("tours", "max");
+  revalidatePath("/admin/discounts");
+  return { success: "Discount code deleted." };
 }
