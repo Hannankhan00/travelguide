@@ -1,11 +1,20 @@
 import { createServer } from "http";
 import next from "next";
 
-const port     = parseInt(process.env.PORT || "3000", 10);
-const dev      = process.env.NODE_ENV !== "production";
-const hostname = process.env.HOSTNAME || "0.0.0.0";
+const port = parseInt(process.env.PORT || "3000", 10);
+const dev  = process.env.NODE_ENV !== "production";
 
-console.log(`[server] Starting — NODE_ENV=${process.env.NODE_ENV} port=${port}`);
+// Passenger proxies to localhost — bind only on loopback so the port
+// is never reachable directly from outside the machine.
+const hostname = process.env.HOSTNAME || "127.0.0.1";
+
+// Create the HTTP server first so we can hand it to next() — this lets
+// Next.js attach its own WebSocket upgrade listener for HMR (dev) and
+// any server-sent-event or WebSocket routes we add in future.
+const httpServer = createServer();
+
+const app    = next({ dev, hostname, port, httpServer });
+const handle = app.getRequestHandler();
 
 process.on("unhandledRejection", (reason) => {
   console.error("[server] Unhandled Rejection:", reason);
@@ -15,16 +24,9 @@ process.on("uncaughtException", (err) => {
   console.error("[server] Uncaught Exception:", err.message, err.stack);
 });
 
-const app    = next({ dev, hostname, port });
-const handle = app.getRequestHandler();
-
-console.log("[server] Calling app.prepare()...");
-
 app.prepare()
   .then(() => {
-    console.log("[server] app.prepare() succeeded — starting HTTP server");
-
-    const httpServer = createServer((req, res) => {
+    httpServer.on("request", (req, res) => {
       handle(req, res).catch((err) => {
         console.error("[server] Request handler error:", err);
         if (!res.headersSent) {
@@ -34,19 +36,15 @@ app.prepare()
       });
     });
 
-    httpServer.on("error", (err) => {
-      console.error("[server] HTTP server error:", err);
-    });
-
     httpServer.listen(port, hostname, () => {
-      console.log(`[server] Ready at http://${hostname}:${port} [${dev ? "development" : "production"}]`);
+      console.log(
+        `[server] Ready on http://${hostname}:${port} [${dev ? "development" : "production"}]`
+      );
     });
 
-    // Graceful shutdown — let in-flight requests finish before the process exits.
-    // Hostinger sends SIGTERM when restarting the app. Without this handler,
-    // the process exits immediately, dropping active connections mid-response.
-    // The 10-second timeout is a hard ceiling: if requests haven't finished by
-    // then, we exit anyway to avoid blocking the restart indefinitely.
+    // Graceful shutdown — Passenger/Hostinger sends SIGTERM on restart/stop.
+    // We let in-flight requests finish (up to 10 s) before exiting so the
+    // process never drops an active response mid-stream.
     function shutdown(signal) {
       console.log(`[server] ${signal} received — starting graceful shutdown`);
       httpServer.close((err) => {
@@ -68,7 +66,6 @@ app.prepare()
     process.on("SIGINT",  () => shutdown("SIGINT"));
   })
   .catch((err) => {
-    console.error("[server] FATAL — app.prepare() failed:");
-    console.error(err);
+    console.error("[server] FATAL — app.prepare() failed:", err);
     process.exit(1);
   });
