@@ -77,6 +77,9 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
+          // Disable QUIC protocol announcement to fix ERR_QUIC_PROTOCOL_ERROR
+          { key: "Alt-Svc", value: "clear" },
+
           // Belt-and-suspenders: CSP frame-ancestors overrides X-Frame-Options in modern browsers
           { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
 
