@@ -84,7 +84,7 @@ export function ItineraryTimeline({ itinerary, meetingPoint, endPoint }: Props) 
 
       {/* Expand toggle */}
       {itinerary.length > half && (
-        <div className="flex items-center gap-4 py-2 pl-[52px]">
+        <div className="flex items-center gap-4 py-2 pl-13">
           <button
             onClick={() => setExpanded(o => !o)}
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#185FA5] hover:text-[#0C447C] transition-colors"

@@ -17,7 +17,7 @@ export function ExpandableDescription({ paragraphs }: Props) {
     <div>
       <div
         className={`text-sm text-[#545454] leading-relaxed space-y-3 overflow-hidden transition-all duration-300 ${
-          !expanded && needsTruncation ? "max-h-[6.5rem]" : "max-h-none"
+          !expanded && needsTruncation ? "max-h-26" : "max-h-none"
         }`}
         style={!expanded && needsTruncation ? { WebkitMaskImage: "linear-gradient(to bottom, black 55%, transparent 100%)" } : undefined}
       >

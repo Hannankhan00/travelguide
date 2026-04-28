@@ -138,7 +138,7 @@ export default async function CustomerDetailPage({
                         </div>
                         <Link
                           href={`/admin/bookings`}
-                          className="font-medium text-[#111] hover:text-[#C41230] transition-colors max-w-[200px] truncate block"
+                          className="font-medium text-[#111] hover:text-[#C41230] transition-colors max-w-50 truncate block"
                         >
                           {b.tour.title}
                         </Link>

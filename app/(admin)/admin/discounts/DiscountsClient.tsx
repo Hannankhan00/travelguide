@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import {
   Plus, Trash2, Pencil, ToggleLeft, ToggleRight, Tag,
-  X, ChevronDown, Check, AlertCircle,
+  X, ChevronDown, Check, AlertCircle, Search,
 } from "lucide-react";
 import {
   createDiscountCodeAction,
@@ -54,6 +54,123 @@ const emptyForm = {
   notifyWishlist: false,
   notifySubscribers: false,
 };
+
+function TourCombobox({
+  tours,
+  value,
+  onChange,
+}: {
+  tours: TourOption[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const selected = tours.find((t) => t.id === value);
+  const displayLabel = selected ? selected.title : "All tours";
+
+  const filtered = query.trim()
+    ? tours.filter((t) => t.title.toLowerCase().includes(query.toLowerCase()))
+    : tours;
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const openDropdown = () => {
+    setOpen(true);
+    setQuery("");
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const select = (id: string) => {
+    onChange(id);
+    setOpen(false);
+    setQuery("");
+  };
+
+  return (
+    <div ref={containerRef} className="relative">
+      {/* Trigger */}
+      <button
+        type="button"
+        onClick={openDropdown}
+        className={inputCls + " flex items-center justify-between text-left"}
+      >
+        <span className={value ? "text-[#111]" : "text-[#A8A29E]"}>{displayLabel}</span>
+        <ChevronDown className="size-3.5 text-[#A8A29E] shrink-0 ml-2" />
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div className="absolute z-50 mt-1 w-full bg-white border border-[#E4E0D9] rounded-xl shadow-lg overflow-hidden">
+          {/* Search input */}
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-[#E4E0D9]">
+            <Search className="size-3.5 text-[#A8A29E] shrink-0" />
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search tours…"
+              className="flex-1 text-sm text-[#111] placeholder:text-[#A8A29E] outline-none bg-transparent"
+            />
+            {query && (
+              <button type="button" onClick={() => setQuery("")} className="text-[#A8A29E] hover:text-[#111]">
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Options list */}
+          <ul className="max-h-52 overflow-y-auto py-1">
+            {/* All tours option */}
+            <li>
+              <button
+                type="button"
+                onClick={() => select("")}
+                className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between hover:bg-[#F8F7F5] transition-colors ${
+                  value === "" ? "text-[#C41230] font-semibold" : "text-[#545454]"
+                }`}
+              >
+                <span className="italic">All tours</span>
+                {value === "" && <Check className="size-3.5" />}
+              </button>
+            </li>
+
+            {filtered.length === 0 ? (
+              <li className="px-3 py-2 text-sm text-[#A8A29E] text-center">No tours found</li>
+            ) : (
+              filtered.map((t) => (
+                <li key={t.id}>
+                  <button
+                    type="button"
+                    onClick={() => select(t.id)}
+                    className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between hover:bg-[#F8F7F5] transition-colors ${
+                      value === t.id ? "text-[#C41230] font-semibold" : "text-[#111]"
+                    }`}
+                  >
+                    <span className="truncate pr-2">{t.title}</span>
+                    {value === t.id && <Check className="size-3.5 shrink-0" />}
+                  </button>
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function DiscountsClient({ discounts: init, tours, currency }: Props) {
   const [discounts, setDiscounts] = useState<DiscountRow[]>(init);
@@ -371,19 +488,11 @@ export function DiscountsClient({ discounts: init, tours, currency }: Props) {
               {/* Tour */}
               <div>
                 <label className={labelCls}>Apply To Tour</label>
-                <div className="relative">
-                  <select
-                    value={form.tourId}
-                    onChange={(e) => set("tourId", e.target.value)}
-                    className={inputCls + " appearance-none pr-8"}
-                  >
-                    <option value="">All tours</option>
-                    {tours.map((t) => (
-                      <option key={t.id} value={t.id}>{t.title}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#A8A29E] pointer-events-none" />
-                </div>
+                <TourCombobox
+                  tours={tours}
+                  value={form.tourId}
+                  onChange={(id) => set("tourId", id)}
+                />
               </div>
 
               {/* Dates */}
