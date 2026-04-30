@@ -15,8 +15,11 @@ interface MiniTour {
   duration: number;
   durationType: string;
   basePrice: number;
+  originalPrice?: number;
   rating: number;
   reviewCount: number;
+  featured?: boolean;
+  likelyToSellOut?: boolean;
   coverImage?: string;
 }
 

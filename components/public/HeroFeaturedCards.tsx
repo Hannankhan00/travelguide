@@ -42,8 +42,11 @@ interface MiniTour {
   duration: number;
   durationType: string;
   basePrice: number;
+  originalPrice?: number;
   rating: number;
   reviewCount: number;
+  featured?: boolean;
+  likelyToSellOut?: boolean;
   coverImage?: string;
 }
 
@@ -118,6 +121,20 @@ export function HeroFeaturedCards({ tours }: Props) {
                       style={{ background: "linear-gradient(135deg, #0C447C 0%, #185FA5 100%)" }}
                     />
                   )}
+                  {/* Badges over thumbnail */}
+                  <div className="absolute top-1.5 left-1.5 flex flex-col gap-1 items-start">
+                    {tour.featured && (
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-bold bg-[#1B2847]/90 text-white shadow-sm backdrop-blur-sm">
+                        <Star className="size-2 fill-white" />
+                        Featured
+                      </span>
+                    )}
+                    {tour.likelyToSellOut && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[8px] font-bold bg-[#C41230]/90 text-white shadow-sm backdrop-blur-sm">
+                        Selling fast
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Info */}
@@ -148,9 +165,20 @@ export function HeroFeaturedCards({ tours }: Props) {
                   )}
                   <p className="text-[12px] text-[#555]">
                     From{" "}
-                    <span className="font-extrabold text-[#EF9F27] text-[15px]">
-                      {formatPrice(tour.basePrice)}
-                    </span>
+                    {tour.originalPrice ? (
+                      <>
+                        <span className="text-[11px] text-[#999] line-through mr-0.5">
+                          {formatPrice(tour.originalPrice)}
+                        </span>
+                        <span className="font-extrabold text-[#C41230] text-[15px]">
+                          {formatPrice(tour.basePrice)}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="font-extrabold text-[#EF9F27] text-[15px]">
+                        {formatPrice(tour.basePrice)}
+                      </span>
+                    )}
                   </p>
                 </div>
               </Link>
