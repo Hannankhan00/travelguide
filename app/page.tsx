@@ -56,7 +56,7 @@ const getCachedHomeTours = unstable_cache(
       take:     50,
       orderBy:  { updatedAt: "desc" },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      include:  { images: { where: { isPrimary: true }, take: 1 } } as any,
+      include:  { images: { where: { isPrimary: true }, take: 1 }, discounts: { where: { isActive: true } } } as any,
     }),
   ["home-tours"],
   { revalidate: 300, tags: ["tours"] }
@@ -97,22 +97,43 @@ export default async function HomePage() {
   // WishlistButton is a client component that manages its own toggled state
   // after the user interacts — no per-request auth() needed here.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const toRowTour = (tour: any): RowTour => ({
-    id:             tour.id,
-    slug:           tour.slug,
-    title:          tour.title,
-    location:       tour.location ?? "",
-    duration:       tour.duration,
-    durationType:   tour.durationType ?? "days",
-    basePrice:      Number(tour.basePrice),
-    rating:         Number(tour.rating ?? 0),
-    reviewCount:    tour.reviewCount ?? 0,
-    maxGroupSize:   tour.maxGroupSize,
-    category:       tour.category ?? "",
-    likelyToSellOut: tour.likelyToSellOut ?? false,
-    coverImage:     tour.images?.[0]?.url,
-    isWishlisted:   false,
-  });
+  const toRowTour = (tour: any): RowTour => {
+    const originalPrice = Number(tour.basePrice);
+    let finalPrice = originalPrice;
+    let hasDiscount = false;
+    if (tour.discounts?.length > 0) {
+      const now = new Date();
+      const active = tour.discounts.find((d: any) =>
+        new Date(d.validFrom) <= now && (!d.validUntil || new Date(d.validUntil) >= now)
+      );
+      if (active) {
+        hasDiscount = true;
+        if (active.discountType === "PERCENTAGE") {
+          finalPrice = originalPrice * (1 - Number(active.discountValue) / 100);
+        } else if (active.discountType === "FIXED_AMOUNT") {
+          finalPrice = Math.max(0, originalPrice - Number(active.discountValue));
+        }
+      }
+    }
+    return {
+      id:             tour.id,
+      slug:           tour.slug,
+      title:          tour.title,
+      location:       tour.location ?? "",
+      duration:       tour.duration,
+      durationType:   tour.durationType ?? "days",
+      basePrice:      finalPrice,
+      originalPrice:  hasDiscount ? originalPrice : undefined,
+      rating:         Number(tour.rating ?? 0),
+      reviewCount:    tour.reviewCount ?? 0,
+      maxGroupSize:   tour.maxGroupSize,
+      category:       tour.category ?? "",
+      featured:       tour.featured ?? false,
+      likelyToSellOut: tour.likelyToSellOut ?? false,
+      coverImage:     tour.images?.[0]?.url,
+      isWishlisted:   false,
+    };
+  };
 
   const heroTours = allTours.filter((t) => t.featured).slice(0, 6).map(toRowTour);
 

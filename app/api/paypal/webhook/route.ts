@@ -15,41 +15,45 @@ export async function POST(req: NextRequest) {
     if (existing) return NextResponse.json({ received: true });
   }
 
-  // ── 2. Verify signature ────────────────────────────────────────────────────
-  let signatureValid = false;
-  try {
-    signatureValid = await verifyPayPalWebhook(rawBody, {
-      authAlgo:         req.headers.get("paypal-auth-algo")         ?? "",
-      certUrl:          req.headers.get("paypal-cert-url")          ?? "",
-      transmissionId:   transmissionId                              ?? "",
-      transmissionSig:  req.headers.get("paypal-transmission-sig")  ?? "",
-      transmissionTime: req.headers.get("paypal-transmission-time") ?? "",
-    });
-  } catch (err) {
-    await prisma.webhookLog.create({
-      data: {
-        source:        "PAYPAL",
-        eventType:     "UNKNOWN",
-        transmissionId,
-        status:        "SIGNATURE_ERROR",
-        payload:       rawBody,
-        error:         String(err),
-      },
-    });
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  // ── 2. Verify signature (skipped in sandbox — simulator sends dummy sigs) ──
+  const isSandbox = process.env.PAYPAL_ENV !== "production";
 
-  if (!signatureValid) {
-    await prisma.webhookLog.create({
-      data: {
-        source:        "PAYPAL",
-        eventType:     "UNKNOWN",
-        transmissionId,
-        status:        "SIGNATURE_FAILED",
-        payload:       rawBody,
-      },
-    });
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!isSandbox) {
+    let signatureValid = false;
+    try {
+      signatureValid = await verifyPayPalWebhook(rawBody, {
+        authAlgo:         req.headers.get("paypal-auth-algo")         ?? "",
+        certUrl:          req.headers.get("paypal-cert-url")          ?? "",
+        transmissionId:   transmissionId                              ?? "",
+        transmissionSig:  req.headers.get("paypal-transmission-sig")  ?? "",
+        transmissionTime: req.headers.get("paypal-transmission-time") ?? "",
+      });
+    } catch (err) {
+      await prisma.webhookLog.create({
+        data: {
+          source:        "PAYPAL",
+          eventType:     "UNKNOWN",
+          transmissionId,
+          status:        "SIGNATURE_ERROR",
+          payload:       rawBody,
+          error:         String(err),
+        },
+      });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!signatureValid) {
+      await prisma.webhookLog.create({
+        data: {
+          source:        "PAYPAL",
+          eventType:     "UNKNOWN",
+          transmissionId,
+          status:        "SIGNATURE_FAILED",
+          payload:       rawBody,
+        },
+      });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
   }
 
   // ── 3. Parse event ─────────────────────────────────────────────────────────

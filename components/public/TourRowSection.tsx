@@ -40,10 +40,12 @@ export interface RowTour {
   duration: number;
   durationType: string;
   basePrice: number;
+  originalPrice?: number;
   rating: number;
   reviewCount: number;
   maxGroupSize?: number | null;
   category: string;
+  featured?: boolean;
   likelyToSellOut?: boolean;
   coverImage?: string;
   isWishlisted?: boolean;
@@ -167,11 +169,19 @@ function TourCard({ tour, formatPrice }: { tour: RowTour; formatPrice: (p: numbe
         <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
 
         {/* Badges */}
-        {tour.likelyToSellOut && (
-          <span className="absolute top-2.5 left-2.5 bg-white text-[#1a1a1a] text-[9px] font-bold px-2 py-0.5 rounded shadow-sm">
-            Likely to sell out
-          </span>
-        )}
+        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 items-start">
+          {tour.featured && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#1B2847]/90 text-white shadow-sm backdrop-blur-sm">
+              <Star className="size-2.5 fill-white" />
+              Featured
+            </span>
+          )}
+          {tour.likelyToSellOut && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#C41230]/90 text-white shadow-sm backdrop-blur-sm">
+              Likely to sell out
+            </span>
+          )}
+        </div>
 
         {/* Wishlist */}
         <div className="absolute top-2 right-2 z-10">
@@ -212,7 +222,14 @@ function TourCard({ tour, formatPrice }: { tour: RowTour; formatPrice: (p: numbe
 
         <div className="pt-2.5 border-t border-[#F1EFE9]">
           <span className="text-[11px] text-[#A8A29E]">from </span>
-          <span className="text-[#0C447C] font-extrabold text-base">{formatPrice(tour.basePrice)}</span>
+          {tour.originalPrice ? (
+            <>
+              <span className="text-[11px] text-[#A8A29E] line-through mr-1">{formatPrice(tour.originalPrice)}</span>
+              <span className="text-[#C41230] font-extrabold text-base">{formatPrice(tour.basePrice)}</span>
+            </>
+          ) : (
+            <span className="text-[#0C447C] font-extrabold text-base">{formatPrice(tour.basePrice)}</span>
+          )}
         </div>
       </Link>
     </div>
