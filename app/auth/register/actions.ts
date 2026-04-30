@@ -63,21 +63,28 @@ export async function registerUserAction(formData: FormData) {
     const baseUrl   = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
     const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${rawToken}&email=${encodeURIComponent(email)}`;
 
-    await sendEmail({
-      to:      email,
-      subject: `Verify your email — ${COMPANY_NAME}`,
-      html:    emailVerificationHtml({ name, verifyUrl }),
-    });
+    let emailError: string | undefined;
+    try {
+      await sendEmail({
+        to:      email,
+        subject: `Verify your email — ${COMPANY_NAME}`,
+        html:    emailVerificationHtml({ name, verifyUrl }),
+      });
+    } catch (err) {
+      emailError = err instanceof Error ? err.message : String(err);
+      console.error("Verification email error:", err);
+    }
 
     await prisma.emailLog.create({
       data: {
         to:      email,
         subject: `Verify your email — ${COMPANY_NAME}`,
         type:    "EMAIL_VERIFICATION",
-        status:  "SENT",
+        status:  emailError ? "FAILED" : "SENT",
         sentAt:  new Date(),
+        error:   emailError ?? null,
       },
-    }).catch(() => {}); // log failure is non-critical
+    }).catch(() => {});
   } catch (error) {
     console.error("Verification email error:", error);
     // Account exists — show verification screen so user can use "Resend" button
@@ -112,8 +119,19 @@ export async function resendVerificationAction(email: string) {
       html:    emailVerificationHtml({ name: user.name ?? "Traveller", verifyUrl }),
     });
 
+    await prisma.emailLog.create({
+      data: {
+        to:      email,
+        subject: `Verify your email — ${COMPANY_NAME}`,
+        type:    "EMAIL_VERIFICATION",
+        status:  "SENT",
+        sentAt:  new Date(),
+      },
+    }).catch(() => {});
+
     return { success: true };
-  } catch {
+  } catch (err) {
+    console.error("Resend verification error:", err);
     return { error: "Failed to resend. Please try again." };
   }
 }

@@ -6,7 +6,7 @@ import { COMPANY_NAME, COMPANY_EMAIL } from "./constants";
 // new raw connection on every single email. Under any load (discount batch sends,
 // booking confirmations, password resets) this exhausted the SMTP server's
 // connection limit, causing sendMail() to throw and surfacing as HTTP 500s.
-const transporter = nodemailer.createTransport({
+export const transporter = nodemailer.createTransport({
   host:   process.env.SMTP_HOST,
   port:   Number(process.env.SMTP_PORT ?? 587),
   secure: process.env.SMTP_SECURE === "true",
