@@ -17,6 +17,7 @@ import {
   UserCheck,
   Tag,
   CreditCard,
+  Webhook,
 } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
 import { signOutAction } from "@/app/(admin)/admin/actions";
@@ -30,6 +31,7 @@ const navItems = [
   { label: "Users",        href: "/admin/users",          icon: Users           },
   { label: "Discounts",    href: "/admin/discounts",      icon: Tag             },
   { label: "Payments",     href: "/admin/payments",       icon: CreditCard      },
+  { label: "Webhooks",     href: "/admin/webhooks",       icon: Webhook         },
   { label: "Analytics",    href: "/admin/analytics",      icon: BarChart3       },
   { label: "Chat",         href: "/admin/chat",           icon: MessageSquare   },
 ];

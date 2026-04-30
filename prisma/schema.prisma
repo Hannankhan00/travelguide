@@ -345,6 +345,22 @@ model EmailLog {
   @@index([status])
 }
 
+model WebhookLog {
+  id           String   @id @default(cuid())
+  source       String
+  eventType    String
+  transmissionId String?  @unique
+  status       String
+  bookingId    String?
+  payload      String?  @db.LongText
+  error        String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  @@index([source, eventType])
+  @@index([status])
+  @@index([createdAt])
+}
+
 enum UserRole {
   ADMIN
   CUSTOMER
