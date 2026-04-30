@@ -138,6 +138,48 @@ export async function capturePayPalOrder(orderId: string): Promise<{
   return res.json();
 }
 
+export async function verifyPayPalWebhook(
+  rawBody:      string,
+  headers: {
+    authAlgo:        string;
+    certUrl:         string;
+    transmissionId:  string;
+    transmissionSig: string;
+    transmissionTime: string;
+  },
+): Promise<boolean> {
+  const webhookId = process.env.PAYPAL_WEBHOOK_ID;
+  if (!webhookId) throw new Error("PAYPAL_WEBHOOK_ID not configured");
+
+  const token = await getAccessToken();
+
+  const res = await fetch(`${PAYPAL_BASE}/v1/notifications/verify-webhook-signature`, {
+    method: "POST",
+    headers: {
+      Authorization:  `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      auth_algo:         headers.authAlgo,
+      cert_url:          headers.certUrl,
+      transmission_id:   headers.transmissionId,
+      transmission_sig:  headers.transmissionSig,
+      transmission_time: headers.transmissionTime,
+      webhook_id:        webhookId,
+      webhook_event:     JSON.parse(rawBody),
+    }),
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`PayPal webhook verify failed (${res.status}): ${body}`);
+  }
+
+  const data = await res.json() as { verification_status: string };
+  return data.verification_status === "SUCCESS";
+}
+
 // Refunds a completed capture. Call this when payment was captured but the
 // downstream booking creation failed — money must be returned to the customer.
 // Throws if the refund API call itself fails; callers must log and alert.
