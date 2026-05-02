@@ -22,13 +22,6 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const startTimeParam = (sp.startTime  as string) || null;
   const variationIdParam = (sp.variationId as string) || null;
 
-  if (!dateParam || !adultsParam) {
-    redirect("/"); // Or back to tour page, but we don't have slug easily here unless we query
-  }
-
-  const adults = parseInt(adultsParam, 10);
-  const children = parseInt(childrenParam || "0", 10);
-  
   const tour = await prisma.tour.findUnique({
     where: { id: tourId },
     include: { images: true }
@@ -37,6 +30,13 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   if (!tour) {
     notFound();
   }
+
+  if (!dateParam || !adultsParam) {
+    redirect(`/tours/${tour.slug}`);
+  }
+
+  const adults = parseInt(adultsParam, 10);
+  const children = parseInt(childrenParam || "0", 10);
 
   let session = null;
   try {
